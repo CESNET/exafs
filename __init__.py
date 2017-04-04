@@ -43,7 +43,7 @@ def create_app():
     # calls *our* login_handler, passing the attribute dictionary
     ext = SSO(app=app)
 
-    @sso.login_handler
+    @ext.login_handler
     def login_callback(user_info):
         """Store information in session."""
         session['user'] = user_info
