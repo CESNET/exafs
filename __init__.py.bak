@@ -24,30 +24,33 @@ def create_app():
     # Add a secret key for encrypting session information
     app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
 
-    #: Default attribute map
+    # Map SSO attributes from ADFS to session keys under session['user']
     SSO_ATTRIBUTE_MAP = {
-        'ADFS_AUTHLEVEL': (False, 'authlevel'),
-        'ADFS_GROUP': (True, 'group'),
-        'ADFS_LOGIN': (True, 'nickname'),
-        'ADFS_ROLE': (False, 'role'),
-        'ADFS_EMAIL': (True, 'email'),
-        'ADFS_IDENTITYCLASS': (False, 'external'),
-        'HTTP_SHIB_AUTHENTICATION_METHOD': (False, 'authmethod'),
+        #'ADFS_LOGIN': (True, 'username'),
+        #'ADFS_FULLNAME': (True, 'fullname'),
+        #'ADFS_PERSONID': (True, 'personid'),
+        #'ADFS_DEPARTMENT': (True, 'department'),
+        'ADFS_EMAIL': (True, 'email')
+        # There are other attributes available
+        # Inspect the argument passed to the login_handler to see more
+        # 'ADFS_AUTHLEVEL': (False, 'authlevel'),
+        # 'ADFS_GROUP': (True, 'group'),
+        # 'ADFS_ROLE': (False, 'role'),
+        # 'ADFS_IDENTITYCLASS': (False, 'external'),
+        # 'HTTP_SHIB_AUTHENTICATION_METHOD': (False, 'authmethod'),
     }
-
-    app.config['SSO_ATTRIBUTE_MAP'] = SSO_ATTRIBUTE_MAP
-    app.config['SSO_LOGIN_URL'] = '/secure'
+    app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
+    app.config.setdefault('SSO_LOGIN_URL', '/secure')
 
     # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
     # which essentially maps the SSO attributes to a dictionary and
     # calls *our* login_handler, passing the attribute dictionary
     ext = SSO(app=app)
 
-    @sso.login_handler
-    def login_callback(user_info):
-        """Store information in session."""
+    @ext.login_handler
+    def login(user_info):
         session['user'] = user_info
-        return redirect('/')        
+        return redirect('/')
 
     @app.route('/logout')
     def logout():
