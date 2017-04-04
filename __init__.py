@@ -26,10 +26,10 @@ def create_app():
 
     # Map SSO attributes from ADFS to session keys under session['user']
     SSO_ATTRIBUTE_MAP = {
-        'ADFS_LOGIN': (True, 'username'),
-        'ADFS_FULLNAME': (True, 'fullname'),
-        'ADFS_PERSONID': (True, 'personid'),
-        'ADFS_DEPARTMENT': (True, 'department'),
+        #'ADFS_LOGIN': (True, 'username'),
+        #'ADFS_FULLNAME': (True, 'fullname'),
+        #'ADFS_PERSONID': (True, 'personid'),
+        #'ADFS_DEPARTMENT': (True, 'department'),
         'ADFS_EMAIL': (True, 'email')
         # There are other attributes available
         # Inspect the argument passed to the login_handler to see more
