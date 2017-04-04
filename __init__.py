@@ -49,41 +49,12 @@ def create_app():
         session['user'] = user_info
         return redirect('/')        
 
-    @app.route('/logout')
-    def logout():
-        session.pop('user')
-        return redirect('/')
-
-    @app.route('/')
+   @app.route('/')
     def index():
-        time = datetime.now().time()
-        timestr = '{0:02d}:{1:02d}:{2:02d}'.format(
-            time.hour, time.minute, time.second
-        )
-        headings = '<h1>Hello, World!</h1><h2>Server time: {0}</h2>'.format(
-            timestr
-        )
+        """Display user information or force login."""
         if 'user' in session:
-            details = get_user_details([
-                'username',
-                'fullname',
-                'email',
-                'department',
-                'personid'
-            ])
-            button = (
-                '<form action="/logout" method="get">'
-                '<input type="submit" value="Log out">'
-                '</form>'
-            )
-        else:
-            details = ''
-            button = (
-                '<form action="/secure" method="get">'
-                '<input type="submit" value="Log in">'
-                '</form>'
-            )
-        return headings + details + button
+            return 'Welcome {name}'.format(name=session['user']['nickname'])
+        return redirect(app.config['SSO_LOGIN_URL'])
 
     return app
 
