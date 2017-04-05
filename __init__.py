@@ -63,7 +63,7 @@ def create_app():
             time.hour, time.minute, time.second
         )
        
-        return render_template("pages/home.j2", info = get_user_session_info(), time=timestr)    
+        return render_template('pages/home.j2', info = get_user_session_info(), time=timestr)    
         
     return app
 
