@@ -17,7 +17,7 @@ def create_app():
      #: Default attribute map
     SSO_ATTRIBUTE_MAP = {
        'eppn': (True, 'eppn'),
-       'cn': (True, 'cn'),
+       'cn': (False, 'cn'),
     }
 
     app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
