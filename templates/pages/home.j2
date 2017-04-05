@@ -1,0 +1,17 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}Flowspec{% endblock %}
+{% block content %}
+    <h1>Hello, World!</h1>
+    <h2>Server time: {{timestr}}</h2>
+
+    <h2>{{info}}</h2>
+
+    <form action="/logout" method="get">
+        <input type="submit" value="Log out">
+    </form>
+    
+    <form action="/login" method="get">
+        <input type="submit" value="Log in">
+    </form> 
+            )
+{% endblock %}
