@@ -87,6 +87,7 @@ def not_found(error):
     return render_template('errors/404.j2'), 404    
 
 @app.route('/')
+@auth_required
 def index():
     time = datetime.now().time()
     timestr = '{0:02d}:{1:02d}:{2:02d}'.format(
