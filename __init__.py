@@ -8,14 +8,6 @@ def get_user_session_info():
     return repr(session['user'].items())
 
 
-def get_user_details(fields):
-    defs = [
-        '<dt>{0}</dt><dd>{1}</dd>'.format(f, get_user_session_info(f))
-        for f in fields
-    ]
-    return '<dl>{0}</dl>'.format(''.join(defs))
-
-
 def create_app():
     app = Flask('Flowspec')
     # Add a secret key for encrypting session information
@@ -57,7 +49,7 @@ def create_app():
             timestr
         )
         if 'user' in session:
-            details = get_user_details()
+            details = get_user_session_info()
             button = (
                 '<form action="/logout" method="get">'
                 '<input type="submit" value="Log out">'
