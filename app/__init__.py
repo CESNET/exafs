@@ -1,8 +1,7 @@
-# Import flask and template operators
-from flask import Flask, render_template
-
-# Import SQLAlchemy
+from flask import Flask, session, redirect, render_template
+from flask_sso import SSO
 from flask.ext.sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 
 def get_user_session_info():
