@@ -25,22 +25,15 @@ def create_app():
     app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
 
     # Map SSO attributes from ADFS to session keys under session['user']
+     #: Default attribute map
     SSO_ATTRIBUTE_MAP = {
-        #'ADFS_LOGIN': (True, 'username'),
-        #'ADFS_FULLNAME': (True, 'fullname'),
-        #'ADFS_PERSONID': (True, 'personid'),
-        #'ADFS_DEPARTMENT': (True, 'department'),
-        'ADFS_EMAIL': (True, 'email')
-        # There are other attributes available
-        # Inspect the argument passed to the login_handler to see more
-        # 'ADFS_AUTHLEVEL': (False, 'authlevel'),
-        # 'ADFS_GROUP': (True, 'group'),
-        # 'ADFS_ROLE': (False, 'role'),
-        # 'ADFS_IDENTITYCLASS': (False, 'external'),
-        # 'HTTP_SHIB_AUTHENTICATION_METHOD': (False, 'authmethod'),
+       'eppn': (True, 'eppn'),
+       'cn': (False, 'cn'),
+       'affiliation': (True, 'affiliation')
     }
+
     app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
-    app.config.setdefault('SSO_LOGIN_URL', '/secure')
+    app.config.setdefault('SSO_LOGIN_URL', '/login')
 
     # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
     # which essentially maps the SSO attributes to a dictionary and

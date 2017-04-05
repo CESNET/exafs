@@ -24,16 +24,16 @@ def create_app():
     # Add a secret key for encrypting session information
     app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
 
-    #: Default attribute map
+    # Map SSO attributes from ADFS to session keys under session['user']
+     #: Default attribute map
     SSO_ATTRIBUTE_MAP = {
        'eppn': (True, 'eppn'),
        'cn': (False, 'cn'),
        'affiliation': (True, 'affiliation')
     }
 
-
-    app.config['SSO_ATTRIBUTE_MAP'] = SSO_ATTRIBUTE_MAP
-    #app.config['SSO_LOGIN_URL'] = '/securs'
+    app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
+    app.config.setdefault('SSO_LOGIN_URL', '/login')
 
     # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
     # which essentially maps the SSO attributes to a dictionary and
@@ -41,19 +41,45 @@ def create_app():
     ext = SSO(app=app)
 
     @ext.login_handler
-    def login_callback(user_info):
-        """Store information in session."""
+    def login(user_info):
         session['user'] = user_info
-        return redirect('/')        
+        return redirect('/')
+
+    @app.route('/logout')
+    def logout():
+        session.pop('user')
+        return redirect('/')
 
     @app.route('/')
     def index():
-        """Display user information or force login."""
+        time = datetime.now().time()
+        timestr = '{0:02d}:{1:02d}:{2:02d}'.format(
+            time.hour, time.minute, time.second
+        )
+        headings = '<h1>Hello, World!</h1><h2>Server time: {0}</h2>'.format(
+            timestr
+        )
         if 'user' in session:
-	    print "reloaded"
-	    print session['user']
-            return 'Welcome'
-        return redirect(app.config['SSO_LOGIN_URL'])
+            details = get_user_details([
+                'username',
+                'fullname',
+                'email',
+                'department',
+                'personid'
+            ])
+            button = (
+                '<form action="/logout" method="get">'
+                '<input type="submit" value="Log out">'
+                '</form>'
+            )
+        else:
+            details = ''
+            button = (
+                '<form action="/login" method="get">'
+                '<input type="submit" value="Log in">'
+                '</form>'
+            )
+        return headings + details + button
 
     return app
 
@@ -63,4 +89,4 @@ def wsgi(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    create_app().run()
+    create_app().run(debug=True)
