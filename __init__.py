@@ -29,7 +29,9 @@ def create_app():
     SSO_ATTRIBUTE_MAP = {
        'eppn': (True, 'eppn'),
        'cn': (False, 'cn'),
-       'affiliation': (True, 'affiliation')
+       'affiliation': (True, 'affiliation'),
+       'unscoped-affiliation': (True, 'unscoped-affiliation'),
+       'persistent-id': (True, 'persistent-id')
     }
 
     app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
