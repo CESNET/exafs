@@ -4,8 +4,8 @@ from flask import Flask, session, redirect
 from flask_sso import SSO
 
 
-def get_user_session_info(key):
-    return repr(session['user'].keys())
+def get_user_session_info():
+    return repr(session['user'].items())
 
 
 def get_user_details(fields):
@@ -59,11 +59,7 @@ def create_app():
             timestr
         )
         if 'user' in session:
-            details = get_user_details([
-                'eppn',
-                'cn',
-                'affiliation'
-            ])
+            details = get_user_details()
             button = (
                 '<form action="/logout" method="get">'
                 '<input type="submit" value="Log out">'
