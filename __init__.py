@@ -5,10 +5,7 @@ from flask_sso import SSO
 
 
 def get_user_session_info(key):
-    return session['user'].get(
-        key,
-        'Key `{0}` not found in user session info'.format(key)
-    )
+    return repr(session['user'].keys())
 
 
 def get_user_details(fields):
