@@ -61,11 +61,9 @@ def create_app():
         )
         if 'user' in session:
             details = get_user_details([
-                'username',
-                'fullname',
-                'email',
-                'department',
-                'personid'
+                'eppn',
+                'cn',
+                'affiliation'
             ])
             button = (
                 '<form action="/logout" method="get">'
