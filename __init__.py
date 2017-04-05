@@ -26,17 +26,14 @@ def create_app():
 
     #: Default attribute map
     SSO_ATTRIBUTE_MAP = {
-        'ADFS_AUTHLEVEL': (False, 'authlevel'),
-        'ADFS_GROUP': (True, 'group'),
-        'ADFS_LOGIN': (True, 'nickname'),
-        'ADFS_ROLE': (False, 'role'),
-        'ADFS_EMAIL': (True, 'email'),
-        'ADFS_IDENTITYCLASS': (False, 'external'),
-        'HTTP_SHIB_AUTHENTICATION_METHOD': (False, 'authmethod'),
+       'eppn': (True, 'eppn'),
+       'cn': (False, 'cn'),
+       'affiliation': (True, 'affiliation')
     }
 
+
     app.config['SSO_ATTRIBUTE_MAP'] = SSO_ATTRIBUTE_MAP
-    app.config['SSO_LOGIN_URL'] = '/secure'
+    #app.config['SSO_LOGIN_URL'] = '/securs'
 
     # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
     # which essentially maps the SSO attributes to a dictionary and
@@ -49,11 +46,13 @@ def create_app():
         session['user'] = user_info
         return redirect('/')        
 
-   @app.route('/')
+    @app.route('/')
     def index():
         """Display user information or force login."""
         if 'user' in session:
-            return 'Welcome {name}'.format(name=session['user']['nickname'])
+	    print "reloaded"
+	    print session['user']
+            return 'Welcome'
         return redirect(app.config['SSO_LOGIN_URL'])
 
     return app
@@ -64,4 +63,4 @@ def wsgi(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    create_app().run(debug=True)
+    create_app().run()
