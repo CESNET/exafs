@@ -22,7 +22,6 @@ def check_auth(email):
     This function is called to check if a username /
     password combination is valid.
     """
-    print app.config.get('SSO_AUTH')
     if app.config.get('SSO_AUTH'):
         users = ["jiri.vrany@tul.cz", "petr.adamec@tul.cz"]
         return email in users
