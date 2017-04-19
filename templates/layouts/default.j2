@@ -69,10 +69,10 @@
     </nav>
 
     <div class="container theme-showcase" role="main">
-      {% with messages = get_flashed_messages() %}
+      {% with messages = get_flashed_messages(with_categories=true)  %}
         {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-block alert-error fade in">
+          {% for category, message in messages %}
+            <div class="alert alert-block {{category}} fade in">
               <a class="close" data-dismiss="alert">&times;</a>
               {{ message }}
             </div>

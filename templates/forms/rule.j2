@@ -1,36 +1,36 @@
 {% extends 'layouts/default.j2' %}
 {% block title %}Reset Password{% endblock %}
 {% block content %}
-  <form>
+  <form action="/addrule" method="post">
   <div class="row">
     <div class="col-sm-8">
       <div class="form-group">
         <label for="inputSourceAdress" class="control-label">Source address</label>
-        <input type="text" class="form-control" id="inputSourceAdress" placeholder="S Network address" />
+        <input type="text" class="form-control" name="source_adress" id="inputSourceAdress" placeholder="S Network address" />
       </div>
       <div class="form-group">  
         <label for="inputDestinationAdress" class="control-label">Destination address</label>
-        <input type="text" class="form-control" id="inputDestinationAdress" placeholder="Network address" />
+        <input type="text" class="form-control" name="destination_adress" id="inputDestinationAdress" placeholder="Network address" />
       </div>  
     </div>
     <div class="col-sm-4">
         <div class="form-group "> 
           <label for="inputProtocol" class="control-label">Protocol</label>
-            <div class="checkbox">
+            <div class="radio">
             <label>
-              <input type="checkbox" value="icmp">
+              <input type="radio" name="protocol" value="icmp">
               ICMP
             </label>
           </div>
-          <div class="checkbox">
+          <div class="radio">
             <label>
-              <input type="checkbox" value="tcp">
+              <input type="radio" name="protocol" value="tcp">
               TCP
             </label>
           </div>
-          <div class="checkbox">
+          <div class="radio">
             <label>
-              <input type="checkbox" value="udp">
+              <input type="radio" name="protocol" value="udp">
               UDP
             </label>
           </div>
@@ -42,19 +42,19 @@
     <div class="col-sm-4">
       <div class="form-group">
         <label for="sourcePort" class="control-label">Source port</label>
-        <input type="text" class="form-control date" name="sourcePort">
+        <input type="text" class="form-control date" name="source_port">
       </div>  
     </div>
     <div class="col-sm-4">
       <div class="form-group">
         <label for="destinationPort" class="control-label">Destination port</label>
-        <input type="text" class="form-control date" name="destinationPort">
+        <input type="text" class="form-control date" name="destination_port">
       </div>  
     </div>
     <div class="col-sm-4">
       <div class="form-group">
         <label for="packetLength" class="control-label">Packet length</label>
-        <input type="text" class="form-control date" name="packetLength">
+        <input type="text" class="form-control date" name="packet_length">
       </div>  
     </div>
   </div>
@@ -64,7 +64,7 @@
     <div class="col-sm-6">
       <div class="form-group">  
         <label for="inputAction" class="control-label">Action</label>
-          <select class="form-control" id="inputAction">
+          <select class="form-control" name="action" id="inputAction">
               <option>1</option>
               <option>2</option>
               <option>3</option>
@@ -77,7 +77,7 @@
       <div class="form-group">
         <label for="inputExpiration" class="control-label">Expiration date</label>
         <div class='input-group date' id='dateTimeExpires'>
-                      <input type='text' class="form-control" />
+                      <input type='text' name="expire_date" class="form-control" />
                       <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                       </span>
@@ -90,7 +90,7 @@
     <div class="col-sm-12">
       <div class="form-group">
         <label for="inputComment" class="control-label">Comments</label>
-        <textarea class="form-control" rows="3" name="inputComment" id="inputComment"></textarea>
+        <textarea class="form-control" rows="3" name="comment" id="inputComment"></textarea>
       </div>
     </div>
   </div>

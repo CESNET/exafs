@@ -2,12 +2,17 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 import config
-from os import path
+from os import environ
 
 app = Flask(__name__)
 
 # Configurations
-if path.realpath(__file__) == '/home/albert/work/flowspec/www/flowapp.py':
+try:
+    env = environ['APP_ENV']
+except KeyError as e:
+    env = 'Production'
+    
+if env=='Devel':
     app.config.from_object(config.DevelopmentConfig)
 else: 
     app.config.from_object(config.ProductionConfig)

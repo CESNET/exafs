@@ -1,16 +1,17 @@
-from flask import Flask, session, redirect, render_template
+#from flask import Flask, flask.session, flask.redirect, flask.render_template, flask.request, url_for
+import flask
 from flask_sso import SSO
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from functools import wraps
-from os import path
+from os import environ
 
 import config
 
 
 def get_user():
     try:
-        email = session['user'].get('eppn')
+        email = flask.session['user'].get('eppn')
     except KeyError:
         email = False
     
@@ -32,21 +33,18 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
-            return redirect('/login')
+            return flask.redirect('/login')
         return f(*args, **kwargs)
     return decorated
 
 
-app = Flask('Flowspec')
-# Add a secret key for encrypting session information
+app = flask.Flask('Flowspec')
+# Add a secret key for encrypting flask.session information
 app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
 
-# Define the database object 
-db = SQLAlchemy(app)
-# Build the database:
-#db.create_all()
 
-# Map SSO attributes from ADFS to session keys under session['user']
+
+# Map SSO attributes from ADFS to flask.session keys under flask.session['user']
 #: Default attribute map
 SSO_ATTRIBUTE_MAP = {
    'eppn': (True, 'eppn'),
@@ -54,7 +52,12 @@ SSO_ATTRIBUTE_MAP = {
 }
 
 # Configurations
-if path.realpath(__file__) == '/home/albert/work/flowspec/www/flowapp.py':
+try:
+    env = environ['APP_ENV']
+except KeyError as e:
+    env = 'Production'
+    
+if env=='Devel':
     app.config.from_object(config.DevelopmentConfig)
 else: 
     app.config.from_object(config.ProductionConfig)
@@ -63,27 +66,31 @@ app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
 app.config.setdefault('SSO_LOGIN_URL', '/login')
 
 
+print app.config['SQLALCHEMY_DATABASE_URI']
 # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
 ext = SSO(app=app)
 
+# Define the database object 
+db = SQLAlchemy(app)
 
-    
+import models
+
 
 @ext.login_handler
 def login(user_info):
-    session['user'] = user_info
-    return redirect('/')
+    flask.session['user'] = user_info
+    return flask.redirect('/')
 
 @app.route('/logout')
 def logout():
-    session.pop('user')
-    return redirect('/')
+    flask.session.pop('user')
+    return flask.redirect('/')
 
 
 # Sample HTTP error handling
 @app.errorhandler(404)
 def not_found(error):
-    return render_template('errors/404.j2'), 404    
+    return flask.render_template('errors/404.j2'), 404    
 
 @app.route('/')
 @auth_required
@@ -93,14 +100,41 @@ def index():
         time.hour, time.minute, time.second
     )
    
-    return render_template('pages/home.j2', info = get_user(), time=timestr)
+    return flask.render_template('pages/home.j2', info = get_user(), time=timestr)
 
 
-@app.route('/addrule')
+@app.route('/addrule', methods=['GET'])
+@auth_required
+def addrule_form():
+    return flask.render_template('forms/rule.j2')                    
+
+@app.route('/addrule', methods=['POST'])
 @auth_required
 def addrule():
-    return render_template('forms/rule.j2')                    
-
+    #flask.request.form.get('source_adress)]
+    model_class = models.get_ip_model(flask.request.form.get('source_adress'))
+    if model_class:
+        model = model_class(source = flask.request.form.get('source_adress'), 
+            source_mask = flask.request.form.get('source_adress'),
+            source_port = flask.request.form.get('source_adress'),
+            destination = flask.request.form.get('destination_adress'),
+            destination_mask = flask.request.form.get('destination_mask'),
+            destination_port = flask.request.form.get('destination_port'),
+            protocol = flask.request.form.get('protocol'),
+            packet_len  = flask.request.form.get('packet_length'),
+            expires = flask.request.form.get('expire_date'),
+            comment = flask.request.form.get('comment'))
+        print model
+        db.session.add(model)
+        db.session.commit()
+        flask.flash(u'Rule saved', 'alert-sucess')
+        print model_class
+        return flask.redirect(flask.url_for('addrule_form'))    
+    else:
+        flask.flash(u'Invalid source adress', 'alert-danger')        
+        return flask.redirect(flask.url_for('addrule_form'))
+    
+    
 
 if __name__ == '__main__':
     app.run()
