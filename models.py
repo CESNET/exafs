@@ -57,10 +57,10 @@ class Role(db.Model):
 
 class RTBH(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ipv4 = db.Column(db.Varbinary(16))
-    ipv4_mask = db.Column(db.Varbinary(16))
-    ipv6 = db.Column(db.Varbinary(16))
-    ipv6_mask = db.Column(db.Varbinary(16))
+    ipv4 = db.Column(db.VARBINARY(16))
+    ipv4_mask = db.Column(db.VARBINARY(16))
+    ipv6 = db.Column(db.VARBINARY(16))
+    ipv6_mask = db.Column(db.VARBINARY(16))
 
     def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask):
         self.ipv4 = ipv4_to_long(ipv4)
@@ -71,10 +71,10 @@ class RTBH(db.Model):
 
 class Flowspec4(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    source = db.Column(db.Varbinary(16))
-    source_mask = db.Column(db.Varbinary(16))
-    destination = db.Column(db.Varbinary(16))
-    destination_mask = db.Column(db.Varbinary(16))
+    source = db.Column(db.VARBINARY(16))
+    source_mask = db.Column(db.VARBINARY(16))
+    destination = db.Column(db.VARBINARY(16))
+    destination_mask = db.Column(db.VARBINARY(16))
 
     def __init__(self, source, source_mask, destination, destination_mask):
         self.source = ipv4_to_long(source)
@@ -85,10 +85,10 @@ class Flowspec4(db.Model):
 
 class Flowspec6(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    source = db.Column(db.Varbinary(16))
-    source_mask = db.Column(db.Varbinary(16))
-    destination = db.Column(db.Varbinary(16))
-    destination_mask = db.Column(db.Varbinary(16))
+    source = db.Column(db.VARBINARY(16))
+    source_mask = db.Column(db.VARBINARY(16))
+    destination = db.Column(db.VARBINARY(16))
+    destination_mask = db.Column(db.VARBINARY(16))
 
     def __init__(self, source, source_mask, destination, destination_mask):
         self.source = ipv6_to_long(source)
