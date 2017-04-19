@@ -42,7 +42,7 @@ app = Flask('Flowspec')
 app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
 
 # Define the database object 
-#db = SQLAlchemy(app)
+db = SQLAlchemy(app)
 # Build the database:
 #db.create_all()
 

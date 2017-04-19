@@ -2,8 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from socket import inet_aton, inet_ntoa, inet_pton, inet_ntop
 from struct import unpack, pack, error as struct_error
-
-db = SQLAlchemy()
+from flowapp import db
 
 user_role_rel_table = db.Table('user_role_rel_table',
                                db.Column('user_id', db.Integer, db.ForeignKey(
