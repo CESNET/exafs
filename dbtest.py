@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import models
+
 import config
 from os import path
 
@@ -14,6 +14,6 @@ else:
 
 db = SQLAlchemy(app)
 
+from models import *
 
-if __name__ == "__main__":
-    db.create_all()        
+db.create_all()        
