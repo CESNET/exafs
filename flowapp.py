@@ -70,8 +70,8 @@ def login(user_info):
     else:        
         user = models.User.query.filter_by(email=email).first()
         flask.session['user_email'] = user.email
-        flask.session['user_roles'] = user.role.query(Role.id).all()
-        flask.session['user_org'] = user.organization.query(Organization.id).all()
+        flask.session['user_roles'] = [role.id for role in user.role.all()]
+        flask.session['user_org'] = [org.id for org in user.organization.all()]
         return flask.redirect('/')
     
 
