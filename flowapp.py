@@ -171,7 +171,7 @@ def testfunc():
 
 @app.after_request
 def remove_if_invalid(response):
-    if "__invalidate__" in session:
+    if "__invalidate__" in flask.session:
         response.delete_cookie(app.session_cookie_name)
         print flask.request.cookies
     return response
