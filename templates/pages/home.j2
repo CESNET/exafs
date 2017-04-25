@@ -4,5 +4,5 @@
     <h1>Work in progress...</h1>
     <h2>Server time: {{ time }}</h2>
 
-    <h2>user: {{ email }}, role: {{ session[config.USER_ROLE] }}, organization: {{ session[config.USER_ORG] }}</h2>
+    <h2>user: {{ email }}, role: {{ session['user_roles'] }}, organization: {{ session['user_org'] }}</h2>
 {% endblock %}
