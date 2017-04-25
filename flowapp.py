@@ -99,7 +99,7 @@ def check_auth(email):
     """
     exist = False
     #if email:
-    exist = models.User.query.filter_by(email=False).first()
+    exist = models.User.query.filter_by(email=None).first()
     print "EXIST", exist
     
     if app.config.get('SSO_AUTH'):
