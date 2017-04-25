@@ -77,7 +77,7 @@ def login(user_info):
 
 @app.route('/logout')
 def logout():
-    session["__invalidate__"] = True
+    flask.session["__invalidate__"] = True
     return flask.redirect(flask.url_for("index"))
 
 def get_user():
