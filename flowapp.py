@@ -77,8 +77,8 @@ def login(user_info):
 
 @app.route('/logout')
 def logout():
-    flask.session.clear()
-    return flask.redirect('/')
+    session["__invalidate__"] = True
+    return flask.redirect(flask.url_for("index"))
 
 def get_user():
     """
@@ -169,7 +169,12 @@ def testfunc():
     return flask.render_template('pages/user.j2', user=user, role=drole, org=dorg)
     
 
-
+@app.after_request
+def remove_if_invalid(response):
+    if "__invalidate__" in session:
+        response.delete_cookie(app.session_cookie_name)
+        print flask.request.cookies
+    return response
 
 
 if __name__ == '__main__':
