@@ -83,9 +83,6 @@ def logout():
     print "DEBUG session keys before clear", flask.session.keys()
     flask.session.clear()
     print "DEBUG session keys after clear", flask.session.keys()
-    for key in flask.request.cookies.keys():
-        print "deleting", key
-        response.delete_cookie(key)
     print "DEBUG redirecting to logout page"
     return flask.redirect('https://flowspec.is.tul.cz/Shibboleth.sso/Logout?return=https://shibbo.tul.cz/idp/profile/Logout')
 
