@@ -88,7 +88,7 @@ def get_user():
         email = flask.session['user_email']
     except KeyError:
         email = False
-    
+    print "EMAIL", email
     return email
 
 
