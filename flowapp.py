@@ -88,7 +88,7 @@ def get_user():
         email = flask.session['user_email']
     except KeyError:
         email = False
-    print "EMAIL", email
+    
     return email
 
 
@@ -98,7 +98,8 @@ def check_auth(email):
     password combination is valid.
     """
     exist = models.User.query.filter_by(email=email).first()
-
+    print "EXIST", exist
+    print "EMAIL", email
     if app.config.get('SSO_AUTH'):
         return exist
     else:
