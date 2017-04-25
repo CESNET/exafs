@@ -77,8 +77,9 @@ def login(user_info):
 
 @app.route('/logout')
 def logout():
-    flask.session["__invalidate__"] = True
-    return flask.render_template('pages/logout.j2')
+    #flask.session["__invalidate__"] = True
+    #return flask.render_template('pages/logout.j2')
+    return flask.redirect('https://flowspec.is.tul.cz/Shibboleth.sso/Logout?return=https://shibbo.tul.cz/idp/profile/Logout')
 
 def get_user():
     """
