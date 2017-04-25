@@ -55,7 +55,6 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
-            print "DEBUG redirecting to login"
             return flask.redirect('/login')
         return f(*args, **kwargs)
     return decorated
@@ -71,19 +70,14 @@ def login(user_info):
     else:        
         user = models.User.query.filter_by(email=email).first()
         flask.session['user_email'] = user.email
-        flask.session['user_roles'] = [role.id for role in user.role.all()]
-        flask.session['user_org'] = [org.id for org in user.organization.all()]
+        flask.session['user_roles'] = [role.name for role in user.role.all()]
+        flask.session['user_org'] = [org.name for org in user.organization.all()]
         return flask.redirect('/')
     
 
 @app.route('/logout')
 def logout():
-    #flask.session["__invalidate__"] = True
-    #return flask.render_template('pages/logout.j2')
-    print "DEBUG session keys before clear", flask.session.keys()
     flask.session.clear()
-    print "DEBUG session keys after clear", flask.session.keys()
-    print "DEBUG redirecting to logout page"
     return flask.redirect('https://flowspec.is.tul.cz/Shibboleth.sso/Logout?return=https://shibbo.tul.cz/idp/profile/Logout')
 
 def get_user():
@@ -128,7 +122,7 @@ def index():
         time.hour, time.minute, time.second
     )
    
-    return flask.render_template('pages/home.j2', info = get_user(), time=timestr)
+    return flask.render_template('pages/home.j2', email = get_user(), time=timestr)
 
 
 @app.route('/addrule', methods=['GET'])
