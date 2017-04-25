@@ -78,7 +78,7 @@ def login(user_info):
 @app.route('/logout')
 def logout():
     flask.session["__invalidate__"] = True
-    return flask.render_template('forms/rule.j2')   
+    return flask.render_template('pages/logout.j2')
 
 def get_user():
     """
