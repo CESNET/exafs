@@ -1,0 +1,7 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}Flowspec{% endblock %}
+{% block content %}
+    <h2>USER ID: {{ user.id }} {{user.email}}</h2>
+    <h2>USER ROLE: {{ role.id }} {{role.name}}</h2>
+    <h2>USER ORGANIZATION: {{ org.name }} </h2>
+{% endblock %}

@@ -104,7 +104,10 @@
 
 <script type="text/javascript">
             $(function () {
-                $('#dateTimeExpires').datetimepicker();
+                $('#dateTimeExpires').datetimepicker({
+                    format: 'MM/DD/YYYY HH:mm',
+                    keepOpen: false
+                });
             });
 </script>
 {% endblock %}

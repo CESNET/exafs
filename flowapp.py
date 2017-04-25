@@ -9,34 +9,6 @@ from os import environ
 import config
 
 
-def get_user():
-    try:
-        email = flask.session['user'].get('eppn')
-    except KeyError:
-        email = False
-    
-    return email
-
-
-def check_auth(email):
-    """
-    This function is called to check if a username /
-    password combination is valid.
-    """
-    if app.config.get('SSO_AUTH'):
-        users = ["jiri.vrany@tul.cz", "petr.adamec@tul.cz"]
-        return email in users
-    else:
-        return True    
-
-def auth_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not check_auth(get_user()):
-            return flask.redirect('/login')
-        return f(*args, **kwargs)
-    return decorated
-
 
 app = flask.Flask('Flowspec')
 # Add a secret key for encrypting flask.session information
@@ -53,11 +25,11 @@ SSO_ATTRIBUTE_MAP = {
 
 # Configurations
 try:
-    env = environ['APP_ENV']
+    env = environ['USERNAME']
 except KeyError as e:
     env = 'Production'
     
-if env=='Devel':
+if env=='albert':
     app.config.from_object(config.DevelopmentConfig)
 else: 
     app.config.from_object(config.ProductionConfig)
@@ -66,7 +38,6 @@ app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
 app.config.setdefault('SSO_LOGIN_URL', '/login')
 
 
-print app.config['SQLALCHEMY_DATABASE_URI']
 # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
 ext = SSO(app=app)
 
@@ -76,15 +47,63 @@ db = SQLAlchemy(app)
 import models
 
 
+# auth atd.
+def auth_required(f):
+    """
+    auth required decorator
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not check_auth(get_user()):
+            return flask.redirect('/login')
+        return f(*args, **kwargs)
+    return decorated
+
+
 @ext.login_handler
 def login(user_info):
-    flask.session['user'] = user_info
-    return flask.redirect('/')
+    try:
+        email = user_info.get('eppn')
+    except KeyError:
+        email = False
+        return flask.redirect('/')
+    else:        
+        user = models.User.query.filter_by(email=email).first()
+        flask.session['user'] = user
+        flask.session['user_roles'] = user.role.all()
+        flask.session['user_org'] = user.organization.all()
+        return flask.redirect('/')
+    
 
 @app.route('/logout')
 def logout():
-    flask.session.pop('user')
+    flask.session.clear()
     return flask.redirect('/')
+
+def get_user():
+    """
+    get user email from session
+    """
+    try:
+        email = flask.session['user'].get('eppn')
+    except KeyError:
+        email = False
+    
+    return email
+
+
+def check_auth(email):
+    """
+    This function is called to check if a username /
+    password combination is valid.
+    """
+    exist = models.User.query.filter_by(email=email).first()
+
+    if app.config.get('SSO_AUTH'):
+        return exist
+    else:
+        return True    
+
 
 
 # Sample HTTP error handling
@@ -122,7 +141,7 @@ def addrule():
             destination_port = flask.request.form.get('destination_port'),
             protocol = flask.request.form.get('protocol'),
             packet_len  = flask.request.form.get('packet_length'),
-            expires = flask.request.form.get('expire_date'),
+            expires = models.webpicker_to_datetime(flask.request.form.get('expire_date')),
             comment = flask.request.form.get('comment'))
         print model
         db.session.add(model)
@@ -133,8 +152,22 @@ def addrule():
     else:
         flask.flash(u'Invalid source adress', 'alert-danger')        
         return flask.redirect(flask.url_for('addrule_form'))
+
+
+@app.route('/test')
+@auth_required
+def testfunc():
+    email = "petr.adamec@tul.cz"
+    user = models.User.query.filter_by(email=email).first()
+
+    drole = user.role.filter(models.Role.id == 3).one()
+    dorg = user.organization.one()
+
+    return flask.render_template('pages/user.j2', user=user, role=drole, org=dorg)
     
-    
+
+
+
 
 if __name__ == '__main__':
     app.run()
