@@ -82,10 +82,10 @@ def logout():
 
 def get_user():
     """
-    get user email from session
+    get user from session
     """
     try:
-        email = flask.session['user'].get('eppn')
+        email = flask.session['user'].email
     except KeyError:
         email = False
     
