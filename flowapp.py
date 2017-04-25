@@ -97,9 +97,9 @@ def check_auth(email):
     This function is called to check if a username /
     password combination is valid.
     """
+    print "EMAIL entered ", email
     exist = models.User.query.filter_by(email=email).first()
     print "EXIST", exist
-    print "EMAIL", email
     if app.config.get('SSO_AUTH'):
         return exist
     else:
