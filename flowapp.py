@@ -69,7 +69,7 @@ def login(user_info):
         return flask.redirect('/')
     else:        
         user = models.User.query.filter_by(email=email).first()
-        flask.session['user'] = user
+        flask.session['user_email'] = user.email
         flask.session['user_roles'] = user.role.all()
         flask.session['user_org'] = user.organization.all()
         return flask.redirect('/')
@@ -85,7 +85,7 @@ def get_user():
     get user from session
     """
     try:
-        email = flask.session['user'].email
+        email = flask.session['user_email']
     except KeyError:
         email = False
     
