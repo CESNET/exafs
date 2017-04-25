@@ -55,6 +55,7 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
+            print "DEBUG redirecting to login"
             return flask.redirect('/login')
         return f(*args, **kwargs)
     return decorated
@@ -79,6 +80,7 @@ def login(user_info):
 def logout():
     #flask.session["__invalidate__"] = True
     #return flask.render_template('pages/logout.j2')
+    print "DEBUG redirecting to logout page"
     return flask.redirect('https://flowspec.is.tul.cz/Shibboleth.sso/Logout?return=https://shibbo.tul.cz/idp/profile/Logout')
 
 def get_user():
