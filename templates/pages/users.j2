@@ -1,0 +1,30 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}Flowspec Users{% endblock %}
+{% block content %}
+    <table class="table table-hover">
+    <tr>
+    <th>email</th>
+    <th>role(s)</th>
+    <th>organization(s)</th>
+    <th>action</th>
+    </tr>
+    {% for user in users %}
+        <tr>
+        <td>{{ user.email }}</td>
+        <td>
+        {% for role in user.role %}
+          {{ role.name }} 
+        {% endfor %}
+        </td>
+        <td>
+        {% for org in user.organization %}
+            {{ org.name }}
+        {% endfor %}
+        </td>
+        <td>
+        <a class="btn btn-info" href="{{ url_for('user', user_id=user.id) }}" role="button">edit</a>
+        </td>
+        </tr>
+    {% endfor %}
+    </table>
+{% endblock %}

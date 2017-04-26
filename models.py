@@ -294,3 +294,20 @@ def insert_users(users):
         db.session.add(u)
 
     db.session.commit()
+
+def insert_user(email, role_ids, org_ids):
+    """
+    inser user with multiple roles and organizations
+    """
+    u = User(email=email)
+    
+    for role_id in role_ids:
+        r = Role.query.filter_by(id=role_id).first()
+        u.role.append(r)
+
+    for org_id in org_ids:    
+        o = Organization.query.filter_by(id=org_id).first()
+        u.organization.append(o)
+    
+    db.session.add(u)
+    db.session.commit()    
