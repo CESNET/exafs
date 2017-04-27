@@ -4,6 +4,7 @@ click==6.7
 Flask==0.12
 Flask-SQLAlchemy==2.2
 Flask-SSO==0.4.0
+Flask-WTF==0.14.2
 honcho==0.7.1
 itsdangerous==0.24
 Jinja2==2.9.5
@@ -16,3 +17,4 @@ six==1.10.0
 SQLAlchemy==1.1.6
 uWSGI==2.0.14
 Werkzeug==0.11.15
+WTForms==2.1
