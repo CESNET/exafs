@@ -66,7 +66,7 @@ def login(user_info):
         email = False
         return redirect('/')
     else:
-        user = models.User.query.filter_by(email=email).first()
+        user = db.session.query(models.User).filter_by(email=email).first()
         session['user_email'] = user.email
         session['user_id'] = user.id
         session['user_roles'] = [role.name for role in user.role.all()]
@@ -102,7 +102,7 @@ def check_auth(email):
     """
     exist = False
     if email:
-        exist = models.User.query.filter_by(email=email).first()
+        exist = db.session.query(models.User).filter_by(email=email).first()
 
     if app.config.get('SSO_AUTH'):
         return exist
@@ -130,7 +130,7 @@ def index():
     timestr = '{0:02d}:{1:02d}:{2:02d}'.format(
         time.hour, time.minute, time.second
     )
-    rules = models.Flowspec4.query.all()
+    rules = db.session.query(models.Flowspec4).all()
 
     return render_template('pages/home.j2', time=timestr, rules=rules)
 
@@ -141,7 +141,7 @@ def ivp4_rule():
 
     form = forms.IPv4Form(request.form)
     form.action.choices = [(g.id, g.name)
-                             for g in models.Action.query.order_by('name')]
+                             for g in db.session.query(models.Action).order_by('name')]
 
     if request.method == 'POST' and form.validate():
 
@@ -152,7 +152,7 @@ def ivp4_rule():
             destination=form.destination_adress.data,
             destination_mask=form.destination_mask.data,
             destination_port=form.destination_port.data,
-            protocol=form.protocol.data,
+            protocol=",".join(form.protocol.data),
             packet_len=form.packet_length.data,
             expires=models.webpicker_to_datetime(form.expire_date.data),
             comment=form.comment.data,
@@ -175,31 +175,19 @@ def ivp4_rule():
     return render_template('forms/ipv4_rule.j2', form=form)
 
 
-@app.route('/test')
-@auth_required
-def testfunc():
-    email = "petr.adamec@tul.cz"
-    user = models.User.query.filter_by(email=email).first()
-
-    drole = user.role.filter(models.Role.id == 3).one()
-    dorg = user.organization.one()
-
-    return render_template('pages/user.j2', user=user, role=drole, org=dorg)
-
-
 @app.route('/user', methods=['GET', 'POST'])
 @auth_required
 def user():
 
     form = forms.UserForm(request.form)
     form.role_ids.choices = [(g.id, g.name)
-                             for g in models.Role.query.order_by('name')]
+                             for g in db.session.query(models.Role).order_by('name')]
     form.org_ids.choices = [(g.id, g.name)
-                            for g in models.Organization.query.order_by('name')]
+                            for g in db.session.query(models.Organization).order_by('name')]
 
     if request.method == 'POST' and form.validate():
         # test if user is unique
-        exist = models.User.query.filter_by(email=form.email.data).first()
+        exist = db.session.query(models.User).filter_by(email=form.email.data).first()
         if not exist:
             models.insert_user(
                 form.email.data, form.role_ids.data, form.org_ids.data)
@@ -216,12 +204,12 @@ def user():
 @app.route('/user/<int:user_id>', methods=['GET', 'POST'])
 @auth_required
 def edit_user(user_id):
-    user = models.User.query.get(user_id)
+    user = db.session.query(models.User).get(user_id)
     form = forms.UserForm(request.form, obj=user)
     form.role_ids.choices = [(g.id, g.name)
-                             for g in models.Role.query.order_by('name')]
+                             for g in db.session.query(models.Role).order_by('name')]
     form.org_ids.choices = [(g.id, g.name)
-                            for g in models.Organization.query.order_by('name')]
+                            for g in db.session.query(models.Organization).order_by('name')]
 
     if request.method == 'POST' and form.validate():
         user.update(form)
@@ -243,7 +231,7 @@ def users():
 @app.route('/organizations')
 @auth_required
 def organizations():
-    orgs = models.Organization.query.all()
+    orgs = db.session.query(models.Organization).all()
     print orgs
     return render_template('pages/orgs.j2', orgs=orgs)
 
@@ -255,7 +243,7 @@ def organization():
     
     if request.method == 'POST' and form.validate():
         # test if user is unique
-        exist = models.Organization.query.filter_by(name=form.name.data).first()
+        exist = db.session.query(models.Organization).filter_by(name=form.name.data).first()
         if not exist:
             org = models.Organization(name=form.name.data, arange=form.arange.data)
             db.session.add(org)
@@ -273,7 +261,7 @@ def organization():
 @app.route('/organization/<int:org_id>', methods=['GET', 'POST'])
 @auth_required
 def edit_organization(org_id):
-    org = models.Organization.query.get(org_id)
+    org = db.session.query(models.Organization).get(org_id)
     form = forms.OrganizationForm(request.form, obj=org)
 
     if request.method == 'POST' and form.validate():
@@ -289,7 +277,7 @@ def edit_organization(org_id):
 @app.route('/actions')
 @auth_required
 def actions():
-    actions = models.Action.query.all()
+    actions = db.session.query(models.Action).all()
     return render_template('pages/actions.j2', actions=actions)
 
 
@@ -300,7 +288,7 @@ def action():
     
     if request.method == 'POST' and form.validate():
         # test if user is unique
-        exist = models.Action.query.filter_by(name=form.name.data).first()
+        exist = mdb.session.query(odels.Action).filter_by(name=form.name.data).first()
         if not exist:
             action = models.Action(name=form.name.data, description=form.description.data)
             db.session.add(action)
@@ -318,7 +306,7 @@ def action():
 @app.route('/action/<int:action_id>', methods=['GET', 'POST'])
 @auth_required
 def edit_action(action_id):
-    action = models.Action.query.get(action_id)
+    action = db.session.query(models.Action).get(action_id)
     form = forms.ActionForm(request.form, obj=action)
 
     if request.method == 'POST' and form.validate():
@@ -329,6 +317,11 @@ def edit_action(action_id):
 
     action_url = url_for('edit_action', action_id=action.id)
     return render_template('forms/simple_form.j2', title="Editin {}".format(action.name), form=form, action_url=action_url)
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
 
 
 if __name__ == '__main__':
