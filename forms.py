@@ -32,6 +32,16 @@ class OrganizationForm(FlaskForm):
     )
 
 
+class ActionForm(FlaskForm):
+    
+    name = TextField(
+        'Action short name',
+        validators=[DataRequired("Required field"), Length(max=150)]
+    )
+
+    description = TextField('Action description')
+
+
 class IPv4Form(FlaskForm):
 
     source_adress = TextField('Source address',

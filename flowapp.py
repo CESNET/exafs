@@ -286,5 +286,50 @@ def edit_organization(org_id):
     return render_template('forms/simple_form.j2', title="Editin {}".format(org.name), form=form, action_url=action_url)
 
 
+@app.route('/actions')
+@auth_required
+def actions():
+    actions = models.Action.query.all()
+    return render_template('pages/actions.j2', actions=actions)
+
+
+@app.route('/action', methods=['GET', 'POST'])
+@auth_required
+def action():
+    form = forms.ActionForm(request.form)
+    
+    if request.method == 'POST' and form.validate():
+        # test if user is unique
+        exist = models.Action.query.filter_by(name=form.name.data).first()
+        if not exist:
+            action = models.Action(name=form.name.data, description=form.description.data)
+            db.session.add(action)
+            db.session.commit()
+            flash('Action saved', 'alert-sucess')
+            return redirect(url_for('actions'))
+        else:
+            flash('Action {} already exists'.format(
+                form.name.data), 'alert-danger')
+
+    action_url = url_for('action')
+    return render_template('forms/simple_form.j2', title="Add new action to Flowspec", form=form, action_url=action_url)
+
+
+@app.route('/action/<int:action_id>', methods=['GET', 'POST'])
+@auth_required
+def edit_action(action_id):
+    action = models.Action.query.get(action_id)
+    form = forms.ActionForm(request.form, obj=action)
+
+    if request.method == 'POST' and form.validate():
+        form.populate_obj(action)
+        db.session.commit()
+        flash('Action updated')
+        return redirect(url_for('actions'))
+
+    action_url = url_for('edit_action', action_id=action.id)
+    return render_template('forms/simple_form.j2', title="Editin {}".format(action.name), form=form, action_url=action_url)
+
+
 if __name__ == '__main__':
     app.run()
