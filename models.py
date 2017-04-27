@@ -93,6 +93,30 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % (self.email)
 
+    def update(self, form):
+        """
+        update with values from edit form
+        """
+        self.email = form.email.data
+
+        #first clear existing roles and orgs
+        for role in self.role:
+            self.role.remove(role)
+        for org in self.organization:
+            self.organization.remove(org)    
+
+        for role_id in form.role_ids.data:
+            r = Role.query.filter_by(id=role_id).first()
+            if not r in self.role:
+                self.role.append(r)
+
+        for org_id in form.org_ids.data:    
+            o = Organization.query.filter_by(id=org_id).first()
+            if not o in self.organization:
+                self.organization.append(o)
+        
+        db.session.commit()   
+
 
 class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -104,7 +128,7 @@ class Role(db.Model):
         self.description = description
 
     def __repr__(self):
-        return '<Role %r>' % (self.name)
+        return self.name
 
 
 class Organization(db.Model):
@@ -115,6 +139,10 @@ class Organization(db.Model):
     def __init__(self, name, arange):
         self.name = name
         self.arange = arange
+
+    def __repr__(self):
+        return self.name
+    
 
 
 class RTBH(db.Model):
@@ -142,11 +170,11 @@ class RTBH(db.Model):
 class Flowspec4(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
-    source = db.Column(db.VARBINARY(16))
-    source_mask = db.Column(db.VARBINARY(16))
+    source = db.Column(db.String(255))
+    source_mask = db.Column(db.Integer)
     source_port = db.Column(db.String(255))
-    dest = db.Column(db.VARBINARY(16))
-    dest_mask = db.Column(db.VARBINARY(16))
+    dest = db.Column(db.String(255))
+    dest_mask = db.Column(db.Integer)
     dest_port = db.Column(db.String(255))
     protocol = db.Column(db.String(255))
     packet_len = db.Column(db.Integer)
@@ -159,10 +187,10 @@ class Flowspec4(db.Model):
     user = db.relationship('User', backref='flowspec4')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol, packet_len, expires, user_id, action_id, created=None, comment=None):
-        self.source = self.convert_ip(source)
-        self.source_mask = self.convert_ip(source_mask)
-        self.dest = self.convert_ip(destination)
-        self.dest_mask = self.convert_ip(destination_mask)
+        self.source = source
+        self.source_mask = source_mask
+        self.dest = destination
+        self.dest_mask = destination_mask
         self.source_port = source_port
         self.dest_port = destination_port
         self.protocol = protocol
@@ -175,8 +203,7 @@ class Flowspec4(db.Model):
             created = datetime.utcnow()
         self.created = created
 
-    def convert_ip(self, adr):
-        return ipv4_to_long(adr)
+          
 
 
 class Flowspec6(db.Model):

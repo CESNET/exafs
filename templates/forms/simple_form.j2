@@ -1,0 +1,11 @@
+{% extends 'layouts/default.j2' %}
+{% from 'forms/macros.j2' import render_form %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+{% block content %}
+    <div class="simple-form">
+        {{ render_form(form, action_url=action_url, action_text='Save') }}
+    </div>
+{% endblock content %}

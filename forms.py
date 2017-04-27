@@ -1,31 +1,14 @@
 from flask_wtf import FlaskForm
-from wtforms import TextField, SelectMultipleField
-from wtforms.validators import DataRequired, EqualTo, Length, Email, ValidationError
-from models import User
+from wtforms import TextField, SelectMultipleField, TextAreaField, IntegerField, SelectField
+from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, NumberRange
 
 
-
-class Unique(object):
-    """ validator that checks field uniqueness """
-    def __init__(self, model, field, message=None):
-        self.model = model
-        self.field = field
-        if not message:
-            message = u'this element already exists'
-        self.message = message
-
-    def __call__(self, form, field):         
-        check = self.model.query.filter(self.field == field.data).first()
-        if check:
-            raise ValidationError(self.message)    
     
-
 class UserForm(FlaskForm):
     
     email = TextField(
         'Email', validators=[DataRequired("Required field"), 
-                            Email("Please provide valid email"),
-                            Unique(User, User.email)]
+                            Email("Please provide valid email")]
     )
 
     role_ids = SelectMultipleField(u'Role',
@@ -37,3 +20,59 @@ class UserForm(FlaskForm):
         validators=[DataRequired("Select at last one Organization")])
 
 
+class OrganizationForm(FlaskForm):
+    
+    name = TextField(
+        'Organization name',
+        validators=[DataRequired("Required field"), Length(max=150)]
+    )
+
+    arange = TextAreaField('Organization Adress Range - comma separated', 
+        validators=[DataRequired("Required field")]
+    )
+
+
+class IPv4Form(FlaskForm):
+
+    source_adress = TextField('Source address',
+        validators=[DataRequired("Required field"), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+    )
+
+    source_mask = IntegerField('Source mask (bytes)',
+        validators=[NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+
+    destination_adress = TextField('Destination address',
+        validators=[DataRequired("Required field"), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+    )
+    
+    destination_mask = IntegerField('Destination mask (bytes)',
+        validators=[NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+
+    protocol = SelectMultipleField('Protocol',
+        choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
+        validators=[DataRequired("Select at last one protocol")])
+
+    source_port = TextField(
+        'Source port(s) - comma separated',
+        validators=[DataRequired("Required field"), Length(max=255)]
+    )
+
+    destination_port  = TextField(
+        'Destination port(s) - comma separated',
+        validators=[DataRequired("Required field"), Length(max=255)]
+    )
+
+
+    packet_length = IntegerField('Packet length')
+    
+    action = SelectField(u'Action',
+        coerce=int,
+        validators=[DataRequired()])
+
+    
+    expire_date = TextField(
+        'Expires'
+    )
+    
+    comment = arange = TextAreaField('Comments'
+    )
