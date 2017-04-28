@@ -1,13 +1,26 @@
 from flask_wtf import FlaskForm
 from wtforms import TextField, SelectMultipleField, TextAreaField, IntegerField, SelectField
-from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, NumberRange
+from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, NumberRange, Optional, ValidationError
+import flowspec
 
+class PortString(object):
+    def __init__(self, message=None):
+        if not message:
+            message = u'Invalid port value: '
+        self.message = message
+
+    def __call__(self, form, field):
+        try:
+            for port_string in field.data.split(";"):
+                flowspec.translate_port_string(port_string)
+        except ValueError, e:
+            raise ValidationError(self.message + str(e.args[0]))
 
     
 class UserForm(FlaskForm):
     
     email = TextField(
-        'Email', validators=[DataRequired("Required field"), 
+        'Email', validators=[Optional(), 
                             Email("Please provide valid email")]
     )
 
@@ -24,11 +37,11 @@ class OrganizationForm(FlaskForm):
     
     name = TextField(
         'Organization name',
-        validators=[DataRequired("Required field"), Length(max=150)]
+        validators=[Optional(), Length(max=150)]
     )
 
-    arange = TextAreaField('Organization Adress Range - comma separated', 
-        validators=[DataRequired("Required field")]
+    arange = TextAreaField('Organization Adress Range - one range per row', 
+        validators=[Optional()]
     )
 
 
@@ -36,7 +49,7 @@ class ActionForm(FlaskForm):
     
     name = TextField(
         'Action short name',
-        validators=[DataRequired("Required field"), Length(max=150)]
+        validators=[Optional(), Length(max=150)]
     )
 
     description = TextField('Action description')
@@ -45,35 +58,35 @@ class ActionForm(FlaskForm):
 class IPv4Form(FlaskForm):
 
     source_adress = TextField('Source address',
-        validators=[DataRequired("Required field"), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+        validators=[Optional(), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
     )
 
     source_mask = IntegerField('Source mask (bytes)',
-        validators=[NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
     destination_adress = TextField('Destination address',
-        validators=[DataRequired("Required field"), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+        validators=[Optional(),  IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
     )
     
     destination_mask = IntegerField('Destination mask (bytes)',
-        validators=[NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
     protocol = SelectMultipleField('Protocol',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
-        validators=[DataRequired("Select at last one protocol")])
+        validators=[Optional(), DataRequired("Select at last one protocol")])
 
     source_port = TextField(
-        'Source port(s) - comma separated',
-        validators=[DataRequired("Required field"), Length(max=255)]
+        'Source port(s) -  ; separated ',
+        validators=[Optional(), Length(max=255), PortString()]
     )
 
     destination_port  = TextField(
-        'Destination port(s) - comma separated',
-        validators=[DataRequired("Required field"), Length(max=255)]
+        'Destination port(s) - ; separated',
+        validators=[Optional(), Length(max=255), PortString()]
     )
 
 
-    packet_length = IntegerField('Packet length')
+    packet_length = TextField('Packet length',  validators=[Optional(), Length(max=255)])
     
     action = SelectField(u'Action',
         coerce=int,

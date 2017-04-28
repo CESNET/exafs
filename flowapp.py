@@ -1,7 +1,7 @@
 from flask import Flask, session, redirect, render_template, request, url_for, flash, session
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from os import environ
 
@@ -171,6 +171,10 @@ def ivp4_rule():
                     getattr(form, field).label.text,
                     error
                 ))
+
+    default_expires = datetime.now() + timedelta(days=7) 
+    form.expire_date.data = models.datetime_to_webpicker(default_expires)
+
 
     return render_template('forms/ipv4_rule.j2', form=form)
 

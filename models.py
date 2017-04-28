@@ -7,11 +7,21 @@ from sqlalchemy import event
 from datetime import datetime
 
 # utls
+
+
 def webpicker_to_datetime(webtime):
     """
     convert 'MM/DD/YYYY HH:mm' to datetime
     """
     return datetime.strptime(webtime, '%m/%d/%Y %H:%M')
+
+
+def datetime_to_webpicker(python_time):
+    """
+    convert 'MM/DD/YYYY HH:mm' to datetime
+    """
+    return datetime.strftime(python_time, '%m/%d/%Y %H:%M')
+
 
 def get_ip_model(adr):
     """
@@ -23,8 +33,9 @@ def get_ip_model(adr):
         model = Flowspec6
     else:
         model = None
-    
-    return model    
+
+    return model
+
 
 def validate_ipv4(adr):
     try:
@@ -32,6 +43,7 @@ def validate_ipv4(adr):
         return True
     except socket_error:
         return False
+
 
 def validate_ipv6(adr):
     try:
@@ -56,7 +68,7 @@ def ipv6_to_bytes(ip):
 def bytes_to_ipv6(ip_bytes):
     return inet_ntop(AF_INET6, ip_bytes)
 
-#models and tables
+# models and tables
 
 user_role = db.Table('user_role',
                db.Column('user_id', db.Integer, db.ForeignKey(
@@ -72,19 +84,20 @@ user_organization = db.Table('user_organization',
                    'organization.id'), nullable=False),
                db.PrimaryKeyConstraint('user_id', 'organization_id'))
 
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(80), unique=True)
     role = db.relationship(
         'Role',
         secondary=user_role,
-        lazy='dynamic', 
+        lazy='dynamic',
         backref='user')
 
     organization = db.relationship(
         'Organization',
         secondary=user_organization,
-        lazy='dynamic', 
+        lazy='dynamic',
         backref='user')
 
     def __init__(self, email):
@@ -99,23 +112,23 @@ class User(db.Model):
         """
         self.email = form.email.data
 
-        #first clear existing roles and orgs
+        # first clear existing roles and orgs
         for role in self.role:
             self.role.remove(role)
         for org in self.organization:
-            self.organization.remove(org)    
+            self.organization.remove(org)
 
         for role_id in form.role_ids.data:
             r = Role.query.filter_by(id=role_id).first()
             if not r in self.role:
                 self.role.append(r)
 
-        for org_id in form.org_ids.data:    
+        for org_id in form.org_ids.data:
             o = Organization.query.filter_by(id=org_id).first()
             if not o in self.organization:
                 self.organization.append(o)
-        
-        db.session.commit()   
+
+        db.session.commit()
 
 
 class Role(db.Model):
@@ -142,7 +155,6 @@ class Organization(db.Model):
 
     def __repr__(self):
         return self.name
-    
 
 
 class RTBH(db.Model):
@@ -165,10 +177,11 @@ class RTBH(db.Model):
         self.user_id = user_id
         if created is None:
             created = datetime.utcnow()
-        self.created = created    
+        self.created = created
+
 
 class Flowspec4(db.Model):
-    
+
     id = db.Column(db.Integer, primary_key=True)
     source = db.Column(db.String(255))
     source_mask = db.Column(db.Integer)
@@ -177,77 +190,77 @@ class Flowspec4(db.Model):
     dest_mask = db.Column(db.Integer)
     dest_port = db.Column(db.String(255))
     protocol = db.Column(db.String(255))
-    packet_len = db.Column(db.Integer)
+    packet_len = db.Column(db.String(255))
     comment = db.Column(db.Text)
-    expires = db.Column(db.DateTime)
-    created = db.Column(db.DateTime)
-    action_id = db.Column(db.Integer, db.ForeignKey('action.id'))
-    action = db.relationship('Action', backref='flowspec4')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User', backref='flowspec4')
+    expires=db.Column(db.DateTime)
+    created=db.Column(db.DateTime)
+    action_id=db.Column(db.Integer, db.ForeignKey('action.id'))
+    action=db.relationship('Action', backref='flowspec4')
+    user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
+    user=db.relationship('User', backref='flowspec4')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol, packet_len, expires, user_id, action_id, created=None, comment=None):
-        self.source = source
-        self.source_mask = source_mask
-        self.dest = destination
-        self.dest_mask = destination_mask
-        self.source_port = source_port
-        self.dest_port = destination_port
-        self.protocol = protocol
-        self.packet_len = packet_len
-        self.comment = comment
-        self.expires = expires
-        self.user_id = user_id
-        self.action_id = action_id
+        self.source=source
+        self.source_mask=source_mask
+        self.dest=destination
+        self.dest_mask=destination_mask
+        self.source_port=source_port
+        self.dest_port=destination_port
+        self.protocol=protocol
+        self.packet_len=packet_len
+        self.comment=comment
+        self.expires=expires
+        self.user_id=user_id
+        self.action_id=action_id
         if created is None:
-            created = datetime.utcnow()
-        self.created = created
+            created=datetime.utcnow()
+        self.created=created
 
-          
+
 
 
 class Flowspec6(db.Model):
 
-    id = db.Column(db.Integer, primary_key=True)
-    source = db.Column(db.VARBINARY(16))
-    source_mask = db.Column(db.VARBINARY(16))
-    source_port = db.Column(db.Integer)
-    dest = db.Column(db.VARBINARY(16))
-    dest_mask = db.Column(db.VARBINARY(16))
-    dest_port = db.Column(db.Integer)
-    protocol = db.Column(db.String(4))
-    packet_len = db.Column(db.Integer)
-    comment = db.Column(db.Text)
-    expires = db.Column(db.DateTime)
-    created = db.Column(db.DateTime)
-    action_id = db.Column(db.Integer, db.ForeignKey('action.id'))
-    action = db.relationship('Action', backref='flowspec6')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User', backref='flowspec6')
+    id=db.Column(db.Integer, primary_key=True)
+    source=db.Column(db.VARBINARY(16))
+    source_mask=db.Column(db.VARBINARY(16))
+    source_port=db.Column(db.Integer)
+    dest=db.Column(db.VARBINARY(16))
+    dest_mask=db.Column(db.VARBINARY(16))
+    dest_port=db.Column(db.Integer)
+    protocol=db.Column(db.String(4))
+    packet_len=db.Column(db.Integer)
+    comment=db.Column(db.Text)
+    expires=db.Column(db.DateTime)
+    created=db.Column(db.DateTime)
+    action_id=db.Column(db.Integer, db.ForeignKey('action.id'))
+    action=db.relationship('Action', backref='flowspec6')
+    user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
+    user=db.relationship('User', backref='flowspec6')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol, packet_len, expires, user_id, action_id, created=None, comment=None):
-        self.source = self.convert_ip(source)
-        self.source_mask = self.convert_ip(source_mask)
-        self.dest = self.convert_ip(destination)
-        self.dest_mask = self.convert_ip(destination_mask)
-        self.source_port = source_port
-        self.dest_port = destination_port
-        self.protocol = protocol
-        self.packet_len = packet_len
-        self.comment = comment
-        self.expires = expires
-        self.user_id = user_id
-        self.action_id = action_id
+        self.source=self.convert_ip(source)
+        self.source_mask=self.convert_ip(source_mask)
+        self.dest=self.convert_ip(destination)
+        self.dest_mask=self.convert_ip(destination_mask)
+        self.source_port=source_port
+        self.dest_port=destination_port
+        self.protocol=protocol
+        self.packet_len=packet_len
+        self.comment=comment
+        self.expires=expires
+        self.user_id=user_id
+        self.action_id=action_id
         if created is None:
-            created = datetime.utcnow()
-        self.created = created
-    
+            created=datetime.utcnow()
+        self.created=created
+
     def convert_ip(self, adr):
         try:
-            conv = ipv6_to_bytes(adr)
+            conv=ipv6_to_bytes(adr)
         except TypeError:
-            conv = 0    
-        
+            conv=0
+
         return conv
 
 
@@ -256,38 +269,38 @@ class Action(db.Model):
     Action for rule
     """
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), unique=True)
-    description = db.Column(db.String(260))        
-    
+    id=db.Column(db.Integer, primary_key=True)
+    name=db.Column(db.String(120), unique=True)
+    description=db.Column(db.String(260))
+
 
     def __init__(self, name, description):
-        self.name = name
-        self.description = description
+        self.name=name
+        self.description=description
 
 
 class Log(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    time = db.Column(db.DateTime)
-    hostname = db.Column(db.String(20))
-    flagger = db.Column(db.Boolean)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User', backref='log')
+    id=db.Column(db.Integer, primary_key=True)
+    time=db.Column(db.DateTime)
+    hostname=db.Column(db.String(20))
+    flagger=db.Column(db.Boolean)
+    user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
+    user=db.relationship('User', backref='log')
 
     def __init__(self, time, uptime, hostname, flagger, user_id):
-        self.returns = 0
-        self.errors = 0
-        self.time = time
-        self.hostname = hostname
-        self.flagger = flagger
-        self.user_id = user_id
+        self.returns=0
+        self.errors=0
+        self.time=time
+        self.hostname=hostname
+        self.flagger=flagger
+        self.user_id=user_id
 
     def __repr__(self):
         return '<Log %r>' % (self.hostname)
 
 
 
-#DDL 
+# DDL
 @event.listens_for(Action.__table__, 'after_create')
 def insert_initial_actions(*args, **kwargs):
     db.session.add(Action(name='QoS 100k', description='QoS'))
@@ -305,17 +318,17 @@ def insert_initial_roles(*args, **kwargs):
 @event.listens_for(Organization.__table__, 'after_create')
 def insert_initial_organizations(*args, **kwargs):
     db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16'))
-    db.session.commit()    
+    db.session.commit()
 
-#Misc functions
+# Misc functions
 def insert_users(users):
     """
     inser list of users {name: string, role_id: integer} to db
     """
     for user in users:
-        r = Role.query.filter_by(id=user['role_id']).first()
-        o = Organization.query.filter_by(id=user['org_id']).first()
-        u = User(email=user['name'])
+        r=Role.query.filter_by(id=user['role_id']).first()
+        o=Organization.query.filter_by(id=user['org_id']).first()
+        u=User(email=user['name'])
         u.role.append(r)
         u.organization.append(o)
         db.session.add(u)
@@ -326,15 +339,15 @@ def insert_user(email, role_ids, org_ids):
     """
     inser user with multiple roles and organizations
     """
-    u = User(email=email)
-    
+    u=User(email=email)
+
     for role_id in role_ids:
-        r = Role.query.filter_by(id=role_id).first()
+        r=Role.query.filter_by(id=role_id).first()
         u.role.append(r)
 
-    for org_id in org_ids:    
-        o = Organization.query.filter_by(id=org_id).first()
+    for org_id in org_ids:
+        o=Organization.query.filter_by(id=org_id).first()
         u.organization.append(o)
-    
+
     db.session.add(u)
-    db.session.commit()    
+    db.session.commit()
