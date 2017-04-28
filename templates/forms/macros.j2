@@ -16,8 +16,8 @@
         {% if tooltip %}
             <div class="input-group">
               {{ field(class_='form-control', **kwargs) }}
-               <span class="input-group-addon">
-                    <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip"  title="{{ tooltip }}"></span>
+               <span class="input-group-addon data-toggle="tooltip"  title="{{ tooltip }}">
+                    <span class="glyphicon glyphicon-question-sign"></span>
               </span>
             </div>  
         {% else %}
