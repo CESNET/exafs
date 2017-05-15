@@ -50,6 +50,7 @@
             
             {% if session['user_email'] %}
               <li><a href="{{ url_for('ivp4_rule') }}">Add IPv4 Rule</a></li>
+              <li><a href="{{ url_for('ivp6_rule') }}">Add IPv6 Rule</a></li>
             {% endif %}
             
             {% if 3 in session['user_role_ids'] %}

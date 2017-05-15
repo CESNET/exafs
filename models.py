@@ -23,51 +23,6 @@ def datetime_to_webpicker(python_time):
     return datetime.strftime(python_time, '%m/%d/%Y %H:%M')
 
 
-def get_ip_model(adr):
-    """
-    returns either ipv4 or ipv6 model
-    """
-    if validate_ipv4(adr):
-        model = Flowspec4
-    elif validate_ipv6(adr):
-        model = Flowspec6
-    else:
-        model = None
-
-    return model
-
-
-def validate_ipv4(adr):
-    try:
-        inet_aton(adr)
-        return True
-    except socket_error:
-        return False
-
-
-def validate_ipv6(adr):
-    try:
-        inet_pton(AF_INET6, adr)
-        return True
-    except socket_error:
-        return False
-
-
-def ipv4_to_long(ip):
-    return unpack('!i', inet_aton(ip))[0]
-
-
-def long_to_ipv4(ip_int):
-    return inet_ntoa(pack('!i', ip_int))
-
-
-def ipv6_to_bytes(ip):
-    return inet_pton(AF_INET6, ip)
-
-
-def bytes_to_ipv6(ip_bytes):
-    return inet_ntop(AF_INET6, ip_bytes)
-
 # models and tables
 
 user_role = db.Table('user_role',
@@ -222,13 +177,13 @@ class Flowspec4(db.Model):
 class Flowspec6(db.Model):
 
     id=db.Column(db.Integer, primary_key=True)
-    source=db.Column(db.VARBINARY(16))
-    source_mask=db.Column(db.VARBINARY(16))
-    source_port=db.Column(db.Integer)
-    dest=db.Column(db.VARBINARY(16))
-    dest_mask=db.Column(db.VARBINARY(16))
-    dest_port=db.Column(db.Integer)
-    protocol=db.Column(db.String(4))
+    source=db.Column(db.String(255))
+    source_mask=db.Column(db.Integer)
+    source_port=db.Column(db.String(255))
+    dest=db.Column(db.String(255))
+    dest_mask=db.Column(db.Integer)
+    dest_port=db.Column(db.String(255))
+    next_header=db.Column(db.String(255))
     packet_len=db.Column(db.Integer)
     comment=db.Column(db.Text)
     expires=db.Column(db.DateTime)
@@ -238,14 +193,14 @@ class Flowspec6(db.Model):
     user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
     user=db.relationship('User', backref='flowspec6')
 
-    def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol, packet_len, expires, user_id, action_id, created=None, comment=None):
-        self.source=self.convert_ip(source)
-        self.source_mask=self.convert_ip(source_mask)
-        self.dest=self.convert_ip(destination)
-        self.dest_mask=self.convert_ip(destination_mask)
+    def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header, packet_len, expires, user_id, action_id, created=None, comment=None):
+        self.source=source
+        self.source_mask=source_mask
+        self.dest=destination
+        self.dest_mask=destination_mask
         self.source_port=source_port
         self.dest_port=destination_port
-        self.protocol=protocol
+        self.next_header=next_header
         self.packet_len=packet_len
         self.comment=comment
         self.expires=expires
@@ -255,13 +210,6 @@ class Flowspec6(db.Model):
             created=datetime.utcnow()
         self.created=created
 
-    def convert_ip(self, adr):
-        try:
-            conv=ipv6_to_bytes(adr)
-        except TypeError:
-            conv=0
-
-        return conv
 
 
 class Action(db.Model):
@@ -351,3 +299,16 @@ def insert_user(email, role_ids, org_ids):
 
     db.session.add(u)
     db.session.commit()
+
+
+def get_user_nets(user_id):
+    """
+    Return list of network ranges for all user ogranization
+    """    
+    orgs = Organization.query.filter_by(id=user_id).all()
+    result = []
+    for org in orgs:
+        result.extend(org.arange.split())
+    
+    return result        
+

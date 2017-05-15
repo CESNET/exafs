@@ -126,22 +126,27 @@ def not_found(error):
 @app.route('/')
 @auth_required
 def index():
-    time = datetime.now().time()
-    timestr = '{0:02d}:{1:02d}:{2:02d}'.format(
-        time.hour, time.minute, time.second
-    )
-    rules = db.session.query(models.Flowspec4).all()
+    rules4 = db.session.query(models.Flowspec4).all()
+    rules6 = db.session.query(models.Flowspec6).all()
+    print len(rules6)
 
-    return render_template('pages/home.j2', time=timestr, rules=rules)
+    return render_template('pages/home.j2', rules_v4=rules4, rules_v6=rules6)
 
 
 @app.route('/add_ipv4_rule', methods=['GET', 'POST'])
 @auth_required
 def ivp4_rule():
 
+    net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv4Form(request.form)
     form.action.choices = [(g.id, g.name)
                              for g in db.session.query(models.Action).order_by('name')]
+
+    #add validator to instance but only once                             
+    if len(form.source_adress.validators) == 2:
+        form.source_adress.validators.append(forms.NetInRange(net_ranges))
+
+
 
     if request.method == 'POST' and form.validate():
 
@@ -161,7 +166,6 @@ def ivp4_rule():
         )
         db.session.add(model)
         db.session.commit()
-        print "SAVED"
         flash(u'IPv4 Rule saved', 'alert-sucess')
         return redirect(url_for('index')) 
     else:
@@ -177,6 +181,56 @@ def ivp4_rule():
 
 
     return render_template('forms/ipv4_rule.j2', form=form)
+
+
+@app.route('/add_ipv6_rule', methods=['GET', 'POST'])
+@auth_required
+def ivp6_rule():
+
+    net_ranges = models.get_user_nets(session['user_id'])
+    form = forms.IPv6Form(request.form)
+    form.action.choices = [(g.id, g.name)
+                             for g in db.session.query(models.Action).order_by('name')]
+
+    #add validator to instance but only once                             
+    if len(form.source_adress.validators) == 2:
+        form.source_adress.validators.append(forms.NetInRange(net_ranges))
+
+
+
+    if request.method == 'POST' and form.validate():
+
+        model = models.Flowspec6(
+            source=form.source_adress.data,
+            source_mask=form.source_mask.data,
+            source_port=form.source_port.data,
+            destination=form.destination_adress.data,
+            destination_mask=form.destination_mask.data,
+            destination_port=form.destination_port.data,
+            next_header=",".join(form.next_header.data),
+            packet_len=form.packet_length.data,
+            expires=models.webpicker_to_datetime(form.expire_date.data),
+            comment=form.comment.data,
+            action_id=form.action.data,
+            user_id=session['user_id']
+        )
+        db.session.add(model)
+        db.session.commit()
+        flash(u'IPv6 Rule saved', 'alert-sucess')
+        return redirect(url_for('index')) 
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                print(u"Error in the %s field - %s" % (
+                    getattr(form, field).label.text,
+                    error
+                ))
+
+    default_expires = datetime.now() + timedelta(days=7) 
+    form.expire_date.data = models.datetime_to_webpicker(default_expires)
+
+
+    return render_template('forms/ipv6_rule.j2', form=form)
 
 
 @app.route('/user', methods=['GET', 'POST'])

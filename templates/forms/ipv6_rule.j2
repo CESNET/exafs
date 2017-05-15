@@ -1,0 +1,104 @@
+{% extends 'layouts/default.j2' %}
+{% from 'forms/macros.j2' import render_field %}
+{% block title %}Add IPv6 rule{% endblock %}
+{% block content %}
+  <form action="{{ url_for('ivp6_rule') }}" method="POST">
+  {{ form.hidden_tag() if form.hidden_tag }}
+  <div class="row">
+    <div class="col-sm-8">
+      <div class="row">
+        <div class="col-sm-8">
+          {{ render_field(form.source_adress) }}
+        </div>
+        <div class="col-sm-4">
+          {% if  3 in session['user_role_ids'] %}
+            {{ render_field(form.source_mask) }}
+          {% else %}
+            {{ render_field(form.source_mask, disabled=True, value="32") }}
+          {% endif %}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-8">
+          {{ render_field(form.destination_adress) }}
+        </div>
+        <div class="col-sm-4">
+          {% if  3 in session['user_role_ids'] %}
+            {{ render_field(form.destination_mask) }}
+          {% else %}
+            {{ render_field(form.destination_mask, disabled=True, value="32") }}
+          {% endif %}
+          
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+        {{ render_field(form.next_header) }}
+    </div>
+  </div>  
+
+  <div class="row">
+    <div class="col-sm-4">
+        {{ render_field(form.source_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
+    </div>
+    <div class="col-sm-4">
+        {{ render_field(form.destination_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
+    </div>
+    <div class="col-sm-4">
+        {{ render_field(form.packet_length) }}
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="col-sm-6">
+      {{ render_field(form.action) }}
+    </div>    
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="inputExpiration" class="control-label">Expiration date</label>
+        <div class='input-group date' id='dateTimeExpires'>
+                      <!--
+                      <input type='text' name="expire_date" class="form-control" />
+                      -->
+                      {{ form.expire_date(class_='form-control') }}
+                      <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                      </span>
+        </div>
+
+        {% if form.expire_date.errors %}
+            {% for e in form.expire_date.errors %}
+                <p class="help-block">{{ e }}</p>
+            {% endfor %}
+        {% endif %}
+      </div>            
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12">
+         {{ render_field(form.comment) }}
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-10">
+      <button type="submit" class="btn btn-default">Save</button>
+    </div>
+  </div>
+
+<script type="text/javascript">
+            $(function () {
+                $('#dateTimeExpires').datetimepicker({
+                    format: 'MM/DD/YYYY HH:mm',
+                    keepOpen: false
+                });
+            });
+
+            $(function () {
+              $('[data-toggle="tooltip"]').tooltip()
+            })
+
+</script>
+{% endblock %}
