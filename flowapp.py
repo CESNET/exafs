@@ -196,6 +196,8 @@ def ivp6_rule():
     if len(form.source_adress.validators) == 2:
         form.source_adress.validators.append(forms.NetInRange(net_ranges))
 
+    print net_ranges        
+
 
 
     if request.method == 'POST' and form.validate():
