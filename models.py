@@ -114,22 +114,24 @@ class Organization(db.Model):
 
 class RTBH(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ipv4 = db.Column(db.VARBINARY(16))
-    ipv4_mask = db.Column(db.VARBINARY(16))
-    ipv6 = db.Column(db.VARBINARY(16))
-    ipv6_mask = db.Column(db.VARBINARY(16))
+    ipv4 = db.Column(db.String(255))
+    ipv4_mask = db.Column(db.Integer)
+    ipv6 = db.Column(db.String(255))
+    ipv6_mask = db.Column(db.Integer)
+    comment = db.Column(db.Text)
     expires = db.Column(db.DateTime)
     created = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='rtbh')
 
-    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, expires, user_id, created=None):
-        self.ipv4 = ipv4_to_long(ipv4)
-        self.ipv4_mask = ipv4_to_long(ipv4_mask)
-        self.ipv6 = ipv6_to_long(ipv6)
-        self.ipv6_mask = ipv6_to_long(ipv6_mask)
+    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, expires, user_id, comment=None, created=None):
+        self.ipv4 = ipv4
+        self.ipv4_mask = ipv4_mask
+        self.ipv6 = ipv6
+        self.ipv6_mask = ipv6_mask
         self.expires = expires
         self.user_id = user_id
+        self.comment=comment
         if created is None:
             created = datetime.utcnow()
         self.created = created

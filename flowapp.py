@@ -126,11 +126,13 @@ def not_found(error):
 @app.route('/')
 @auth_required
 def index():
-    rules4 = db.session.query(models.Flowspec4).all()
-    rules6 = db.session.query(models.Flowspec6).all()
+
+    rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
+    rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
+    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
     print len(rules6)
 
-    return render_template('pages/home.j2', rules_v4=rules4, rules_v6=rules6)
+    return render_template('pages/home.j2', rules_v4=rules4, rules_v6=rules6, rules_rtbh=rules_rtbh, today=datetime.now())
 
 
 @app.route('/add_ipv4_rule', methods=['GET', 'POST'])
@@ -166,7 +168,7 @@ def ivp4_rule():
         )
         db.session.add(model)
         db.session.commit()
-        flash(u'IPv4 Rule saved', 'alert-sucess')
+        flash(u'IPv4 Rule saved', 'alert-success')
         return redirect(url_for('index')) 
     else:
         for field, errors in form.errors.items():
@@ -196,9 +198,6 @@ def ivp6_rule():
     if len(form.source_adress.validators) == 2:
         form.source_adress.validators.append(forms.NetInRange(net_ranges))
 
-    print net_ranges        
-
-
 
     if request.method == 'POST' and form.validate():
 
@@ -218,7 +217,7 @@ def ivp6_rule():
         )
         db.session.add(model)
         db.session.commit()
-        flash(u'IPv6 Rule saved', 'alert-sucess')
+        flash(u'IPv6 Rule saved', 'alert-success')
         return redirect(url_for('index')) 
     else:
         for field, errors in form.errors.items():
@@ -233,6 +232,52 @@ def ivp6_rule():
 
 
     return render_template('forms/ipv6_rule.j2', form=form)
+
+
+
+@app.route('/add_rtbh_rule', methods=['GET', 'POST'])
+@auth_required
+def rtbh_rule():
+
+    net_ranges = models.get_user_nets(session['user_id'])
+    form = forms.RTBHForm(request.form)
+    
+    #add validator to instance but only once                             
+    if len(form.ipv4.validators) == 2:
+        form.ipv4.validators.append(forms.NetInRange(net_ranges))
+
+    if len(form.ipv6.validators) == 2:
+        form.ipv6.validators.append(forms.NetInRange(net_ranges))
+    
+
+    if request.method == 'POST' and form.validate():
+
+        model = models.RTBH(
+            ipv4=form.ipv4.data,
+            ipv4_mask=form.ipv4_mask.data,
+            ipv6=form.ipv6.data,
+            ipv6_mask=form.ipv6_mask.data,
+            expires=models.webpicker_to_datetime(form.expire_date.data),
+            comment=form.comment.data,
+            user_id=session['user_id']
+        )
+        db.session.add(model)
+        db.session.commit()
+        flash(u'RTBH Rule saved', 'alert-success')
+        return redirect(url_for('index')) 
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                print(u"Error in the %s field - %s" % (
+                    getattr(form, field).label.text,
+                    error
+                ))
+
+    default_expires = datetime.now() + timedelta(days=7) 
+    form.expire_date.data = models.datetime_to_webpicker(default_expires)
+
+
+    return render_template('forms/rtbh_rule.j2', form=form)
 
 
 @app.route('/user', methods=['GET', 'POST'])
@@ -353,7 +398,7 @@ def action():
             action = models.Action(name=form.name.data, description=form.description.data)
             db.session.add(action)
             db.session.commit()
-            flash('Action saved', 'alert-sucess')
+            flash('Action saved', 'alert-success')
             return redirect(url_for('actions'))
         else:
             flash('Action {} already exists'.format(

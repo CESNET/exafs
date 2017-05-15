@@ -86,6 +86,29 @@ class ActionForm(FlaskForm):
     description = TextField('Action description')
 
 
+class RTBHForm(FlaskForm):
+    
+    ipv4 = TextField('Source IPv4 address',
+        validators=[Optional(), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+    )
+
+    ipv4_mask = IntegerField('Source IPv4  mask (bytes)',
+        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+
+    ipv6 = TextField('Source IPv6 address',
+        validators=[Optional(), IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
+    )
+    ipv6_mask = IntegerField('Source mask (bytes)',
+        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+
+    expire_date = TextField(
+        'Expires'
+    )
+
+    comment = arange = TextAreaField('Comments'
+    )
+
+   
 class IPv4Form(FlaskForm):
     
     source_adress = TextField('Source address',

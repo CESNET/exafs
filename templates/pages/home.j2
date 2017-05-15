@@ -10,19 +10,23 @@
     <th>Destination adress</th>
     <th>Dest. port(s)</th>
     <th>Protocol(s)</th>
+    <th>Expires</th>
     </tr>
     {% for rule in rules_v4 %}
-        <tr>
-        <td>{{ rule.source }}/{{rule.source_mask}}</td>
+        <tr {% if rule.expires < today %} class="warning" {% endif %}>
+        <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
         <td>
             {{ rule.source_port }}
         </td>
-        <td>{{ rule.dest }}/{{rule.dest_mask}}</td>
+        <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{ rule.dest_mask|default("", True) }}</td>
         <td>
             {{ rule.dest_port }}
         </td>
         <td>
             {{ rule.protocol }}
+        </td>
+        <td>
+            {{ rule.expires }}
         </td>
         </tr>
     {% endfor %}
@@ -36,19 +40,41 @@
     <th>Destination adress</th>
     <th>Dest. port(s)</th>
     <th>NextHeader(s)</th>
+     <th>Expires</th>
     </tr>
     {% for rule in rules_v6 %}
-        <tr>
-        <td>{{ rule.source }}/{{rule.source_mask}}</td>
+        <tr {% if rule.expires < today %} class="warning"  {% endif %}>
+        <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
         <td>
             {{ rule.source_port }}
         </td>
-        <td>{{ rule.dest }}/{{rule.dest_mask}}</td>
+        <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{rule.dest_mask|default("", True)}}</td>
         <td>
             {{ rule.dest_port }}
         </td>
         <td>
             {{ rule.next_header }}
+        </td>
+         <td>
+            {{ rule.expires }} 
+        </td>
+        </tr>
+    {% endfor %}
+    </table>
+
+    <h2>Rules RTBH</h2>
+    <table class="table table-hover">
+    <tr>
+    <th>IPv4 adress</th>
+    <th>IPv6 adress</th>
+    <th>Expires</th>
+    </tr>
+    {% for rule in rules_rtbh %}
+        <tr {% if rule.expires < today %} class="warning"  {% endif %}>
+        <td>{{ rule.ipv4 }} {{ '/' if rule.ipv4_mask else '' }} {{rule.ipv4_mask|default("", True)}}</td>
+        <td>{{ rule.ipv6 }} {{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}</td>
+         <td>
+            {{ rule.expires }} 
         </td>
         </tr>
     {% endfor %}

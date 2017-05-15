@@ -49,8 +49,9 @@
           <ul class="nav navbar-nav">
             
             {% if session['user_email'] %}
-              <li><a href="{{ url_for('ivp4_rule') }}">Add IPv4 Rule</a></li>
-              <li><a href="{{ url_for('ivp6_rule') }}">Add IPv6 Rule</a></li>
+              <li><a href="{{ url_for('ivp4_rule') }}">Add IPv4</a></li>
+              <li><a href="{{ url_for('ivp6_rule') }}">Add IPv6</a></li>
+               <li><a href="{{ url_for('rtbh_rule') }}">Add RTBH</a></li>
             {% endif %}
             
             {% if 3 in session['user_role_ids'] %}
@@ -75,10 +76,11 @@
     </nav>
 
     <div class="container theme-showcase" role="main">
+   
       {% with messages = get_flashed_messages(with_categories=true)  %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-block {{category}} fade in">
+            <div class="alert {{category}}" role="alert">
               <a class="close" data-dismiss="alert">&times;</a>
               {{ message }}
             </div>
