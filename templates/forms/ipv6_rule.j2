@@ -2,7 +2,7 @@
 {% from 'forms/macros.j2' import render_field %}
 {% block title %}Add IPv6 rule{% endblock %}
 {% block content %}
-  <form action="{{ url_for('ivp6_rule') }}" method="POST">
+  <form action="{{ action_url }}" method="POST">
   {{ form.hidden_tag() if form.hidden_tag }}
   <div class="row">
     <div class="col-sm-8">

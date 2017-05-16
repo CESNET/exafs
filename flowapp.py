@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from os import environ
 
+
 import config
 import forms
 
@@ -135,6 +136,39 @@ def index():
     return render_template('pages/home.j2', rules_v4=rules4, rules_v6=rules6, rules_rtbh=rules_rtbh, today=datetime.now())
 
 
+
+@app.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
+@auth_required
+def reactivate_rule(rule_type, rule_id):
+    data_models = {1: models.RTBH, 4: models.Flowspec4, 6: models.Flowspec6}
+    data_forms = {1: forms.RTBHForm, 4: forms.IPv4Form, 6: forms.IPv6Form}
+    data_templates = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
+    data_tables = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
+
+    model_name = data_models[rule_type]
+    form_name = data_forms[rule_type]
+    
+    model = db.session.query(model_name).get(rule_id)
+    form = form_name(request.form, obj=model)
+
+    if request.method == 'POST' and form.validate():
+        model.expires = models.webpicker_to_datetime(form.expire_date.data)
+        db.session.commit()
+        flash(u'Rule reactivated', 'alert-success')
+        return redirect(url_for('index'))
+    else:
+        flash_errors(form)        
+
+    form.expire_date.data = models.datetime_to_webpicker(model.expires)
+    for field in form:
+        if field.name not in ['expire_date', 'csrf_token']:
+            field.render_kw = {'disabled': 'disabled'}
+
+    action_url = url_for('reactivate_rule', rule_type=rule_type, rule_id=rule_id)       
+    return render_template(data_templates[rule_type], form=form, action_url=action_url)
+
+
+
 @app.route('/add_ipv4_rule', methods=['GET', 'POST'])
 @auth_required
 def ivp4_rule():
@@ -182,7 +216,7 @@ def ivp4_rule():
     form.expire_date.data = models.datetime_to_webpicker(default_expires)
 
 
-    return render_template('forms/ipv4_rule.j2', form=form)
+    return render_template('forms/ipv4_rule.j2', form=form, action_url=url_for('ipv4_rule'))
 
 
 @app.route('/add_ipv6_rule', methods=['GET', 'POST'])
@@ -231,7 +265,7 @@ def ivp6_rule():
     form.expire_date.data = models.datetime_to_webpicker(default_expires)
 
 
-    return render_template('forms/ipv6_rule.j2', form=form)
+    return render_template('forms/ipv6_rule.j2', form=form, action_url=url_for('ipv6_rule'))
 
 
 
@@ -277,7 +311,7 @@ def rtbh_rule():
     form.expire_date.data = models.datetime_to_webpicker(default_expires)
 
 
-    return render_template('forms/rtbh_rule.j2', form=form)
+    return render_template('forms/rtbh_rule.j2', form=form, action_url=url_for('rtbh_rule'))
 
 
 @app.route('/user', methods=['GET', 'POST'])
@@ -323,6 +357,8 @@ def edit_user(user_id):
     form.role_ids.data = [role.id for role in user.role]
     form.org_ids.data = [org.id for org in user.organization]
     action_url = url_for('edit_user', user_id=user_id)
+
+
     return render_template('forms/simple_form.j2', title="Editing {}".format(user.email), form=form, action_url=action_url)
 
 
@@ -379,6 +415,7 @@ def edit_organization(org_id):
     return render_template('forms/simple_form.j2', title="Editin {}".format(org.name), form=form, action_url=action_url)
 
 
+
 @app.route('/actions')
 @auth_required
 def actions():
@@ -427,6 +464,15 @@ def edit_action(action_id):
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
+
+
+def flash_errors(form):
+    for field, errors in form.errors.items():
+        for error in errors:
+            flash(u"Error in the %s field - %s" % (
+                getattr(form, field).label.text,
+                error
+            ))
 
 
 if __name__ == '__main__':

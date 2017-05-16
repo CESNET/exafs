@@ -11,6 +11,7 @@
     <th>Dest. port(s)</th>
     <th>Protocol(s)</th>
     <th>Expires</th>
+    <th>Action</th>
     </tr>
     {% for rule in rules_v4 %}
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
@@ -28,6 +29,9 @@
         <td>
             {{ rule.expires }}
         </td>
+        <td>
+        <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=4, rule_id=rule.id) }}" role="button">reactivate</a>
+        </td>
         </tr>
     {% endfor %}
     </table>
@@ -41,6 +45,7 @@
     <th>Dest. port(s)</th>
     <th>NextHeader(s)</th>
      <th>Expires</th>
+      <th>Action</th>
     </tr>
     {% for rule in rules_v6 %}
         <tr {% if rule.expires < today %} class="warning"  {% endif %}>
@@ -58,6 +63,9 @@
          <td>
             {{ rule.expires }} 
         </td>
+        <td>
+        <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=6, rule_id=rule.id) }}" role="button">reactivate</a>
+        </td>
         </tr>
     {% endfor %}
     </table>
@@ -68,6 +76,7 @@
     <th>IPv4 adress</th>
     <th>IPv6 adress</th>
     <th>Expires</th>
+     <th>Action</th>
     </tr>
     {% for rule in rules_rtbh %}
         <tr {% if rule.expires < today %} class="warning"  {% endif %}>
@@ -75,6 +84,9 @@
         <td>{{ rule.ipv6 }} {{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}</td>
          <td>
             {{ rule.expires }} 
+        </td>
+         <td>
+        <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">reactivate</a>
         </td>
         </tr>
     {% endfor %}

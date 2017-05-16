@@ -6,6 +6,7 @@ from flowapp import db
 from sqlalchemy import event
 from datetime import datetime
 
+
 # utls
 
 
@@ -135,6 +136,10 @@ class RTBH(db.Model):
         if created is None:
             created = datetime.utcnow()
         self.created = created
+
+    def update_time(self, form):
+        self.expires = webpicker_to_datetime(form.expire_date.data)
+        db.session.commit()
 
 
 class Flowspec4(db.Model):
