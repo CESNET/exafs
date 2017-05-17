@@ -164,14 +164,15 @@ def reactivate_rule(rule_type, rule_id):
         if field.name not in ['expire_date', 'csrf_token']:
             field.render_kw = {'disabled': 'disabled'}
 
-    action_url = url_for('reactivate_rule', rule_type=rule_type, rule_id=rule_id)       
+    action_url = url_for('reactivate_rule', rule_type=rule_type, rule_id=rule_id)
+
     return render_template(data_templates[rule_type], form=form, action_url=action_url)
 
 
 
 @app.route('/add_ipv4_rule', methods=['GET', 'POST'])
 @auth_required
-def ivp4_rule():
+def ipv4_rule():
 
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv4Form(request.form)
@@ -221,7 +222,7 @@ def ivp4_rule():
 
 @app.route('/add_ipv6_rule', methods=['GET', 'POST'])
 @auth_required
-def ivp6_rule():
+def ipv6_rule():
 
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv6Form(request.form)

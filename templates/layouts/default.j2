@@ -49,8 +49,8 @@
           <ul class="nav navbar-nav">
             
             {% if session['user_email'] %}
-              <li><a href="{{ url_for('ivp4_rule') }}">Add IPv4</a></li>
-              <li><a href="{{ url_for('ivp6_rule') }}">Add IPv6</a></li>
+              <li><a href="{{ url_for('ipv4_rule') }}">Add IPv4</a></li>
+              <li><a href="{{ url_for('ipv6_rule') }}">Add IPv6</a></li>
                <li><a href="{{ url_for('rtbh_rule') }}">Add RTBH</a></li>
             {% endif %}
             
