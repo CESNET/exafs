@@ -8,7 +8,7 @@
     <div class="col-sm-8">
       <div class="row">
         <div class="col-sm-8">
-          {{ render_field(form.source_adress) }}
+          {{ render_field(form.source) }}
         </div>
         <div class="col-sm-4">
           {% if  3 in session['user_role_ids'] %}
@@ -20,7 +20,7 @@
       </div>
       <div class="row">
         <div class="col-sm-8">
-          {{ render_field(form.destination_adress) }}
+          {{ render_field(form.destination) }}
         </div>
         <div class="col-sm-4">
           {% if  3 in session['user_role_ids'] %}
@@ -32,9 +32,14 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-4">
-        {{ render_field(form.protocol) }}
+    <div class="col-sm-2">
+            {{ render_field(form.protocol_string) }}
+            {{ render_field(form.protocol) }}
     </div>
+    <div class="col-sm-2">
+        {{ render_field(form.flags, size=8) }}
+    </div>
+
   </div>  
 
   <div class="row">

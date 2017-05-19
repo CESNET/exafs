@@ -4,6 +4,9 @@ from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, 
 import flowspec
 import ipaddress
 
+TCP_FLAGS = [('ACK', 'ACK'),('FIN', 'FIN'),('URG', 'URG'),('PSH', 'PSH'),('RST', 'RST'),('ECE', 'ECE'),('CWR', 'CWR'),('NS', 'NS')]
+
+
 class PortString(object):
     def __init__(self, message=None):
         if not message:
@@ -111,23 +114,33 @@ class RTBHForm(FlaskForm):
    
 class IPv4Form(FlaskForm):
     
-    source_adress = TextField('Source address',
+    source = TextField('Source address',
         validators=[Optional(), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
     )
 
     source_mask = IntegerField('Source mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    destination_adress = TextField('Destination address',
+    destination = TextField('Destination address',
         validators=[Optional(),  IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
     )
     
     destination_mask = IntegerField('Destination mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    protocol = SelectMultipleField('Protocol',
+    protocol = SelectMultipleField('Protocol(s)',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
-        validators=[Optional(), DataRequired("Select at last one protocol")])
+        validators=[Optional()])
+
+    flags = SelectMultipleField('TCP flag(s)',
+        choices=TCP_FLAGS,
+        validators=[Optional()])
+
+
+    protocol_string = TextField(
+        'Protocols',
+        validators=[Optional(), Length(max=255), PortString()]
+    )
 
     source_port = TextField(
         'Source port(s) -  ; separated ',
@@ -157,14 +170,14 @@ class IPv4Form(FlaskForm):
 
 class IPv6Form(FlaskForm):
     
-    source_adress = TextField('Source address',
+    source = TextField('Source address',
         validators=[Optional(), IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
     )
 
     source_mask = IntegerField('Source mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    destination_adress = TextField('Destination address',
+    destination = TextField('Destination address',
         validators=[Optional(),  IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
     )
     
@@ -173,7 +186,17 @@ class IPv6Form(FlaskForm):
 
     next_header = SelectMultipleField('Next Header',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
-        validators=[Optional(), DataRequired("Select at last one protocol")])
+        validators=[Optional()])
+
+    flags = SelectMultipleField('TCP flag(s)',
+        choices=TCP_FLAGS,
+        validators=[Optional()])
+
+
+    next_header_string = TextField(
+        'Next Header',
+        validators=[Optional(), Length(max=255), PortString()]
+    )
 
     source_port = TextField(
         'Source port(s) -  ; separated ',
@@ -199,3 +222,16 @@ class IPv6Form(FlaskForm):
     
     comment = arange = TextAreaField('Comments'
     )    
+
+
+
+def add_adress_range_validator(form, net_ranges):
+    """
+    add validator to instance but only once                             
+    """
+    if len(form.source.validators) == 2:
+        form.source.validators.append(NetInRange(net_ranges))
+    if len(form.destination.validators) == 2:
+        form.destination.validators.append(NetInRange(net_ranges))    
+
+    return form          

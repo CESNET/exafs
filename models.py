@@ -152,6 +152,7 @@ class Flowspec4(db.Model):
     dest_mask = db.Column(db.Integer)
     dest_port = db.Column(db.String(255))
     protocol = db.Column(db.String(255))
+    flags = db.Column(db.String(255))
     packet_len = db.Column(db.String(255))
     comment = db.Column(db.Text)
     expires=db.Column(db.DateTime)
@@ -161,7 +162,7 @@ class Flowspec4(db.Model):
     user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
     user=db.relationship('User', backref='flowspec4')
 
-    def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol, packet_len, expires, user_id, action_id, created=None, comment=None):
+    def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol, flags, packet_len, expires, user_id, action_id, created=None, comment=None):
         self.source=source
         self.source_mask=source_mask
         self.dest=destination
@@ -169,6 +170,7 @@ class Flowspec4(db.Model):
         self.source_port=source_port
         self.dest_port=destination_port
         self.protocol=protocol
+        self.flags=flags
         self.packet_len=packet_len
         self.comment=comment
         self.expires=expires
@@ -191,6 +193,7 @@ class Flowspec6(db.Model):
     dest_mask=db.Column(db.Integer)
     dest_port=db.Column(db.String(255))
     next_header=db.Column(db.String(255))
+    flags=db.Column(db.String(255))
     packet_len=db.Column(db.Integer)
     comment=db.Column(db.Text)
     expires=db.Column(db.DateTime)
@@ -200,7 +203,7 @@ class Flowspec6(db.Model):
     user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
     user=db.relationship('User', backref='flowspec6')
 
-    def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header, packet_len, expires, user_id, action_id, created=None, comment=None):
+    def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header, flags, packet_len, expires, user_id, action_id, created=None, comment=None):
         self.source=source
         self.source_mask=source_mask
         self.dest=destination
@@ -208,6 +211,7 @@ class Flowspec6(db.Model):
         self.source_port=source_port
         self.dest_port=destination_port
         self.next_header=next_header
+        self.flags=flags
         self.packet_len=packet_len
         self.comment=comment
         self.expires=expires
@@ -272,7 +276,8 @@ def insert_initial_roles(*args, **kwargs):
 
 @event.listens_for(Organization.__table__, 'after_create')
 def insert_initial_organizations(*args, **kwargs):
-    db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16'))
+    db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16\n2001:718:1c01::/48'))
+
     db.session.commit()
 
 # Misc functions

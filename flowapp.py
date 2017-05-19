@@ -130,10 +130,15 @@ def index():
 
     rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
+    rules = {4: rules4, 6: rules6}
+
+    actions = db.session.query(models.Action).all()
+    actions = {action.id: action for action in actions}
+
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
     print len(rules6)
 
-    return render_template('pages/home.j2', rules_v4=rules4, rules_v6=rules6, rules_rtbh=rules_rtbh, today=datetime.now())
+    return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
 
 
 
@@ -150,6 +155,11 @@ def reactivate_rule(rule_type, rule_id):
     
     model = db.session.query(model_name).get(rule_id)
     form = form_name(request.form, obj=model)
+
+    if rule_type > 2:
+        form.action.choices = [(g.id, g.name)
+         for g in db.session.query(models.Action).order_by('name')]
+
 
     if request.method == 'POST' and form.validate():
         model.expires = models.webpicker_to_datetime(form.expire_date.data)
@@ -179,22 +189,26 @@ def ipv4_rule():
     form.action.choices = [(g.id, g.name)
                              for g in db.session.query(models.Action).order_by('name')]
 
-    #add validator to instance but only once                             
-    if len(form.source_adress.validators) == 2:
-        form.source_adress.validators.append(forms.NetInRange(net_ranges))
-
-
+    form = forms.add_adress_range_validator(form, net_ranges)
 
     if request.method == 'POST' and form.validate():
 
+        protocols = ";".join(form.protocol.data)
+        if (len(form.protocol_string.data) > 1):
+            protocols += ";"
+            protocols += form.protocol_string.data
+        
+        
+
         model = models.Flowspec4(
-            source=form.source_adress.data,
+            source=form.source.data,
             source_mask=form.source_mask.data,
             source_port=form.source_port.data,
-            destination=form.destination_adress.data,
+            destination=form.destination.data,
             destination_mask=form.destination_mask.data,
             destination_port=form.destination_port.data,
-            protocol=",".join(form.protocol.data),
+            protocol=protocols,
+            flags=";".join(form.flags.data),
             packet_len=form.packet_length.data,
             expires=models.webpicker_to_datetime(form.expire_date.data),
             comment=form.comment.data,
@@ -229,21 +243,21 @@ def ipv6_rule():
     form.action.choices = [(g.id, g.name)
                              for g in db.session.query(models.Action).order_by('name')]
 
-    #add validator to instance but only once                             
-    if len(form.source_adress.validators) == 2:
-        form.source_adress.validators.append(forms.NetInRange(net_ranges))
+    
+    form = forms.add_adress_range_validator(form, net_ranges)
 
 
     if request.method == 'POST' and form.validate():
 
         model = models.Flowspec6(
-            source=form.source_adress.data,
+            source=form.source.data,
             source_mask=form.source_mask.data,
             source_port=form.source_port.data,
-            destination=form.destination_adress.data,
+            destination=form.destination.data,
             destination_mask=form.destination_mask.data,
             destination_port=form.destination_port.data,
-            next_header=",".join(form.next_header.data),
+            next_header=";".join(form.next_header.data),
+            flags=";".join(form.flags.data),
             packet_len=form.packet_length.data,
             expires=models.webpicker_to_datetime(form.expire_date.data),
             comment=form.comment.data,

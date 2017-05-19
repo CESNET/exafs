@@ -2,7 +2,7 @@
 {% block title %}Flowspec{% endblock %}
 {% block content %}
     <h1>Default dashboard</h1>
-    <h2>Rules IPv4</h2>
+    <h2>Rules IPv4/v6</h2>
     <table class="table table-hover">
     <tr>
     <th>Source adress</th>
@@ -12,63 +12,53 @@
     <th>Protocol(s)</th>
     <th>Expires</th>
     <th>Action</th>
+    <th>Flags</th>
+    <th>Comment</th>
+    <th></th>
     </tr>
-    {% for rule in rules_v4 %}
-        <tr {% if rule.expires < today %} class="warning" {% endif %}>
-        <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
-        <td>
-            {{ rule.source_port }}
-        </td>
-        <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{ rule.dest_mask|default("", True) }}</td>
-        <td>
-            {{ rule.dest_port }}
-        </td>
-        <td>
-            {{ rule.protocol }}
-        </td>
-        <td>
-            {{ rule.expires }}
-        </td>
-        <td>
-        <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=4, rule_id=rule.id) }}" role="button">reactivate</a>
-        </td>
-        </tr>
+    {% for key, value in rules.items() %}
+        {% for rule in value %}
+            <tr {% if rule.expires < today %} class="warning" {% endif %}>
+            <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
+            <td>
+                {{ rule.source_port }}
+            </td>
+            <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{ rule.dest_mask|default("", True) }}</td>
+            <td>
+                {{ rule.dest_port }}
+            </td>
+            <td>
+                {% if key == 4 %}
+                    {{ rule.protocol }}
+                {% elif key == 6 %}    
+                    {{ rule.next_header }}
+                {% endif %}    
+            </td>
+            <td>
+                {{ rule.expires }}                
+            </td>
+            <td>
+                {{ actions[rule.action_id].name }}
+            </td>
+            <td>
+                {{ rule.flags}}
+            </td>
+            <td title="{{ rule.comment }}">
+                {% if rule.comment %}
+                {{ rule.comment[:20] }} ...
+                {% endif %}
+            </td>
+            <td>
+            <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
+                 <span class="glyphicon glyphicon-time"></span>
+            </a>
+            </td>
+            </tr>
+        {% endfor %}
+      
     {% endfor %}
     </table>
 
-    <h2>Rules IPv6</h2>
-    <table class="table table-hover">
-    <tr>
-    <th>Source adress</th>
-    <th>Source port(s)</th>
-    <th>Destination adress</th>
-    <th>Dest. port(s)</th>
-    <th>NextHeader(s)</th>
-     <th>Expires</th>
-      <th>Action</th>
-    </tr>
-    {% for rule in rules_v6 %}
-        <tr {% if rule.expires < today %} class="warning"  {% endif %}>
-        <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
-        <td>
-            {{ rule.source_port }}
-        </td>
-        <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{rule.dest_mask|default("", True)}}</td>
-        <td>
-            {{ rule.dest_port }}
-        </td>
-        <td>
-            {{ rule.next_header }}
-        </td>
-         <td>
-            {{ rule.expires }} 
-        </td>
-        <td>
-        <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=6, rule_id=rule.id) }}" role="button">reactivate</a>
-        </td>
-        </tr>
-    {% endfor %}
-    </table>
 
     <h2>Rules RTBH</h2>
     <table class="table table-hover">
@@ -85,8 +75,10 @@
          <td>
             {{ rule.expires }} 
         </td>
-         <td>
-        <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">reactivate</a>
+        <td>
+        <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+            <span class="glyphicon glyphicon-time"></span>
+        </a>
         </td>
         </tr>
     {% endfor %}
