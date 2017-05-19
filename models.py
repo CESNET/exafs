@@ -241,17 +241,17 @@ class Action(db.Model):
 class Log(db.Model):
     id=db.Column(db.Integer, primary_key=True)
     time=db.Column(db.DateTime)
-    hostname=db.Column(db.String(20))
-    flagger=db.Column(db.Boolean)
+    task=db.Column(db.String(20))
+    rule_type = db.Column(db.Integer)
+    rule_id = db.Column(db.Integer)
     user_id=db.Column(db.Integer, db.ForeignKey('user.id'))
     user=db.relationship('User', backref='log')
 
-    def __init__(self, time, uptime, hostname, flagger, user_id):
-        self.returns=0
-        self.errors=0
+    def __init__(self, time, task, user_id, rule_type, rule_id):
         self.time=time
-        self.hostname=hostname
-        self.flagger=flagger
+        self.task=task
+        self.rule_type = rule_type
+        self.rule_id = rule_id
         self.user_id=user_id
 
     def __repr__(self):
