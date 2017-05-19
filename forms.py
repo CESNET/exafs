@@ -4,7 +4,7 @@ from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, 
 import flowspec
 import ipaddress
 
-TCP_FLAGS = [('ACK', 'ACK'),('FIN', 'FIN'),('URG', 'URG'),('PSH', 'PSH'),('RST', 'RST'),('ECE', 'ECE'),('CWR', 'CWR'),('NS', 'NS')]
+TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'),('FIN', 'FIN'),('URG', 'URG'),('PSH', 'PSH'),('RST', 'RST'),('ECE', 'ECE'),('CWR', 'CWR'),('NS', 'NS')]
 
 
 class PortString(object):
