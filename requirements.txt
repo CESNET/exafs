@@ -6,6 +6,7 @@ Flask-SQLAlchemy==2.2
 Flask-SSO==0.4.0
 Flask-WTF==0.14.2
 honcho==0.7.1
+ipaddress==1.0.18
 itsdangerous==0.24
 Jinja2==2.9.5
 MarkupSafe==0.23
