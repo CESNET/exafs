@@ -83,7 +83,12 @@ class ActionForm(FlaskForm):
     
     name = TextField(
         'Action short name',
-        validators=[Optional(), Length(max=150)]
+        validators=[Length(max=150)]
+    )
+
+    command = TextField(
+        'ExaBGP command',
+        validators=[Length(max=150)]
     )
 
     description = TextField('Action description')

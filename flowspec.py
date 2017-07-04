@@ -6,6 +6,14 @@ NOTRAN = re.compile(r'^>=(\d+)&<=(\d+)$', re.IGNORECASE)
 GREATER = re.compile(r'>[=]?(\d+)$', re.IGNORECASE)
 LOWER = re.compile(r'<[=]?(\d+)$', re.IGNORECASE)
 
+
+def translate_sequence(sequence):
+    """
+    translate command sequence sepparated by ; to ExaBGP command format
+    """
+    result = [translate_port_string(item) for item in sequence.split(";") if item]
+    return " ".join(result)
+
 def translate_port_string(port_string):
     """
     Translate port string to flowspec port rule

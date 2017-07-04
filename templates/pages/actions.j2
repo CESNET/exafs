@@ -4,12 +4,14 @@
     <table class="table table-hover">
     <tr>
     <th>Name</th>
+    <th>Command</th>
     <th>Description</th>
     <th>action</th>
     </tr>
     {% for action in actions %}
         <tr>
         <td>{{ action.name }}</td>
+        <td>{{ action.command }}</td>
         <td>
             {{ action.description }}
         </td>

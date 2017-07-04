@@ -4,8 +4,10 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from functools import wraps
 from os import environ
+from werkzeug.wrappers import Response
+import sys
 
-
+import messages
 import config
 import forms
 
@@ -136,9 +138,31 @@ def index():
     actions = {action.id: action for action in actions}
 
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
-    print len(rules6)
-
+    
     return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
+
+
+
+@app.route('/export')
+@auth_required
+def export():
+
+    rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
+    rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
+    rules = {4: rules4, 6: rules6}
+
+    actions = db.session.query(models.Action).all()
+    actions = {action.id: action for action in actions}
+
+    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
+
+    output = [messages.create_message_from_rule(rule) for rule in rules4]
+    
+    for message in output:
+        sys.stdout.write(message + '\n')
+        sys.stdout.flush()    
+        
+    return Response("\n".join(output), mimetype='text/plain')
 
 
 
@@ -163,7 +187,7 @@ def reactivate_rule(rule_type, rule_id):
 
     if request.method == 'POST' and form.validate():
         model.expires = models.webpicker_to_datetime(form.expire_date.data)
-        db.session.commit()
+        db_commit(db)
         flash(u'Rule reactivated', 'alert-success')
         return redirect(url_for('index'))
     else:
@@ -184,6 +208,8 @@ def reactivate_rule(rule_type, rule_id):
 @auth_required
 def ipv4_rule():
 
+    protocols = {'udp': '17', 'tcp': '6', 'icmp': '1'}
+
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv4Form(request.form)
     form.action.choices = [(g.id, g.name)
@@ -193,9 +219,10 @@ def ipv4_rule():
 
     if request.method == 'POST' and form.validate():
 
-        protocols = ";".join(form.protocol.data)
+        proto_nrs = [protocols[key] for key in form.protocol.data]
+        protocols = ";".join(proto_nrs) 
         if (len(form.protocol_string.data) > 1):
-            protocols += ";"
+            protocols += ";" if form.protocol.data else ""
             protocols += form.protocol_string.data
         
         
@@ -216,7 +243,7 @@ def ipv4_rule():
             user_id=session['user_id']
         )
         db.session.add(model)
-        db.session.commit()
+        db_commit(db)
         flash(u'IPv4 Rule saved', 'alert-success')
         return redirect(url_for('index')) 
     else:
@@ -265,7 +292,7 @@ def ipv6_rule():
             user_id=session['user_id']
         )
         db.session.add(model)
-        db.session.commit()
+        db_commit(db)
         flash(u'IPv6 Rule saved', 'alert-success')
         return redirect(url_for('index')) 
     else:
@@ -311,7 +338,7 @@ def rtbh_rule():
             user_id=session['user_id']
         )
         db.session.add(model)
-        db.session.commit()
+        db_commit(db)
         flash(u'RTBH Rule saved', 'alert-success')
         return redirect(url_for('index')) 
     else:
@@ -403,7 +430,7 @@ def organization():
         if not exist:
             org = models.Organization(name=form.name.data, arange=form.arange.data)
             db.session.add(org)
-            db.session.commit()
+            db_commit(db)
             flash('Organization saved')
             return redirect(url_for('organizations'))
         else:
@@ -422,7 +449,7 @@ def edit_organization(org_id):
 
     if request.method == 'POST' and form.validate():
         form.populate_obj(org)
-        db.session.commit()
+        db_commit(db)
         flash('Organization updated')
         return redirect(url_for('organizations'))
 
@@ -449,7 +476,7 @@ def action():
         if not exist:
             action = models.Action(name=form.name.data, description=form.description.data)
             db.session.add(action)
-            db.session.commit()
+            db_commit(db)
             flash('Action saved', 'alert-success')
             return redirect(url_for('actions'))
         else:
@@ -468,7 +495,7 @@ def edit_action(action_id):
 
     if request.method == 'POST' and form.validate():
         form.populate_obj(action)
-        db.session.commit()
+        db_commit(db)
         flash('Action updated')
         return redirect(url_for('actions'))
 
@@ -488,6 +515,13 @@ def flash_errors(form):
                 getattr(form, field).label.text,
                 error
             ))
+
+def db_commit(db):
+    try:
+        db.session.commit()
+    except:
+        db.session.rollback()
+
 
 
 if __name__ == '__main__':

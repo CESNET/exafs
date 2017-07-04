@@ -230,11 +230,13 @@ class Action(db.Model):
 
     id=db.Column(db.Integer, primary_key=True)
     name=db.Column(db.String(120), unique=True)
+    command=db.Column(db.String(120), unique=True)
     description=db.Column(db.String(260))
 
 
-    def __init__(self, name, description):
+    def __init__(self, name, command, description):
         self.name=name
+        self.command=command
         self.description=description
 
 
@@ -262,9 +264,9 @@ class Log(db.Model):
 # DDL
 @event.listens_for(Action.__table__, 'after_create')
 def insert_initial_actions(*args, **kwargs):
-    db.session.add(Action(name='QoS 100k', description='QoS'))
-    db.session.add(Action(name='QoS 1000k', description='QoS'))
-    db.session.add(Action(name='QoS 10000k', description='QoS'))
+    db.session.add(Action(name='QoS 100k', command='rate-limit 100', description='QoS'))
+    db.session.add(Action(name='QoS 1000k', command='rate-limit 1000', description='QoS'))
+    db.session.add(Action(name='QoS 10000k', command='rate-limit 10000', description='QoS'))
     db.session.commit()
 
 @event.listens_for(Role.__table__, 'after_create')
