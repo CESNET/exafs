@@ -4,6 +4,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from os import environ
 import sys
+import time
 
 import config
 import messages
@@ -42,3 +43,9 @@ for message in output:
     sys.stdout.write(message + '\n')
     sys.stdout.flush()    
 #   sys.stdout.write("show neighbor summary") 
+
+now = time.time()
+while True and time.time() < now + 20:
+    if 'shutdown' in sys.stdin.readline():
+        break
+    time.sleep(1)
