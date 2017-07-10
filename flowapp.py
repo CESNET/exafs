@@ -143,28 +143,6 @@ def index():
 
 
 
-@app.route('/export')
-@auth_required
-def export():
-
-    rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
-    rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
-    rules = {4: rules4, 6: rules6}
-
-    actions = db.session.query(models.Action).all()
-    actions = {action.id: action for action in actions}
-
-    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
-
-    output = [messages.create_message_from_rule(rule) for rule in rules4]
-    
-    for message in output:
-        sys.stdout.write(message + '\n')
-        sys.stdout.flush()    
-        
-    return Response("\n".join(output), mimetype='text/plain')
-
-
 
 @app.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
 @auth_required
