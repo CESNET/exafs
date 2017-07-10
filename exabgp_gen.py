@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from os import environ
@@ -39,4 +41,4 @@ output = [messages.create_message_from_rule(rule) for rule in rules4]
 for message in output:
     sys.stdout.write(message + '\n')
     sys.stdout.flush()    
-        
+#   sys.stdout.write("show neighbor summary") 
