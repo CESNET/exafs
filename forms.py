@@ -37,7 +37,7 @@ class NetRageString(object):
 
 class NetInRange(object):
     def __init__(self, net_ranges):
-        self.message = "address not in organization range"
+        self.message = "address not in organization range : {}.".format(net_ranges)
         self.net_ranges = net_ranges
 
     def __call__(self, form, field):
