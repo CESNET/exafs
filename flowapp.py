@@ -159,9 +159,9 @@ def reactivate_rule(rule_type, rule_id):
     form = form_name(request.form, obj=model)
 
     if rule_type > 2:
-        form.action.choices = [(g.id, g.name)
-         for g in db.session.query(models.Action).order_by('name')]
-
+        form.action.choices = [(g.id, g.name) 
+                                for g in db.session.query(models.Action).order_by('name')]
+        form.action.data = model.action_id
 
     if request.method == 'POST' and form.validate():
         model.expires = models.webpicker_to_datetime(form.expire_date.data)
@@ -179,6 +179,25 @@ def reactivate_rule(rule_type, rule_id):
     action_url = url_for('reactivate_rule', rule_type=rule_type, rule_id=rule_id)
 
     return render_template(data_templates[rule_type], form=form, action_url=action_url)
+
+
+
+@app.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
+@auth_required
+def delete_rule(rule_type, rule_id):
+    data_models = {1: models.RTBH, 4: models.Flowspec4, 6: models.Flowspec6}
+    data_forms = {1: forms.RTBHForm, 4: forms.IPv4Form, 6: forms.IPv6Form}
+    data_templates = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
+    data_tables = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
+
+    model_name = data_models[rule_type]
+    form_name = data_forms[rule_type]
+    
+    model = db.session.query(model_name).get(rule_id)
+    db.session.delete(model)
+    db_commit(db)
+    flash(u'Rule deleted', 'alert-success')
+    return redirect(url_for('index'))
 
 
 

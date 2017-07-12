@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from os import environ
 import sys
 import time
+from datetime import datetime, timedelta
 
 import config
 import messages
@@ -28,8 +29,9 @@ db = SQLAlchemy(app)
 
 import models
 
-rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
-rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
+today=datetime.now()
+rules4 = db.session.query(models.Flowspec4).filter(models.Flowspec4.expires < today).order_by(models.Flowspec4.expires.desc()).all()
+rules6 = db.session.query(models.Flowspec6).filter(models.Flowspec6.expires < today).order_by(models.Flowspec6.expires.desc()).all()
 rules = {4: rules4, 6: rules6}
 
 actions = db.session.query(models.Action).all()
