@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from flask import Flask, request
 from sys import stdout
 
