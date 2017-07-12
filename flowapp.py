@@ -6,6 +6,7 @@ from functools import wraps
 from os import environ
 from werkzeug.wrappers import Response
 import sys
+import requests
 
 import messages
 import config
@@ -178,6 +179,9 @@ def reactivate_rule(rule_type, rule_id):
 
     action_url = url_for('reactivate_rule', rule_type=rule_type, rule_id=rule_id)
 
+    #announce routes
+    announce_routes()
+
     return render_template(data_templates[rule_type], form=form, action_url=action_url)
 
 
@@ -197,6 +201,9 @@ def delete_rule(rule_type, rule_id):
     db.session.delete(model)
     db_commit(db)
     flash(u'Rule deleted', 'alert-success')
+    #announce routes
+    announce_routes()
+
     return redirect(url_for('index'))
 
 
@@ -242,6 +249,9 @@ def ipv4_rule():
         db.session.add(model)
         db_commit(db)
         flash(u'IPv4 Rule saved', 'alert-success')
+
+        #announce routes
+        announce_routes()
         return redirect(url_for('index')) 
     else:
         for field, errors in form.errors.items():
@@ -291,6 +301,9 @@ def ipv6_rule():
         db.session.add(model)
         db_commit(db)
         flash(u'IPv6 Rule saved', 'alert-success')
+
+        #announce routes
+        announce_routes()
         return redirect(url_for('index')) 
     else:
         for field, errors in form.errors.items():
@@ -337,6 +350,9 @@ def rtbh_rule():
         db.session.add(model)
         db_commit(db)
         flash(u'RTBH Rule saved', 'alert-success')
+
+        #announce routes
+        announce_routes()
         return redirect(url_for('index')) 
     else:
         for field, errors in form.errors.items():
@@ -519,6 +535,26 @@ def db_commit(db):
     except:
         db.session.rollback()
 
+
+def announce_routes():
+    """
+    get actual valid routes from db and send it to ExaBGB api
+    curl --form "command=announce route 100.10.0.0/24 next-hop self" http://localhost:5000/
+    """
+    today=datetime.now()
+    rules4 = db.session.query(models.Flowspec4).filter(models.Flowspec4.expires < today).order_by(models.Flowspec4.expires.desc()).all()
+    rules6 = db.session.query(models.Flowspec6).filter(models.Flowspec6.expires < today).order_by(models.Flowspec6.expires.desc()).all()
+    rules = {4: rules4, 6: rules6}
+
+    actions = db.session.query(models.Action).all()
+    actions = {action.id: action for action in actions}
+
+    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
+
+    output = [messages.create_message_from_rule(rule) for rule in rules4]
+
+    for message in output:
+        requests.post('http://localhost:5000/', data = {'command':message})
 
 
 if __name__ == '__main__':
