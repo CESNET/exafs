@@ -191,8 +191,7 @@ class IPv4Form(FlaskForm):
     )
 
     def validate(self):
-        rv = FlaskForm.validate(self)
-        if not rv:
+        if not FlaskForm.validate(self):
             return False
 
         source_in_range = address_in_range(self.source.data, self.net_ranges)
@@ -201,6 +200,10 @@ class IPv4Form(FlaskForm):
         if not (source_in_range or dest_in_range):
             self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
             self.destination.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+            return False
+
+        if len(self.flags.data) > 0 and self.protocol.data != 'tcp':
+            self.flags.errors.append("Can not set TCP flags for protocol {} !".format(self.protocol.data.upper()))
             return False
 
         return True

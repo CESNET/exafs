@@ -25,6 +25,11 @@ def create_ipv4(rule):
     flow route { match { source 147.230.17.6/32;protocol =tcp;tcp-flags [=fin
     =syn];destination-port =3128 >=8080&<=8088;} then {rate-limit 10000; } }
 
+    announce flow route source 4.0.0.0/24 destination 127.0.0.0/24 protocol 
+    [ udp ] source-port [ =53 ] destination-port [ =80 ] 
+    packet-length [ =777 =1122 ] fragment [ is-fragment dont-fragment ] rate-limit 1024" 
+
+
     """
     source = 'source {}'.format(rule.source) if rule.source else ''
     source += '/{};'.format(rule.source_mask if rule.source_mask else 32) if rule.source else ''
@@ -38,12 +43,19 @@ def create_ipv4(rule):
 
     protocol = 'protocol ={}'.format(rule.protocol) if rule.protocol else ''
 
-    match_body = '{source}{source_port}{dest}{dest_port}{protocol}'.format(
+    flagstring = rule.flags.replace(";"," =")
+    flags = 'tcp-flags [={}]'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
+
+    packet_len = 'packet-length [={}]'.format(rule.packet_len) if rule.packet_len else ''
+
+    match_body = '{source}{source_port}{dest}{dest_port}{protocol}{flags}{packet_len}'.format(
         source=source, 
         source_port=source_port,
         dest=dest,
         dest_port=dest_port,
-        protocol=protocol)
+        protocol=protocol,
+        flags=flags,
+        packet_len=packet_len)
 
     command = '{};'.format(rule.action.command)
     
