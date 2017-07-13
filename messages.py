@@ -1,20 +1,6 @@
 from flowspec import translate_sequence as trps
+from flowspec import MAX_PORT, MAX_PACKET
 
-def create_text(rule):
-    """
-    ExaBgp text format
-    """
-    message = 'announce flow route { match { '
-    message += 'source {}'.format(rule.source) if rule.source else ''
-    message += '/{};'.format(rule.source_mask if rule.source_mask else 32) if rule.source else ''
-    message += ' destination {}'.format(rule.dest) if rule.dest else ''
-    message += '/32;'.format(rule.dest_mask if rule.dest_mask else 32) if rule.dest else ''
-    message += 'destination-port {};'.format(trps(rule.dest_port)) if rule.dest_port else ''
-    message += 'protocol {};'.format(trps(rule.protocol))
-    message += '} then {'
-    message += '{};'.format(rule.action.command)
-    message += ' } }'    
-    return message    
 
 
 def create_ipv4(rule):
@@ -41,15 +27,14 @@ def create_ipv4(rule):
 
     dest_port = 'destination-port {};'.format(trps(rule.dest_port)) if rule.dest_port else ''
 
-    protocol = 'protocol ={}'.format(rule.protocol) if rule.protocol else ''
+    protocol = 'protocol ={};'.format(rule.protocol) if rule.protocol else ''
 
     flagstring = rule.flags.replace(";"," =")
-    flags = 'tcp-flags [={}]'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
+    flags = 'tcp-flags [={}];'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
 
-    packet_len_string = rule.packet_len.replace(";"," =")
-    packet_len = 'packet-length [={}]'.format(packet_len_string) if rule.packet_len else ''
+    packet_len = 'packet-length [{}];'.format(trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ''
 
-    match_body = '{source}{source_port}{dest}{dest_port}{protocol}{flags}{packet_len}'.format(
+    match_body = '{source} {source_port} {dest} {dest_port} {protocol} {flags} {packet_len}'.format(
         source=source, 
         source_port=source_port,
         dest=dest,

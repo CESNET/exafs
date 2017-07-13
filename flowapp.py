@@ -158,14 +158,22 @@ def reactivate_rule(rule_type, rule_id):
     
     model = db.session.query(model_name).get(rule_id)
     form = form_name(request.form, obj=model)
+    form.net_ranges = models.get_user_nets(session['user_id'])
 
     if rule_type > 2:
         form.action.choices = [(g.id, g.name) 
                                 for g in db.session.query(models.Action).order_by('name')]
         form.action.data = model.action_id
 
-    if request.method == 'POST' and form.validate():
-        model.expires = models.webpicker_to_datetime(form.expire_date.data)
+    if rule_type == 4:
+        form.protocol.data = model.protocol        
+
+    if rule_type == 6:
+        form.next_header.data = model.next_header    
+
+    #do not need to validate - all is readonly    
+    if request.method == 'POST':
+        model.expires = models.webpicker_to_datetime(form.expires.data)
         db_commit(db)
         flash(u'Rule reactivated', 'alert-success')
         #announce routes
@@ -174,9 +182,9 @@ def reactivate_rule(rule_type, rule_id):
     else:
         flash_errors(form)        
 
-    form.expire_date.data = models.datetime_to_webpicker(model.expires)
+    form.expires.data = models.datetime_to_webpicker(model.expires)
     for field in form:
-        if field.name not in ['expire_date', 'csrf_token']:
+        if field.name not in ['expires', 'csrf_token']:
             field.render_kw = {'disabled': 'disabled'}
 
     action_url = url_for('reactivate_rule', rule_type=rule_type, rule_id=rule_id)
@@ -229,13 +237,13 @@ def ipv4_rule():
             source=form.source.data,
             source_mask=form.source_mask.data,
             source_port=form.source_port.data,
-            destination=form.destination.data,
-            destination_mask=form.destination_mask.data,
-            destination_port=form.destination_port.data,
+            destination=form.dest.data,
+            destination_mask=form.dest_mask.data,
+            destination_port=form.dest_port.data,
             protocol=form.protocol.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_length.data,
-            expires=models.webpicker_to_datetime(form.expire_date.data),
+            expires=models.webpicker_to_datetime(form.expires.data),
             comment=form.comment.data,
             action_id=form.action.data,
             user_id=session['user_id']
@@ -256,7 +264,7 @@ def ipv4_rule():
                 ))
 
     default_expires = datetime.now() + timedelta(days=7) 
-    form.expire_date.data = models.datetime_to_webpicker(default_expires)
+    form.expires.data = models.datetime_to_webpicker(default_expires)
 
 
     return render_template('forms/ipv4_rule.j2', form=form, action_url=url_for('ipv4_rule'))
@@ -281,13 +289,13 @@ def ipv6_rule():
             source=form.source.data,
             source_mask=form.source_mask.data,
             source_port=form.source_port.data,
-            destination=form.destination.data,
-            destination_mask=form.destination_mask.data,
-            destination_port=form.destination_port.data,
+            destination=form.dest.data,
+            destination_mask=form.dest_mask.data,
+            destination_port=form.dest_port.data,
             next_header=form.next_header.data,
             flags=";".join(form.flags.data),
-            packet_len=form.packet_length.data,
-            expires=models.webpicker_to_datetime(form.expire_date.data),
+            packet_len=form.packet_len.data,
+            expires=models.webpicker_to_datetime(form.expires.data),
             comment=form.comment.data,
             action_id=form.action.data,
             user_id=session['user_id']
@@ -308,7 +316,7 @@ def ipv6_rule():
                 ))
 
     default_expires = datetime.now() + timedelta(days=7) 
-    form.expire_date.data = models.datetime_to_webpicker(default_expires)
+    form.expires.data = models.datetime_to_webpicker(default_expires)
 
 
     return render_template('forms/ipv6_rule.j2', form=form, action_url=url_for('ipv6_rule'))
@@ -337,7 +345,7 @@ def rtbh_rule():
             ipv4_mask=form.ipv4_mask.data,
             ipv6=form.ipv6.data,
             ipv6_mask=form.ipv6_mask.data,
-            expires=models.webpicker_to_datetime(form.expire_date.data),
+            expires=models.webpicker_to_datetime(form.expires.data),
             comment=form.comment.data,
             user_id=session['user_id']
         )
@@ -357,7 +365,7 @@ def rtbh_rule():
                 ))
 
     default_expires = datetime.now() + timedelta(days=7) 
-    form.expire_date.data = models.datetime_to_webpicker(default_expires)
+    form.expires.data = models.datetime_to_webpicker(default_expires)
 
 
     return render_template('forms/rtbh_rule.j2', form=form, action_url=url_for('rtbh_rule'))

@@ -19,10 +19,25 @@ class PortString(object):
     def __call__(self, form, field):
         try:
             for port_string in field.data.split(";"):
-                flowspec.translate_port_string(port_string)
+                flowspec.to_exabgp_string(port_string, flowspec.MAX_PORT)
         except ValueError, e:
             raise ValidationError(self.message + str(e.args[0]))
 
+class PacketString(object):
+    """
+    Validator for packet length string - must be translatable to ExaBgp syntax
+    """
+    def __init__(self, message=None):
+        if not message:
+            message = u'Invalid packet size value: '
+        self.message = message
+
+    def __call__(self, form, field):
+        try:
+            for port_string in field.data.split(";"):
+                flowspec.to_exabgp_string(port_string, flowspec.MAX_PACKET)
+        except ValueError, e:
+            raise ValidationError(self.message + str(e.args[0]))
 
 class NetRageString(object):
     """
@@ -129,7 +144,7 @@ class RTBHForm(FlaskForm):
     ipv6_mask = IntegerField('Source mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    expire_date = TextField(
+    expires = TextField(
         'Expires'
     )
 
@@ -150,11 +165,11 @@ class IPv4Form(FlaskForm):
     source_mask = IntegerField('Source mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    destination = TextField('Destination address',
+    dest = TextField('Destination address',
         validators=[Optional(),  IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
     )
     
-    destination_mask = IntegerField('Destination mask (bytes)',
+    dest_mask = IntegerField('Destination mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
     protocol = SelectField('Protocol(s)',
@@ -170,20 +185,20 @@ class IPv4Form(FlaskForm):
         validators=[Optional(), Length(max=255), PortString()]
     )
 
-    destination_port  = TextField(
+    dest_port  = TextField(
         'Destination port(s) - ; separated',
         validators=[Optional(), Length(max=255), PortString()]
     )
 
 
-    packet_length = TextField('Packet length',  validators=[Optional(), Length(max=255)])
+    packet_len = TextField('Packet length',  validators=[Optional(), Length(max=255), PacketString()])
     
     action = SelectField(u'Action',
         coerce=int,
         validators=[DataRequired()])
 
     
-    expire_date = TextField(
+    expires = TextField(
         'Expires'
     )
     
@@ -195,11 +210,11 @@ class IPv4Form(FlaskForm):
             return False
 
         source_in_range = address_in_range(self.source.data, self.net_ranges)
-        dest_in_range = address_in_range(self.destination.data, self.net_ranges)    
+        dest_in_range = address_in_range(self.dest.data, self.net_ranges)    
 
         if not (source_in_range or dest_in_range):
             self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
-            self.destination.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+            self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
             return False
 
         if len(self.flags.data) > 0 and self.protocol.data != 'tcp':
@@ -215,14 +230,14 @@ class IPv6Form(FlaskForm):
         validators=[Optional(), IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
     )
 
-    source_mask = IntegerField('Source mask (bytes)',
+    source_mask = IntegerField('Source prefix length (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    destination = TextField('Destination address',
+    dest = TextField('Destination address',
         validators=[Optional(),  IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
     )
     
-    destination_mask = IntegerField('Destination mask (bytes)',
+    dest_mask = IntegerField('Destination prefix length (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
     next_header = SelectField('Next Header',
@@ -239,7 +254,7 @@ class IPv6Form(FlaskForm):
         validators=[Optional(), Length(max=255), PortString()]
     )
 
-    destination_port  = TextField(
+    dest_port  = TextField(
         'Destination port(s) - ; separated',
         validators=[Optional(), Length(max=255), PortString()]
     )
@@ -252,7 +267,7 @@ class IPv6Form(FlaskForm):
         validators=[DataRequired()])
 
     
-    expire_date = TextField(
+    expires = TextField(
         'Expires'
     )
     
@@ -274,12 +289,12 @@ def add_adress_range_validator(form, net_ranges):
         form.source.validators.append(NetInRange(net_ranges))
 
     dest_exist = False
-    for val in form.destination.validators:
+    for val in form.dest.validators:
         if type(val) is NetInRange:
             source_exist = True
     
 
-    if len(form.destination.validators) == 2:
-        form.destination.validators.append(NetInRange(net_ranges))    
+    if len(form.dest.validators) == 2:
+        form.dest.validators.append(NetInRange(net_ranges))    
 
     return form          
