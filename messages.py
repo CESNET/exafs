@@ -46,7 +46,8 @@ def create_ipv4(rule):
     flagstring = rule.flags.replace(";"," =")
     flags = 'tcp-flags [={}]'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
 
-    packet_len = 'packet-length [={}]'.format(rule.packet_len) if rule.packet_len else ''
+    packet_len_string = rule.packet_len.replace(";"," =")
+    packet_len = 'packet-length [={}]'.format(packet_len_string) if rule.packet_len else ''
 
     match_body = '{source}{source_port}{dest}{dest_port}{protocol}{flags}{packet_len}'.format(
         source=source, 
