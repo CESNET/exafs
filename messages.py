@@ -36,7 +36,7 @@ def create_ipv4(rule):
 
     dest_port = 'destination-port {};'.format(trps(rule.dest_port)) if rule.dest_port else ''
 
-    protocol = 'protocol {}'.format(trps(rule.protocol)) if rule.protocol else ''
+    protocol = 'protocol ={}'.format(rule.protocol) if rule.protocol else ''
 
     match_body = '{source}{source_port}{dest}{dest_port}{protocol}'.format(
         source=source, 

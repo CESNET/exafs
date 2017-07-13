@@ -44,7 +44,7 @@ class NetRageString(object):
 
 class NetInRange(object):
     """
-    Validator for IP adress - must be in organization net range
+    Validator for IP address - must be in organization net range
     """
     def __init__(self, net_ranges):
         self.message = "Address not in organization range : {}.".format(net_ranges)
@@ -55,10 +55,20 @@ class NetInRange(object):
         for address in field.data.split("/"):
             for adr_range in self.net_ranges:
                 result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
-                print "RESULT RANGE: ", result
         
         if result == False:
             raise ValidationError(self.message)
+
+def address_in_range(address, address_range):
+
+    result = False
+    try:
+        for adr_range in address_range:
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+    except ValueError:
+        result = False
+
+    return result        
 
     
 class UserForm(FlaskForm):
@@ -129,6 +139,10 @@ class RTBHForm(FlaskForm):
    
 class IPv4Form(FlaskForm):
     
+    def __init__(self, *args, **kwargs):
+        super(IPv4Form, self).__init__(*args, **kwargs)
+        self.net_ranges = None
+
     source = TextField('Source address',
         validators=[Optional(), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
     )
@@ -175,6 +189,21 @@ class IPv4Form(FlaskForm):
     
     comment = arange = TextAreaField('Comments'
     )
+
+    def validate(self):
+        rv = FlaskForm.validate(self)
+        if not rv:
+            return False
+
+        source_in_range = address_in_range(self.source.data, self.net_ranges)
+        dest_in_range = address_in_range(self.destination.data, self.net_ranges)    
+
+        if not (source_in_range or dest_in_range):
+            self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+            self.destination.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+            return False
+
+        return True
 
 
 class IPv6Form(FlaskForm):
@@ -233,8 +262,20 @@ def add_adress_range_validator(form, net_ranges):
     """
     add validator to instance but only once                             
     """
-    if len(form.source.validators) == 2:
+    source_exist = False
+    for val in form.source.validators:
+        if type(val) is NetInRange:
+            source_exist = True
+
+    if not source_exist:
         form.source.validators.append(NetInRange(net_ranges))
+
+    dest_exist = False
+    for val in form.destination.validators:
+        if type(val) is NetInRange:
+            source_exist = True
+    
+
     if len(form.destination.validators) == 2:
         form.destination.validators.append(NetInRange(net_ranges))    
 

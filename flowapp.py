@@ -215,10 +215,12 @@ def ipv4_rule():
 
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv4Form(request.form)
+
+    #add values to form instance
     form.action.choices = [(g.id, g.name)
                              for g in db.session.query(models.Action).order_by('name')]
 
-    form = forms.add_adress_range_validator(form, net_ranges)
+    form.net_ranges = net_ranges
 
     if request.method == 'POST' and form.validate():
 
@@ -476,10 +478,10 @@ def action():
     form = forms.ActionForm(request.form)
     
     if request.method == 'POST' and form.validate():
-        # test if user is unique
-        exist = mdb.session.query(odels.Action).filter_by(name=form.name.data).first()
+        # test if Acttion is unique
+        exist = db.session.query(models.Action).filter_by(name=form.name.data).first()
         if not exist:
-            action = models.Action(name=form.name.data, description=form.description.data)
+            action = models.Action(name=form.name.data, command=form.command.data, description=form.description.data)
             db.session.add(action)
             db_commit(db)
             flash('Action saved', 'alert-success')
