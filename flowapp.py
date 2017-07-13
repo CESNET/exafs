@@ -242,7 +242,7 @@ def ipv4_rule():
             destination_port=form.dest_port.data,
             protocol=form.protocol.data,
             flags=";".join(form.flags.data),
-            packet_len=form.packet_length.data,
+            packet_len=form.packet_len.data,
             expires=models.webpicker_to_datetime(form.expires.data),
             comment=form.comment.data,
             action_id=form.action.data,
