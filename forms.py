@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import TextField, SelectMultipleField, TextAreaField, IntegerField, SelectField
-from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, NumberRange, Optional, ValidationError
+from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, NumberRange, Optional, ValidationError, Required
 import flowspec
 import ipaddress
 
@@ -8,6 +8,9 @@ TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'),('FIN', 'FIN'),('URG', 'URG'),('PSH'
 
 
 class PortString(object):
+    """
+    Validator for port string - must be translatable to ExaBgp syntax
+    """
     def __init__(self, message=None):
         if not message:
             message = u'Invalid port value: '
@@ -22,6 +25,10 @@ class PortString(object):
 
 
 class NetRageString(object):
+    """
+    Validator for  IP adress network range
+    each part of string must be valid ip address separated by spaces, newlines
+    """
     def __init__(self, message=None):
         if not message:
             message = u'Invalid network range: '
@@ -36,8 +43,11 @@ class NetRageString(object):
 
 
 class NetInRange(object):
+    """
+    Validator for IP adress - must be in organization net range
+    """
     def __init__(self, net_ranges):
-        self.message = "address not in organization range : {}.".format(net_ranges)
+        self.message = "Address not in organization range : {}.".format(net_ranges)
         self.net_ranges = net_ranges
 
     def __call__(self, form, field):
@@ -133,19 +143,13 @@ class IPv4Form(FlaskForm):
     destination_mask = IntegerField('Destination mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    protocol = SelectMultipleField('Protocol(s)',
+    protocol = SelectField('Protocol(s)',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
-        validators=[Optional()])
+        validators=[Required()])
 
     flags = SelectMultipleField('TCP flag(s)',
         choices=TCP_FLAGS,
         validators=[Optional()])
-
-
-    protocol_string = TextField(
-        'Protocols',
-        validators=[Optional(), Length(max=255), PortString()]
-    )
 
     source_port = TextField(
         'Source port(s) -  ; separated ',
@@ -189,19 +193,14 @@ class IPv6Form(FlaskForm):
     destination_mask = IntegerField('Destination mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    next_header = SelectMultipleField('Next Header',
+    next_header = SelectField('Next Header',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
-        validators=[Optional()])
+        validators=[Required()])
 
     flags = SelectMultipleField('TCP flag(s)',
         choices=TCP_FLAGS,
         validators=[Optional()])
 
-
-    next_header_string = TextField(
-        'Next Header',
-        validators=[Optional(), Length(max=255), PortString()]
-    )
 
     source_port = TextField(
         'Source port(s) -  ; separated ',

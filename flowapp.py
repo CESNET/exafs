@@ -213,8 +213,6 @@ def delete_rule(rule_type, rule_id):
 @auth_required
 def ipv4_rule():
 
-    protocols = {'udp': '17', 'tcp': '6', 'icmp': '1'}
-
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv4Form(request.form)
     form.action.choices = [(g.id, g.name)
@@ -224,14 +222,7 @@ def ipv4_rule():
 
     if request.method == 'POST' and form.validate():
 
-        proto_nrs = [protocols[key] for key in form.protocol.data]
-        protocols = ";".join(proto_nrs) 
-        if (len(form.protocol_string.data) > 1):
-            protocols += ";" if form.protocol.data else ""
-            protocols += form.protocol_string.data
         
-        
-
         model = models.Flowspec4(
             source=form.source.data,
             source_mask=form.source_mask.data,
@@ -239,7 +230,7 @@ def ipv4_rule():
             destination=form.destination.data,
             destination_mask=form.destination_mask.data,
             destination_port=form.destination_port.data,
-            protocol=protocols,
+            protocol=form.protocol.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_length.data,
             expires=models.webpicker_to_datetime(form.expire_date.data),
@@ -291,7 +282,7 @@ def ipv6_rule():
             destination=form.destination.data,
             destination_mask=form.destination_mask.data,
             destination_port=form.destination_port.data,
-            next_header=";".join(form.next_header.data),
+            next_header=form.next_header.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_length.data,
             expires=models.webpicker_to_datetime(form.expire_date.data),
