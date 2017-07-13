@@ -517,6 +517,25 @@ def edit_action(action_id):
     return render_template('forms/simple_form.j2', title="Editin {}".format(action.name), form=form, action_url=action_url)
 
 
+@app.route('/export')
+@auth_required
+def export():
+
+    rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
+    rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
+    rules = {4: rules4, 6: rules6}
+
+    actions = db.session.query(models.Action).all()
+    actions = {action.id: action for action in actions}
+
+    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
+
+    announce_routes()
+    
+    return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
+
+
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
@@ -545,15 +564,14 @@ def announce_routes():
     today=datetime.now()
     rules4 = db.session.query(models.Flowspec4).filter(models.Flowspec4.expires >= today).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).filter(models.Flowspec6.expires >= today).order_by(models.Flowspec6.expires.desc()).all()
-    rules = {4: rules4, 6: rules6}
-
-
-    actions = db.session.query(models.Action).all()
-    actions = {action.id: action for action in actions}
-
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
 
-    output = [messages.create_message_from_rule(rule) for rule in rules4]
+    output4 = [messages.create_ipv4(rule) for rule in rules4]
+    output6 = [messages.create_ipv6(rule) for rule in rules6]
+
+    output = []
+    output.extend(output4)
+    output.extend(output6)
 
     for message in output:
         requests.post('http://localhost:5000/', data = {'command':message})
