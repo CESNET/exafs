@@ -20,13 +20,13 @@
       </div>
       <div class="row">
         <div class="col-sm-8">
-          {{ render_field(form.destination) }}
+          {{ render_field(form.dest) }}
         </div>
         <div class="col-sm-4">
           {% if  3 in session['user_role_ids'] %}
-            {{ render_field(form.destination_mask) }}
+            {{ render_field(form.dest_mask) }}
           {% else %}
-            {{ render_field(form.destination_mask, disabled=True, value="32") }}
+            {{ render_field(form.dest_mask, disabled=True, value="32") }}
           {% endif %}
           
         </div>
@@ -45,10 +45,10 @@
         {{ render_field(form.source_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
     </div>
     <div class="col-sm-4">
-        {{ render_field(form.destination_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
+        {{ render_field(form.dest_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
     </div>
     <div class="col-sm-4">
-        {{ render_field(form.packet_length) }}
+        {{ render_field(form.packet_len) }}
     </div>
   </div>
 
@@ -62,16 +62,16 @@
         <label for="inputExpiration" class="control-label">Expiration date</label>
         <div class='input-group date' id='dateTimeExpires'>
                       <!--
-                      <input type='text' name="expire_date" class="form-control" />
+                      <input type='text' name="expires" class="form-control" />
                       -->
-                      {{ form.expire_date(class_='form-control') }}
+                      {{ form.expires(class_='form-control') }}
                       <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                       </span>
         </div>
 
-        {% if form.expire_date.errors %}
-            {% for e in form.expire_date.errors %}
+        {% if form.expires.errors %}
+            {% for e in form.expires.errors %}
                 <p class="help-block">{{ e }}</p>
             {% endfor %}
         {% endif %}

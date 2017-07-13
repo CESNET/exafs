@@ -260,7 +260,7 @@ class IPv6Form(FlaskForm):
     )
 
 
-    packet_length = TextField('Packet length',  validators=[Optional(), Length(max=255)])
+    packet_len = TextField('Packet length',  validators=[Optional(), Length(max=255)])
     
     action = SelectField(u'Action',
         coerce=int,

@@ -40,16 +40,16 @@
         <label for="inputExpiration" class="control-label">Expiration date</label>
         <div class='input-group date' id='dateTimeExpires'>
                       <!--
-                      <input type='text' name="expire_date" class="form-control" />
+                      <input type='text' name="expires" class="form-control" />
                       -->
-                      {{ form.expire_date(class_='form-control') }}
+                      {{ form.expires(class_='form-control') }}
                       <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
                       </span>
         </div>
 
-        {% if form.expire_date.errors %}
-            {% for e in form.expire_date.errors %}
+        {% if form.expires.errors %}
+            {% for e in form.expires.errors %}
                 <p class="help-block">{{ e }}</p>
             {% endfor %}
         {% endif %}
