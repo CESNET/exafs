@@ -24,6 +24,21 @@ def create_ipv6(rule):
     return create_message(rule, protocol)
 
 
+def create_rtbh(rule):
+    """
+    create RTBH message in ExaBgp text format
+    route 10.10.10.1/32 next-hop 192.0.2.1 community 65001:666 no-export
+    """
+    if rule.ipv4:
+        source = '{}'.format(rule.ipv4) if rule.ipv4 else ''
+        source += '/{}'.format(rule.ipv4_mask if rule.ipv4_mask else 32) if rule.ipv4 else ''
+    if rule.ipv6:
+        source = '{}'.format(rule.ipv6) if rule.ipv6 else ''
+        source += '/{}'.format(rule.ipv6_mask if rule.ipv6_mask else 32) if rule.ipv6 else ''
+    
+    return "route {source} next-hop 192.0.2.1 community {community} no-export".format(source=source, community=rule.community)
+
+
 
 def create_message(rule, ipv_specicic):
     """

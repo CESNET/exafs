@@ -605,10 +605,12 @@ def announce_routes():
 
     output4 = [messages.create_ipv4(rule) for rule in rules4]
     output6 = [messages.create_ipv6(rule) for rule in rules6]
+    output_rtbh = [messages.create_rtbh(rule) for rule in rules_rtbh]
 
     output = []
     output.extend(output4)
     output.extend(output6)
+    output.extend(output_rtbh)
 
     for message in output:
         requests.post('http://localhost:5000/', data = {'command':message})
