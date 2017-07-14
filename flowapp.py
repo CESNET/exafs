@@ -280,7 +280,7 @@ def ipv6_rule():
                              for g in db.session.query(models.Action).order_by('name')]
 
     
-    form = forms.add_adress_range_validator(form, net_ranges)
+    form.net_ranges = net_ranges
 
 
     if request.method == 'POST' and form.validate():

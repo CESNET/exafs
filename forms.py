@@ -229,6 +229,10 @@ class IPv4Form(FlaskForm):
 
 
 class IPv6Form(FlaskForm):
+
+    def __init__(self, *args, **kwargs):
+        super(IPv6Form, self).__init__(*args, **kwargs)
+        self.net_ranges = None
     
     source = TextField('Source address',
         validators=[Optional(), IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
@@ -278,27 +282,20 @@ class IPv6Form(FlaskForm):
     comment = arange = TextAreaField('Comments'
     )    
 
+    def validate(self):
+        if not FlaskForm.validate(self):
+            return False
 
+        source_in_range = address_in_range(self.source.data, self.net_ranges)
+        dest_in_range = address_in_range(self.dest.data, self.net_ranges)    
 
-def add_adress_range_validator(form, net_ranges):
-    """
-    add validator to instance but only once                             
-    """
-    source_exist = False
-    for val in form.source.validators:
-        if type(val) is NetInRange:
-            source_exist = True
+        if not (source_in_range or dest_in_range):
+            self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+            self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+            return False
 
-    if not source_exist:
-        form.source.validators.append(NetInRange(net_ranges))
+        if len(self.flags.data) > 0 and self.protocol.data != 'tcp':
+            self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.protocol.data.upper()))
+            return False
 
-    dest_exist = False
-    for val in form.dest.validators:
-        if type(val) is NetInRange:
-            source_exist = True
-    
-
-    if len(form.dest.validators) == 2:
-        form.dest.validators.append(NetInRange(net_ranges))    
-
-    return form          
+        return True
