@@ -397,7 +397,7 @@ def user():
     return render_template('forms/simple_form.j2', title="Add new user to Flowspec", form=form, action_url=action_url)
 
 
-@app.route('/user/<int:user_id>', methods=['GET', 'POST'])
+@app.route('/user/edit/<int:user_id>', methods=['GET', 'POST'])
 @auth_required
 def edit_user(user_id):
     user = db.session.query(models.User).get(user_id)
@@ -417,6 +417,17 @@ def edit_user(user_id):
 
 
     return render_template('forms/simple_form.j2', title="Editing {}".format(user.email), form=form, action_url=action_url)
+
+@app.route('/user/delete/<int:user_id>', methods=['GET'])
+@auth_required
+def delete_user(user_id):
+    user = db.session.query(models.User).get(user_id)
+    username = user.email
+    db.session.delete(user)
+    db_commit(db)
+    flash(u'User {} deleted'.format(username), 'alert-success')
+    
+    return redirect(url_for('users'))
 
 
 @app.route('/users')
@@ -456,7 +467,7 @@ def organization():
     return render_template('forms/simple_form.j2', title="Add new organization to Flowspec", form=form, action_url=action_url)
 
 
-@app.route('/organization/<int:org_id>', methods=['GET', 'POST'])
+@app.route('/organization/edit/<int:org_id>', methods=['GET', 'POST'])
 @auth_required
 def edit_organization(org_id):
     org = db.session.query(models.Organization).get(org_id)
@@ -471,6 +482,17 @@ def edit_organization(org_id):
     action_url = url_for('edit_organization', org_id=org.id)
     return render_template('forms/simple_form.j2', title="Editin {}".format(org.name), form=form, action_url=action_url)
 
+
+@app.route('/organization/delete/<int:org_id>', methods=['GET'])
+@auth_required
+def delete_organization(org_id):
+    org = db.session.query(models.Organization).get(org_id)
+    aname = org.name
+    db.session.delete(org)
+    db_commit(db)
+    flash(u'Organization {} deleted'.format(aname), 'alert-success')
+    
+    return redirect(url_for('organizations'))
 
 
 @app.route('/actions')
@@ -502,7 +524,7 @@ def action():
     return render_template('forms/simple_form.j2', title="Add new action to Flowspec", form=form, action_url=action_url)
 
 
-@app.route('/action/<int:action_id>', methods=['GET', 'POST'])
+@app.route('/action/edit/<int:action_id>', methods=['GET', 'POST'])
 @auth_required
 def edit_action(action_id):
     action = db.session.query(models.Action).get(action_id)
@@ -516,6 +538,19 @@ def edit_action(action_id):
 
     action_url = url_for('edit_action', action_id=action.id)
     return render_template('forms/simple_form.j2', title="Editin {}".format(action.name), form=form, action_url=action_url)
+
+
+@app.route('/action/delete/<int:action_id>', methods=['GET'])
+@auth_required
+def delete_action(action_id):
+    action = db.session.query(models.Action).get(action_id)
+    aname = action.name
+    db.session.delete(action)
+    db_commit(db)
+    flash(u'Action {} deleted'.format(aname), 'alert-success')
+    
+    return redirect(url_for('actions'))
+
 
 
 @app.route('/export')
