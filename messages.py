@@ -5,6 +5,28 @@ from flowspec import MAX_PORT, MAX_PACKET
 
 def create_ipv4(rule):
     """
+    create ExaBpg text message for IPv4 rule
+    @param rule models.Flowspec4
+    @return string message
+    """
+    protocol = 'protocol ={};'.format(rule.protocol) if rule.protocol else ''
+    return create_message(rule, protocol)
+
+
+
+def create_ipv6(rule):
+    """
+    create ExaBpg text message for IPv6 rule
+    @param rule models.Flowspec6
+    @return string message
+    """
+    protocol = 'next-header ={};'.format(rule.next_header) if rule.next_header else ''
+    return create_message(rule, protocol)
+
+
+
+def create_message(rule, ipv_specicic):
+    """
     create text message using format
 
     tcp-flagy, pokud je jich vice, musi byt zadane v hranate zavorce.
@@ -27,7 +49,7 @@ def create_ipv4(rule):
 
     dest_port = 'destination-port {};'.format(trps(rule.dest_port)) if rule.dest_port else ''
 
-    protocol = 'protocol ={};'.format(rule.protocol) if rule.protocol else ''
+    protocol = ipv_specicic
 
     flagstring = rule.flags.replace(";"," =")
     flags = 'tcp-flags [={}];'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
@@ -50,6 +72,8 @@ def create_ipv4(rule):
         command=command)
     
     return message_body
+
+
 
 
 if __name__ == '__main__':
