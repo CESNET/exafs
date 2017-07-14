@@ -318,7 +318,7 @@ def get_user_nets(user_id):
     """
     Return list of network ranges for all user ogranization
     """    
-    orgs = Organization.query.filter_by(id=user_id).all()
+    orgs =  db.session.query(Organization).filter_by(id=user_id).all()
     result = []
     for org in orgs:
         result.extend(org.arange.split())
