@@ -44,7 +44,7 @@ app.config.setdefault('SSO_LOGIN_URL', '/login')
 ext = SSO(app=app)
 
 # Define the database object
-db = SQLAlchemy(app)
+from models import db
 db.init_app(app)
 import models
 

@@ -1,13 +1,11 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from socket import inet_aton, inet_ntoa, inet_pton, inet_ntop, error as socket_error, AF_INET6
-from struct import unpack, pack, error as struct_error
-from flowapp import db
 from sqlalchemy import event
 from datetime import datetime
 
 
 # utls
+db = SQLAlchemy()
 
 
 def webpicker_to_datetime(webtime):
@@ -75,15 +73,16 @@ class User(db.Model):
             self.organization.remove(org)
 
         for role_id in form.role_ids.data:
-            r = Role.query.filter_by(id=role_id).first()
+            r = db.session.query(Role).filter_by(id=role_id).first()
+            print(type(r))
             if not r in self.role:
-                self.role.append(r)
-
+                ro = self.role.append(r)
+      
         for org_id in form.org_ids.data:
-            o = Organization.query.filter_by(id=org_id).first()
+            o = db.session.query(Organization).filter_by(id=org_id).first()
             if not o in self.organization:
-                self.organization.append(o)
-
+                org = self.organization.append(o)
+      
         db.session.commit()
 
 
@@ -324,5 +323,6 @@ def get_user_nets(user_id):
     for org in orgs:
         result.extend(org.arange.split())
     
+    print("ORGRANGE", result)
     return result        
 
