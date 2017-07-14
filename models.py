@@ -74,7 +74,6 @@ class User(db.Model):
 
         for role_id in form.role_ids.data:
             r = db.session.query(Role).filter_by(id=role_id).first()
-            print(type(r))
             if not r in self.role:
                 ro = self.role.append(r)
       
@@ -318,11 +317,11 @@ def get_user_nets(user_id):
     """
     Return list of network ranges for all user ogranization
     """    
-    orgs =  db.session.query(Organization).filter_by(id=user_id).all()
+    user =  db.session.query(User).filter_by(id=user_id).first()
+    orgs  = user.organization
     result = []
     for org in orgs:
         result.extend(org.arange.split())
     
-    print("ORGRANGE", result)
     return result        
 
