@@ -345,6 +345,7 @@ def rtbh_rule():
             ipv4_mask=form.ipv4_mask.data,
             ipv6=form.ipv6.data,
             ipv6_mask=form.ipv6_mask.data,
+            community=form.community.data,
             expires=models.webpicker_to_datetime(form.expires.data),
             comment=form.comment.data,
             user_id=session['user_id']

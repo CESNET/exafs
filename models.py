@@ -117,17 +117,19 @@ class RTBH(db.Model):
     ipv4_mask = db.Column(db.Integer)
     ipv6 = db.Column(db.String(255))
     ipv6_mask = db.Column(db.Integer)
+    community = db.Column(db.String(255))
     comment = db.Column(db.Text)
     expires = db.Column(db.DateTime)
     created = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='rtbh')
 
-    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, expires, user_id, comment=None, created=None):
+    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community, expires, user_id, comment=None, created=None):
         self.ipv4 = ipv4
         self.ipv4_mask = ipv4_mask
         self.ipv6 = ipv6
         self.ipv6_mask = ipv6_mask
+        self.community = community
         self.expires = expires
         self.user_id = user_id
         self.comment=comment
@@ -262,9 +264,10 @@ class Log(db.Model):
 # DDL
 @event.listens_for(Action.__table__, 'after_create')
 def insert_initial_actions(*args, **kwargs):
-    db.session.add(Action(name='QoS 100k', command='rate-limit 100', description='QoS'))
-    db.session.add(Action(name='QoS 1000k', command='rate-limit 1000', description='QoS'))
-    db.session.add(Action(name='QoS 10000k', command='rate-limit 10000', description='QoS'))
+    db.session.add(Action(name='QoS 100 kbps', command='rate-limit 12800', description='QoS'))
+    db.session.add(Action(name='QoS 1Mbps', command='rate-limit 13107200', description='QoS'))
+    db.session.add(Action(name='QoS 10Mbps', command='rate-limit 131072000', description='QoS'))
+    db.session.add(Action(name='Discard', command='discard', description='Discard'))
     db.session.commit()
 
 @event.listens_for(Role.__table__, 'after_create')

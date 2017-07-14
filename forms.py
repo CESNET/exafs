@@ -144,6 +144,10 @@ class RTBHForm(FlaskForm):
     ipv6_mask = IntegerField('Source mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
+    community = SelectField('Community',
+        choices=[('2852:666', '2852:666'), ('40965:666', '40965:666'), ('xxxxx:666', 'xxxxx:666')],
+        validators=[Required()])
+
     expires = TextField(
         'Expires'
     )
@@ -172,7 +176,7 @@ class IPv4Form(FlaskForm):
     dest_mask = IntegerField('Destination mask (bytes)',
         validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
-    protocol = SelectField('Protocol(s)',
+    protocol = SelectField('Protocol',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
         validators=[Required()])
 
