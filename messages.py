@@ -57,7 +57,7 @@ def create_message(rule, ipv_specicic):
     source = 'source {}'.format(rule.source) if rule.source else ''
     source += '/{};'.format(rule.source_mask if rule.source_mask else 32) if rule.source else ''
 
-    source_port = 'source-port {};'.format(trps(rule.source_port)) if rule.dest_port else ''
+    source_port = 'source-port {};'.format(trps(rule.source_port)) if rule.source_port else ''
 
     dest = ' destination {}'.format(rule.dest) if rule.dest else ''
     dest += '/{};'.format(rule.dest_mask if rule.dest_mask else 32) if rule.dest else ''
@@ -66,10 +66,10 @@ def create_message(rule, ipv_specicic):
 
     protocol = ipv_specicic
 
-    flagstring = rule.flags.replace(";"," =")
-    flags = 'tcp-flags [={}];'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
+    flagstring = rule.flags.replace(";"," ")
+    flags = 'tcp-flags [{}];'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
 
-    packet_len = 'packet-length [{}];'.format(trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ''
+    packet_len = 'packet-length {};'.format(trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ''
 
     match_body = '{source} {source_port} {dest} {dest_port} {protocol} {flags} {packet_len}'.format(
         source=source, 
