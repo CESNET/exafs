@@ -14,8 +14,10 @@ def create_app():
         env = 'Production'
         
     if env=='albert':
+        print("DEVEL")
         app.config.from_object(config.DevelopmentConfig)
     else: 
+        print("PRODUCTION")
         app.config.from_object(config.ProductionConfig)
 
     db.init_app(app)

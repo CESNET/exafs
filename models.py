@@ -194,7 +194,7 @@ class Flowspec6(db.Model):
     dest_port=db.Column(db.String(255))
     next_header=db.Column(db.String(255))
     flags=db.Column(db.String(255))
-    packet_len=db.Column(db.Integer)
+    packet_len = db.Column(db.String(255))
     comment=db.Column(db.Text)
     expires=db.Column(db.DateTime)
     created=db.Column(db.DateTime)

@@ -167,14 +167,14 @@ class IPv4Form(FlaskForm):
     )
 
     source_mask = IntegerField('Source mask (bytes)',
-        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+        validators=[Optional(), NumberRange(min=0, max=32, message='invalid mask value (0-32)')])
 
     dest = TextField('Destination address',
         validators=[Optional(),  IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
     )
     
     dest_mask = IntegerField('Destination mask (bytes)',
-        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+        validators=[Optional(), NumberRange(min=0, max=32, message='invalid mask value (0-32)')])
 
     protocol = SelectField('Protocol',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
@@ -239,14 +239,14 @@ class IPv6Form(FlaskForm):
     )
 
     source_mask = IntegerField('Source prefix length (bytes)',
-        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+        validators=[Optional(), NumberRange(min=0, max=32, message='invalid prefix value (0-32)')])
 
     dest = TextField('Destination address',
         validators=[Optional(),  IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
     )
     
     dest_mask = IntegerField('Destination prefix length (bytes)',
-        validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+        validators=[Optional(), NumberRange(min=0, max=32, message='invalid prefix value (0-32)')])
 
     next_header = SelectField('Next Header',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
@@ -294,7 +294,7 @@ class IPv6Form(FlaskForm):
             self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
             return False
 
-        if len(self.flags.data) > 0 and self.protocol.data != 'tcp':
+        if len(self.flags.data) > 0 and self.next_header.data != 'tcp':
             self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.protocol.data.upper()))
             return False
 

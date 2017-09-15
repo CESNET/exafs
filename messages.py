@@ -40,7 +40,7 @@ def create_rtbh(rule):
 
 
 
-def create_message(rule, ipv_specicic):
+def create_message(rule, ipv_specific):
     """
     create text message using format
 
@@ -64,7 +64,7 @@ def create_message(rule, ipv_specicic):
 
     dest_port = 'destination-port {};'.format(trps(rule.dest_port)) if rule.dest_port else ''
 
-    protocol = ipv_specicic
+    protocol = ipv_specific
 
     flagstring = rule.flags.replace(";"," ")
     flags = 'tcp-flags [{}];'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
