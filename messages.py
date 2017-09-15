@@ -10,7 +10,15 @@ def create_ipv4(rule):
     @return string message
     """
     protocol = 'protocol ={};'.format(rule.protocol) if rule.protocol else ''
-    return create_message(rule, protocol)
+    flagstring = rule.flags.replace(";"," ")
+    flags = 'tcp-flags [{}];'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
+
+    spec = {
+        'protocol': protocol,
+        'flags': flags
+    }
+
+    return create_message(rule, spec)
 
 
 
@@ -21,7 +29,15 @@ def create_ipv6(rule):
     @return string message
     """
     protocol = 'next-header ={};'.format(rule.next_header) if rule.next_header else ''
-    return create_message(rule, protocol)
+    flagstring = rule.flags.replace(";"," ")
+    flags = 'tcp-flags [{}];'.format(flagstring) if rule.flags and rule.next_header == 'tcp' else ''
+
+    spec = {
+        'protocol': protocol,
+        'flags': flags
+    }
+
+    return create_message(rule, spec)
 
 
 def create_rtbh(rule):
@@ -64,10 +80,8 @@ def create_message(rule, ipv_specific):
 
     dest_port = 'destination-port {};'.format(trps(rule.dest_port)) if rule.dest_port else ''
 
-    protocol = ipv_specific
-
-    flagstring = rule.flags.replace(";"," ")
-    flags = 'tcp-flags [{}];'.format(flagstring) if rule.flags and rule.protocol=='tcp' else ''
+    protocol = ipv_specific['protocol']
+    flags = ipv_specific['flags']
 
     packet_len = 'packet-length {};'.format(trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ''
 
