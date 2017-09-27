@@ -2,8 +2,11 @@ from flowspec import translate_sequence as trps
 from flowspec import MAX_PORT, MAX_PACKET
 
 
+ANNOUNCE = 1
+WITHDRAW = 2
 
-def create_ipv4(rule):
+
+def create_ipv4(rule, message_type=ANNOUNCE):
     """
     create ExaBpg text message for IPv4 rule
     @param rule models.Flowspec4
@@ -18,11 +21,11 @@ def create_ipv4(rule):
         'flags': flags
     }
 
-    return create_message(rule, spec)
+    return create_message(rule, spec, message_type)
 
 
 
-def create_ipv6(rule):
+def create_ipv6(rule, message_type=ANNOUNCE):
     """
     create ExaBpg text message for IPv6 rule
     @param rule models.Flowspec6
@@ -37,10 +40,10 @@ def create_ipv6(rule):
         'flags': flags
     }
 
-    return create_message(rule, spec)
+    return create_message(rule, spec, message_type)
 
 
-def create_rtbh(rule):
+def create_rtbh(rule, message_type=ANNOUNCE):
     """
     create RTBH message in ExaBgp text format
     route 10.10.10.1/32 next-hop 192.0.2.1 community 65001:666 no-export
@@ -56,7 +59,7 @@ def create_rtbh(rule):
 
 
 
-def create_message(rule, ipv_specific):
+def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     """
     create text message using format
 
@@ -70,6 +73,11 @@ def create_message(rule, ipv_specific):
 
 
     """
+    action = 'announce'
+    if message_type == WITHDRAW:
+        action = 'withdraw'
+
+
     source = 'source {}'.format(rule.source) if rule.source else ''
     source += '/{};'.format(rule.source_mask if rule.source_mask else 32) if rule.source else ''
 
@@ -96,7 +104,8 @@ def create_message(rule, ipv_specific):
 
     command = '{};'.format(rule.action.command)
     
-    message_body = 'announce flow route {{ match {{ {match_body} }} then {{ {command} }} }}'.format(
+    message_body = '{action} flow route {{ match {{ {match_body} }} then {{ {command} }} }}'.format(
+        action=action,
         match_body=match_body,
         command=command)
     

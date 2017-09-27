@@ -202,17 +202,23 @@ def delete_rule(rule_type, rule_id):
     data_forms = {1: forms.RTBHForm, 4: forms.IPv4Form, 6: forms.IPv6Form}
     data_templates = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
     data_tables = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
+    route_models = {1: messages.create_rtbh, 4: messages.create_ipv4, 6: messages.create_ipv6}
 
     model_name = data_models[rule_type]
     form_name = data_forms[rule_type]
+    route_model = route_models[rule_type]
     
     model = db.session.query(model_name).get(rule_id)
+    
+    #withdraw route
+    route = route_model(model, messages.WITHDRAW)
+    withdraw_route(route)
+
+    #delete from db
     db.session.delete(model)
     db_commit(db)
     flash(u'Rule deleted', 'alert-success')
-    #announce routes
-    announce_routes()
-
+    
     return redirect(url_for('index'))
 
 
@@ -615,6 +621,12 @@ def announce_routes():
     for message in output:
         requests.post('http://localhost:5000/', data = {'command':message})
 
+
+def withdraw_route(route):
+    """
+    withdraw deleted route
+    """
+    requests.post('http://localhost:5000/', data = {'command':route})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
