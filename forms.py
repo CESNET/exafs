@@ -239,14 +239,14 @@ class IPv6Form(FlaskForm):
     )
 
     source_mask = IntegerField('Source prefix length (bytes)',
-        validators=[Optional(), NumberRange(min=0, max=32, message='invalid prefix value (0-32)')])
+        validators=[Optional(), NumberRange(min=64, max=128, message='invalid prefix value (64-128)')])
 
     dest = TextField('Destination address',
         validators=[Optional(),  IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
     )
     
     dest_mask = IntegerField('Destination prefix length (bytes)',
-        validators=[Optional(), NumberRange(min=0, max=32, message='invalid prefix value (0-32)')])
+        validators=[Optional(), NumberRange(min=64, max=128, message='invalid prefix value (64-128)')])
 
     next_header = SelectField('Next Header',
         choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],

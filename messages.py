@@ -4,7 +4,8 @@ from flowspec import MAX_PORT, MAX_PACKET
 
 ANNOUNCE = 1
 WITHDRAW = 2
-
+IPV4_DEFMASK = 32
+IPV6_DEFMASK = 128
 
 def create_ipv4(rule, message_type=ANNOUNCE):
     """
@@ -19,7 +20,8 @@ def create_ipv4(rule, message_type=ANNOUNCE):
 
     spec = {
         'protocol': protocol,
-        'flags': flags
+        'flags': flags,
+        'mask': IPV4_DEFMASK
     }
 
     return create_message(rule, spec, message_type)
@@ -39,6 +41,7 @@ def create_ipv6(rule, message_type=ANNOUNCE):
 
     spec = {
         'protocol': protocol,
+        'mask': IPV6_DEFMASK,
         'flags': flags
     }
 
@@ -57,11 +60,11 @@ def create_rtbh(rule, message_type=ANNOUNCE):
     if rule.ipv4:
         source = '{}'.format(rule.ipv4) if rule.ipv4 else ''
         source += '/{}'.format(
-            rule.ipv4_mask if rule.ipv4_mask else 32) if rule.ipv4 else ''
+            rule.ipv4_mask if rule.ipv4_mask else IPV4_DEFMASK) if rule.ipv4 else ''
     if rule.ipv6:
         source = '{}'.format(rule.ipv6) if rule.ipv6 else ''
         source += '/{}'.format(
-            rule.ipv6_mask if rule.ipv6_mask else 32) if rule.ipv6 else ''
+            rule.ipv6_mask if rule.ipv6_mask else IPV6_DEFMASK) if rule.ipv6 else ''
 
     return "{action} route {source} next-hop 192.0.2.1 community {community} no-export".format(
         action=action,
@@ -89,13 +92,13 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
 
     source = 'source {}'.format(rule.source) if rule.source else ''
     source += '/{};'.format(
-        rule.source_mask if rule.source_mask else 32) if rule.source else ''
+        rule.source_mask if rule.source_mask else ipv_specific['mask']) if rule.source else ''
 
     source_port = 'source-port {};'.format(
         trps(rule.source_port)) if rule.source_port else ''
 
     dest = ' destination {}'.format(rule.dest) if rule.dest else ''
-    dest += '/{};'.format(rule.dest_mask if rule.dest_mask else 32) if rule.dest else ''
+    dest += '/{};'.format(rule.dest_mask if rule.dest_mask else ipv_specific['mask']) if rule.dest else ''
 
     dest_port = 'destination-port {};'.format(
         trps(rule.dest_port)) if rule.dest_port else ''

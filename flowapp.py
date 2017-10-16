@@ -1,4 +1,4 @@
-from flask import Flask, session, redirect, render_template, request, url_for, flash, session
+from flask import Flask, session, redirect, render_template, request, url_for, flash, session, abort
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
@@ -60,6 +60,18 @@ def auth_required(f):
             return redirect('/login')
         return f(*args, **kwargs)
     return decorated
+
+def localhost_only(f):
+    """
+    auth required decorator
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if request.remote_addr != '127.0.0.1':
+            abort(403)  # Forbidden
+        return f(*args, **kwargs)
+    return decorated
+
 
 
 @ext.login_handler
@@ -142,6 +154,12 @@ def index():
     
     return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
 
+@app.route('/announce_all', methods=['GET'])
+@localhost_only
+def announce_all():
+    print(request.remote_addr)
+    announce_routes()
+    return ' '
 
 
 
