@@ -67,7 +67,7 @@ def localhost_only(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        if request.remote_addr != '127.0.0.1':
+        if request.remote_addr != '147.230.18.127':
             abort(403)  # Forbidden
         return f(*args, **kwargs)
     return decorated
