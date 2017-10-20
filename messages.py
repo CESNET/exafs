@@ -61,15 +61,20 @@ def create_rtbh(rule, message_type=ANNOUNCE):
         source = '{}'.format(rule.ipv4) if rule.ipv4 else ''
         source += '/{}'.format(
             rule.ipv4_mask if rule.ipv4_mask else IPV4_DEFMASK) if rule.ipv4 else ''
+        nexthop = '192.0.2.1'
+
     if rule.ipv6:
         source = '{}'.format(rule.ipv6) if rule.ipv6 else ''
         source += '/{}'.format(
             rule.ipv6_mask if rule.ipv6_mask else IPV6_DEFMASK) if rule.ipv6 else ''
+        nexthop = '100::1'
 
-    return "{action} route {source} next-hop 192.0.2.1 community {community} no-export".format(
+
+    return "{action} route {source} next-hop {nexthop} community [{community} no-export]".format(
         action=action,
         source=source,
-        community=rule.community)
+        community=rule.community,
+        nexthop=nexthop)
 
 
 def create_message(rule, ipv_specific, message_type=ANNOUNCE):
