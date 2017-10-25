@@ -32,7 +32,7 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 * systemctl start mariadb
 * mysql_secure_installation
 * systemctl enable mariadb
-* pip install virtualenv
+* pip install virtualenv honcho uwsgi
 * mysql -p
 
 #### As mysql root
@@ -75,11 +75,24 @@ ProxyPass / uwsgi://127.0.0.1:8000/
    `systemctl enable supervisord`
 7. copy flowspec.conf to supervisord.conf
 
+#### As deploy user
+
+* cd ~/www
+* source venv/bin/activate
+* honcho export -a myapp supervisord /etc/supervisor/conf.d
+* v /etc/supervisor/conf.d change user to deploy
+
 
 #### As root
 * mkdir /var/log/flowspec/
 * systemctl restart httpd
 * systemctl restart supervisord
+
+
+## Emergency start as deploy user
+* cd ~/www
+* source venv/bin/activate
+* honcho start &
 
 ## Devel config
 
@@ -88,3 +101,8 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 '''
 docker run --name=flowspec-db --env="MYSQL_ROOT_PASSWORD=my-secret-pw"  --volume="/home/albert/work/flowspec/datadir:/var/lib/mysql" -p 3306:3306 --restart=no mariadb:5.5 
 '''
+
+### @TODO
+
+- neexistující uživatel vyvolá 500 - potřeba ošetřit 
+- doinstalovat guarda / service pro restart serveru
