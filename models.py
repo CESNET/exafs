@@ -280,6 +280,7 @@ def insert_initial_roles(*args, **kwargs):
 @event.listens_for(Organization.__table__, 'after_create')
 def insert_initial_organizations(*args, **kwargs):
     db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16\n2001:718:1c01::/48'))
+    db.session.add(Organization(name='Cesnet', arange='147.230.0.0/16\n2001:718:1c01::/48'))
 
     db.session.commit()
 

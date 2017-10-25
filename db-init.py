@@ -32,7 +32,8 @@ def create_app():
 
         users = [
                 {"name": "jiri.vrany@tul.cz", "role_id": 3, "org_id": 1},
-                {"name": "petr.adamec@tul.cz", "role_id": 3, "org_id": 1} 
+                {"name": "petr.adamec@tul.cz", "role_id": 3, "org_id": 1},
+                {"name": "adamec@cesnet.cz", "role_id": 3, "org_id": 2} 
             ]
         print "#: inserting users"
         insert_users(users)     
