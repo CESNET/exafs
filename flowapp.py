@@ -466,7 +466,6 @@ def users():
 @auth_required
 def organizations():
     orgs = db.session.query(models.Organization).all()
-    print orgs
     return render_template('pages/orgs.j2', orgs=orgs)
 
 
