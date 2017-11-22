@@ -639,6 +639,12 @@ def announce_routes():
         requests.post('http://localhost:5000/', data = {'command':message})
 
 
+@app.errorhandler(500)
+def internal_error(exception):
+    app.logger.error(exception)
+    return render_template('errors/home.j2'), 500
+
+
 def withdraw_route(route):
     """
     withdraw deleted route
