@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import Flask, session, redirect, render_template, request, url_for, flash, session, abort
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
@@ -415,7 +417,7 @@ def user():
             flash('User saved')
             return redirect(url_for('users'))
         else:
-            flash('User {} already exists'.format(
+            flash(u'User {} already exists'.format(
                 form.email.data), 'alert-danger')
 
     action_url = url_for('user')
@@ -441,7 +443,7 @@ def edit_user(user_id):
     action_url = url_for('edit_user', user_id=user_id)
 
 
-    return render_template('forms/simple_form.j2', title="Editing {}".format(user.email), form=form, action_url=action_url)
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(user.email), form=form, action_url=action_url)
 
 @app.route('/user/delete/<int:user_id>', methods=['GET'])
 @auth_required
@@ -484,7 +486,7 @@ def organization():
             flash('Organization saved')
             return redirect(url_for('organizations'))
         else:
-            flash('Organization {} already exists'.format(
+            flash(u'Organization {} already exists'.format(
                 form.name.data), 'alert-danger')
 
     action_url = url_for('organization')
@@ -504,7 +506,7 @@ def edit_organization(org_id):
         return redirect(url_for('organizations'))
 
     action_url = url_for('edit_organization', org_id=org.id)
-    return render_template('forms/simple_form.j2', title="Editin {}".format(org.name), form=form, action_url=action_url)
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(org.name), form=form, action_url=action_url)
 
 
 @app.route('/organization/delete/<int:org_id>', methods=['GET'])
@@ -541,7 +543,7 @@ def action():
             flash('Action saved', 'alert-success')
             return redirect(url_for('actions'))
         else:
-            flash('Action {} already exists'.format(
+            flash(u'Action {} already exists'.format(
                 form.name.data), 'alert-danger')
 
     action_url = url_for('action')
@@ -561,7 +563,7 @@ def edit_action(action_id):
         return redirect(url_for('actions'))
 
     action_url = url_for('edit_action', action_id=action.id)
-    return render_template('forms/simple_form.j2', title="Editin {}".format(action.name), form=form, action_url=action_url)
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(action.name), form=form, action_url=action_url)
 
 
 @app.route('/action/delete/<int:action_id>', methods=['GET'])
