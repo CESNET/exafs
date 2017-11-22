@@ -646,4 +646,4 @@ def withdraw_route(route):
     requests.post('http://localhost:5000/', data = {'command':route})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080, debug=True)
