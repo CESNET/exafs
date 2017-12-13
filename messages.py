@@ -15,7 +15,7 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     """
     protocol = 'protocol ={};'.format(rule.protocol) if rule.protocol else ''
     flagstring = rule.flags.replace(";", " ")
-    flags = 'tcp-flags [{}];'.format(
+    flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
 
     spec = {
@@ -36,7 +36,7 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     protocol = 'next-header ={};'.format(
         rule.next_header) if rule.next_header else ''
     flagstring = rule.flags.replace(";", " ")
-    flags = 'tcp-flags [{}];'.format(
+    flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.next_header == 'tcp' else ''
 
     spec = {
@@ -81,9 +81,10 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     """
     create text message using format
 
-    tcp-flagy, pokud je jich vice, musi byt zadane v hranate zavorce.
-    flow route { match { source 147.230.17.6/32;protocol =tcp;tcp-flags [=fin
-    =syn];destination-port =3128 >=8080&<=8088;} then {rate-limit 10000; } }
+    tcp-flagy
+    
+    flow route { match { source 147.230.17.6/32;protocol =tcp;tcp-flags fin
+    syn;destination-port =3128 >=8080&<=8088;} then {rate-limit 10000; } }
 
     announce flow route source 4.0.0.0/24 destination 127.0.0.0/24 protocol 
     [ udp ] source-port [ =53 ] destination-port [ =80 ] 

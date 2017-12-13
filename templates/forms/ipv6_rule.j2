@@ -15,7 +15,7 @@
           {% if  3 in session['user_role_ids'] %}
             {{ render_field(form.source_mask) }}
           {% else %}
-            {{ render_field(form.source_mask, disabled=True, value="32") }}
+            {{ render_field(form.source_mask, disabled=True, value="128") }}
           {% endif %}
         </div>
       </div>
@@ -27,7 +27,7 @@
           {% if  3 in session['user_role_ids'] %}
             {{ render_field(form.dest_mask) }}
           {% else %}
-            {{ render_field(form.dest_mask, disabled=True, value="32") }}
+            {{ render_field(form.dest_mask, disabled=True, value="128") }}
           {% endif %}
           
         </div>
