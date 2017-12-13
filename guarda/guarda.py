@@ -6,4 +6,4 @@ import time
 # requests.get('https://127.0.0.1/announce_all')
 time.sleep(10)
 # replace URL 
-requests.get('https://flowspec.is.tul.cz/announce_all')
+requests.get('https://exafs.cesnet.cz/announce_all')
