@@ -63,6 +63,7 @@ def auth_required(f):
         return f(*args, **kwargs)
     return decorated
 
+
 def localhost_only(f):
     """
     auth required decorator
@@ -73,7 +74,6 @@ def localhost_only(f):
             abort(403)  # Forbidden
         return f(*args, **kwargs)
     return decorated
-
 
 
 @ext.login_handler
@@ -97,6 +97,8 @@ def login(user_info):
 
 @app.route('/logout')
 def logout():
+    session['user_email'] = False
+    session['user_id'] = False
     session.clear()
     return redirect('https://flowspec.is.tul.cz/Shibboleth.sso/Logout?return=https://shibbo.tul.cz/idp/profile/Logout')
 
@@ -115,7 +117,7 @@ def get_user():
 
 def check_auth(email):
     """
-    This function is called to check if a username /
+    This function is every time when someone accessing the endpoint /
     password combination is valid.
     """
     exist = False
@@ -126,6 +128,7 @@ def check_auth(email):
         return exist
     else:
         # no login
+        print('LOCALHOST login')
         session['user_email'] = 'jiri.vrany@tul.cz'
         session['user_id'] = 1
         session['user_roles'] = ['admin']
@@ -156,13 +159,13 @@ def index():
     
     return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
 
+
 @app.route('/announce_all', methods=['GET'])
 @localhost_only
 def announce_all():
     print(request.remote_addr)
     announce_routes()
     return ' '
-
 
 
 @app.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
@@ -214,7 +217,6 @@ def reactivate_rule(rule_type, rule_id):
     return render_template(data_templates[rule_type], form=form, action_url=action_url)
 
 
-
 @app.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
 @auth_required
 def delete_rule(rule_type, rule_id):
@@ -240,7 +242,6 @@ def delete_rule(rule_type, rule_id):
     flash(u'Rule deleted', 'alert-success')
     
     return redirect(url_for('index'))
-
 
 
 @app.route('/add_ipv4_rule', methods=['GET', 'POST'])
@@ -346,7 +347,6 @@ def ipv6_rule():
 
 
     return render_template('forms/ipv6_rule.j2', form=form, action_url=url_for('ipv6_rule'))
-
 
 
 @app.route('/add_rtbh_rule', methods=['GET', 'POST'])
