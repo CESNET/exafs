@@ -67,8 +67,7 @@
               </ul>
             </li>
             {% endif %}
-            <li><a href="/logout">Logout</a></li>
-           
+            
           </ul>
           <p class="navbar-text">Logged in as {{ session['user_email'] }}, role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_org']|join(", ") }}</p> 
         </div><!--/.nav-collapse -->
