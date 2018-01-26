@@ -1,7 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField
-from wtforms.validators import DataRequired, EqualTo, Length, Email, IPAddress, NumberRange, Optional, ValidationError, \
-    Required
+from wtforms.validators import DataRequired, Length, Email, IPAddress, NumberRange, Optional, ValidationError
 import flowspec
 import ipaddress
 
@@ -150,7 +149,7 @@ class RTBHForm(FlaskForm):
 
     community = SelectField('Community',
                             choices=[('2852:666', '2852:666'), ('40965:666', '40965:666'), ('xxxxx:666', 'xxxxx:666')],
-                            validators=[Required()])
+                            validators=[DataRequired()])
 
     expires = StringField(
         'Expires'
@@ -181,7 +180,7 @@ class IPv4Form(FlaskForm):
 
     protocol = SelectField('Protocol',
                            choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
-                           validators=[Required()])
+                           validators=[DataRequired()])
 
     flags = SelectMultipleField('TCP flag(s)',
                                 choices=TCP_FLAGS,
@@ -252,7 +251,7 @@ class IPv6Form(FlaskForm):
 
     next_header = SelectField('Next Header',
                               choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
-                              validators=[Required()])
+                              validators=[DataRequired()])
 
     flags = SelectMultipleField('TCP flag(s)',
                                 choices=TCP_FLAGS,
