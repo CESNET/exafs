@@ -1,4 +1,5 @@
 import re
+import ipaddress
 
 NUMBER = re.compile(r'^\d+$', re.IGNORECASE)
 RANGE = re.compile(r'^(\d+)-(\d+)$', re.IGNORECASE)
@@ -9,6 +10,36 @@ LOWER = re.compile(r'<[=]?(\d+)$', re.IGNORECASE)
 MAX_PORT = 65535
 MAX_PACKET = 9216
 
+
+def adress_in_range(address, net_ranges):
+    """
+    check if given ip address is in user network ranges
+    :param address: string ip_address
+    :param net_ranges: list of network ranges
+    :return: boolean
+    """
+    result = False
+    try:
+        for adr_range in net_ranges:
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+    except ValueError:
+        return False
+
+    return result
+
+
+def filer_rules(net_ranges, rules):
+    """
+    Return only rules matching user net ranges
+    :param net_ranges: list of network ranges
+    :param rules: list of rules (ipv4 or ipv6
+    :return: filtered list of rules
+    """
+    return [rule for rule in rules if
+            adress_in_range(rule.source, net_ranges)
+            or adress_in_range(rule.dest, net_ranges)]
+
+
 def translate_sequence(sequence, max_val=MAX_PORT):
     """
     translate command sequence sepparated by ; to ExaBGP command format
@@ -18,6 +49,7 @@ def translate_sequence(sequence, max_val=MAX_PORT):
     """
     result = [to_exabgp_string(item, max_val) for item in sequence.split(";") if item]
     return " ".join(result)
+
 
 def to_exabgp_string(value_string, max_val):
     """
@@ -60,6 +92,6 @@ def check_limit(value, max_value):
     """
     value = int(value)
     if value > max_value:
-        raise ValueError("Invalid value number: {} is too big. Max is {}.".format(value, max_value))        
+        raise ValueError("Invalid value number: {} is too big. Max is {}.".format(value, max_value))
     else:
         return value

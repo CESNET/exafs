@@ -12,6 +12,8 @@ import config
 import forms
 from models import db
 import models
+import flowspec
+
 
 app = Flask('Flowspec')
 # Add a secret key for encrypting session information
@@ -60,6 +62,34 @@ def auth_required(f):
     return decorated
 
 
+def admin_required(f):
+    """
+    decorator for admin only endpoints
+    """
+
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 3 not in session['user_role_ids']:
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+def user_or_admin_required(f):
+    """
+    decorator for admin/user endpoints
+    """
+
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not all(i > 1 for i in session['user_role_ids']):
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+
+    return decorated
+
+
 def localhost_only(f):
     """
     auth required decorator
@@ -67,7 +97,7 @@ def localhost_only(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if request.remote_addr != '147.230.18.127':
+        if request.remote_addr != app.config.get('LOCAL_IP'):
             abort(403)  # Forbidden
         return f(*args, **kwargs)
 
@@ -89,6 +119,7 @@ def login(user_info):
         session['user_org'] = [org.name for org in user.organization.all()]
         session['user_role_ids'] = [role.id for role in user.role.all()]
         session['user_org_ids'] = [org.id for org in user.organization.all()]
+        session['can_edit'] = all(i > 1 for i in session['user_role_ids'])
 
         return redirect('/')
 
@@ -131,8 +162,9 @@ def check_auth(email):
         session['user_id'] = 1
         session['user_roles'] = ['admin']
         session['user_org'] = ['TU Liberec']
-        session['user_role_ids'] = [2]
+        session['user_role_ids'] = [1]
         session['user_org_ids'] = [1]
+        session['can_edit'] = all(i > 1 for i in session['user_role_ids'])
         return True
 
 
@@ -145,26 +177,25 @@ def not_found(error):
 @app.route('/')
 @auth_required
 def index():
+    print("USER ROLES: ", session.get('user_role_ids'))
+    net_ranges = models.get_user_nets(session['user_id'])
     rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
-    rules = {4: rules4, 6: rules6}
-    print(session['user_role_ids'])
+    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
     # only admin can see all the rules
     if 3 not in session['user_role_ids']:
-        net_ranges = models.get_user_nets(session['user_id'])
-        print(net_ranges)
-        print(rules4)
-        rules4 = [rule for rule in rules4 if
-                  models.adress_in_range(rule.source, net_ranges)
-                  or models.adress_in_range(rule.dest, net_ranges)]
-        print(rules4)
+        rules4 = flowspec.filer_rules(net_ranges, rules4)
+        rules6 = flowspec.filer_rules(net_ranges, rules6)
+        rules_rtbh = flowspec.filer_rules(net_ranges, rules_rtbh)
 
+    rules = {4: rules4, 6: rules6}
     my_actions = db.session.query(models.Action).all()
     my_actions = {act.id: act for act in my_actions}
 
-    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
-
-    return render_template('pages/home.j2', rules=rules, actions=my_actions, rules_rtbh=rules_rtbh,
+    return render_template('pages/home.j2',
+                           rules=rules,
+                           actions=my_actions,
+                           rules_rtbh=rules_rtbh,
                            today=datetime.now())
 
 
@@ -178,6 +209,7 @@ def announce_all():
 
 @app.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
 @auth_required
+@user_or_admin_required
 def reactivate_rule(rule_type, rule_id):
     data_models = {1: models.RTBH, 4: models.Flowspec4, 6: models.Flowspec6}
     data_forms = {1: forms.RTBHForm, 4: forms.IPv4Form, 6: forms.IPv6Form}
@@ -225,6 +257,7 @@ def reactivate_rule(rule_type, rule_id):
 
 @app.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
 @auth_required
+@user_or_admin_required
 def delete_rule(rule_type, rule_id):
     data_models = {1: models.RTBH, 4: models.Flowspec4, 6: models.Flowspec6}
     data_forms = {1: forms.RTBHForm, 4: forms.IPv4Form, 6: forms.IPv6Form}
@@ -252,6 +285,7 @@ def delete_rule(rule_type, rule_id):
 
 @app.route('/add_ipv4_rule', methods=['GET', 'POST'])
 @auth_required
+@user_or_admin_required
 def ipv4_rule():
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv4Form(request.form)
@@ -302,6 +336,7 @@ def ipv4_rule():
 
 @app.route('/add_ipv6_rule', methods=['GET', 'POST'])
 @auth_required
+@user_or_admin_required
 def ipv6_rule():
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv6Form(request.form)
@@ -350,6 +385,7 @@ def ipv6_rule():
 
 @app.route('/add_rtbh_rule', methods=['GET', 'POST'])
 @auth_required
+@user_or_admin_required
 def rtbh_rule():
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.RTBHForm(request.form)
@@ -396,6 +432,7 @@ def rtbh_rule():
 
 @app.route('/user', methods=['GET', 'POST'])
 @auth_required
+@admin_required
 def user():
     form = forms.UserForm(request.form)
     form.role_ids.choices = [(g.id, g.name)
@@ -421,6 +458,7 @@ def user():
 
 @app.route('/user/edit/<int:user_id>', methods=['GET', 'POST'])
 @auth_required
+@admin_required
 def edit_user(user_id):
     user = db.session.query(models.User).get(user_id)
     form = forms.UserForm(request.form, obj=user)
@@ -443,6 +481,7 @@ def edit_user(user_id):
 
 @app.route('/user/delete/<int:user_id>', methods=['GET'])
 @auth_required
+@admin_required
 def delete_user(user_id):
     user = db.session.query(models.User).get(user_id)
     username = user.email
@@ -455,6 +494,7 @@ def delete_user(user_id):
 
 @app.route('/users')
 @auth_required
+@admin_required
 def users():
     users = models.User.query.all()
     return render_template('pages/users.j2', users=users)
@@ -462,6 +502,7 @@ def users():
 
 @app.route('/organizations')
 @auth_required
+@admin_required
 def organizations():
     orgs = db.session.query(models.Organization).all()
     return render_template('pages/orgs.j2', orgs=orgs)
@@ -469,6 +510,7 @@ def organizations():
 
 @app.route('/organization', methods=['GET', 'POST'])
 @auth_required
+@admin_required
 def organization():
     form = forms.OrganizationForm(request.form)
 
@@ -492,6 +534,7 @@ def organization():
 
 @app.route('/organization/edit/<int:org_id>', methods=['GET', 'POST'])
 @auth_required
+@admin_required
 def edit_organization(org_id):
     org = db.session.query(models.Organization).get(org_id)
     form = forms.OrganizationForm(request.form, obj=org)
@@ -509,6 +552,7 @@ def edit_organization(org_id):
 
 @app.route('/organization/delete/<int:org_id>', methods=['GET'])
 @auth_required
+@admin_required
 def delete_organization(org_id):
     org = db.session.query(models.Organization).get(org_id)
     aname = org.name
@@ -521,6 +565,7 @@ def delete_organization(org_id):
 
 @app.route('/actions')
 @auth_required
+@admin_required
 def actions():
     actions = db.session.query(models.Action).all()
     return render_template('pages/actions.j2', actions=actions)
@@ -528,6 +573,7 @@ def actions():
 
 @app.route('/action', methods=['GET', 'POST'])
 @auth_required
+@admin_required
 def action():
     form = forms.ActionForm(request.form)
 
@@ -550,6 +596,7 @@ def action():
 
 @app.route('/action/edit/<int:action_id>', methods=['GET', 'POST'])
 @auth_required
+@admin_required
 def edit_action(action_id):
     action = db.session.query(models.Action).get(action_id)
     form = forms.ActionForm(request.form, obj=action)
@@ -567,6 +614,7 @@ def edit_action(action_id):
 
 @app.route('/action/delete/<int:action_id>', methods=['GET'])
 @auth_required
+@admin_required
 def delete_action(action_id):
     action = db.session.query(models.Action).get(action_id)
     aname = action.name
@@ -579,6 +627,7 @@ def delete_action(action_id):
 
 @app.route('/export')
 @auth_required
+@admin_required
 def export():
     rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()

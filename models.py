@@ -329,13 +329,3 @@ def get_user_nets(user_id):
     return result
 
 
-def adress_in_range(address, net_ranges):
-    result = False
-    try:
-        for adr_range in net_ranges:
-            print(address, adr_range)
-            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
-    except ValueError:
-        return False
-
-    return result

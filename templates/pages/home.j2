@@ -49,12 +49,14 @@
                 {% endif %}
             </td>
             <td>
-            <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
-                 <span class="glyphicon glyphicon-time"></span>
-            </a>
-            <a class="btn btn-danger" href="{{ url_for('delete_rule', rule_type=key, rule_id=rule.id) }}" role="button">
-                 <span class="glyphicon glyphicon-remove"></span>
-            </a>
+            {% if session['can_edit'] %}
+                <a class="btn btn-info" href="{{ url_for('reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
+                     <span class="glyphicon glyphicon-time"></span>
+                </a>
+                <a class="btn btn-danger" href="{{ url_for('delete_rule', rule_type=key, rule_id=rule.id) }}" role="button">
+                     <span class="glyphicon glyphicon-remove"></span>
+                </a>
+            {% endif %}
             </td>
             </tr>
         {% endfor %}
