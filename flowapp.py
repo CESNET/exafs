@@ -1,24 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, session, redirect, render_template, request, url_for, flash, session, abort
+from flask import Flask, redirect, render_template, request, url_for, flash, session, abort
 from flask_sso import SSO
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from functools import wraps
 from os import environ
-from werkzeug.wrappers import Response
-import sys
 import requests
 
 import messages
 import config
 import forms
-
+from models import db
+import models
 
 app = Flask('Flowspec')
 # Add a secret key for encrypting session information
 app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
-
 
 # Map SSO attributes from ADFS to session keys under session['user']
 #: Default attribute map
@@ -41,14 +38,11 @@ else:
 app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
 app.config.setdefault('SSO_LOGIN_URL', '/login')
 
-
 # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
 ext = SSO(app=app)
 
 # Define the database object
-from models import db
 db.init_app(app)
-import models
 
 
 # auth atd.
@@ -56,11 +50,13 @@ def auth_required(f):
     """
     auth required decorator
     """
+
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
             return redirect('/login')
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -68,11 +64,13 @@ def localhost_only(f):
     """
     auth required decorator
     """
+
     @wraps(f)
     def decorated(*args, **kwargs):
         if request.remote_addr != '147.230.18.127':
             abort(403)  # Forbidden
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -100,7 +98,7 @@ def logout():
     session['user_email'] = False
     session['user_id'] = False
     session.clear()
-    return redirect('https://flowspec.is.tul.cz/Shibboleth.sso/Logout?return=https://shibbo.tul.cz/idp/profile/Logout')
+    return redirect(app.config.get('LOGOUT_URL'))
 
 
 def get_user():
@@ -133,7 +131,7 @@ def check_auth(email):
         session['user_id'] = 1
         session['user_roles'] = ['admin']
         session['user_org'] = ['TU Liberec']
-        session['user_role_ids'] = [3]
+        session['user_role_ids'] = [2]
         session['user_org_ids'] = [1]
         return True
 
@@ -147,17 +145,27 @@ def not_found(error):
 @app.route('/')
 @auth_required
 def index():
-
     rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
     rules = {4: rules4, 6: rules6}
+    print(session['user_role_ids'])
+    # only admin can see all the rules
+    if 3 not in session['user_role_ids']:
+        net_ranges = models.get_user_nets(session['user_id'])
+        print(net_ranges)
+        print(rules4)
+        rules4 = [rule for rule in rules4 if
+                  models.adress_in_range(rule.source, net_ranges)
+                  or models.adress_in_range(rule.dest, net_ranges)]
+        print(rules4)
 
-    actions = db.session.query(models.Action).all()
-    actions = {action.id: action for action in actions}
+    my_actions = db.session.query(models.Action).all()
+    my_actions = {act.id: act for act in my_actions}
 
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
-    
-    return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
+
+    return render_template('pages/home.j2', rules=rules, actions=my_actions, rules_rtbh=rules_rtbh,
+                           today=datetime.now())
 
 
 @app.route('/announce_all', methods=['GET'])
@@ -178,32 +186,32 @@ def reactivate_rule(rule_type, rule_id):
 
     model_name = data_models[rule_type]
     form_name = data_forms[rule_type]
-    
+
     model = db.session.query(model_name).get(rule_id)
     form = form_name(request.form, obj=model)
     form.net_ranges = models.get_user_nets(session['user_id'])
 
     if rule_type > 2:
-        form.action.choices = [(g.id, g.name) 
-                                for g in db.session.query(models.Action).order_by('name')]
+        form.action.choices = [(g.id, g.name)
+                               for g in db.session.query(models.Action).order_by('name')]
         form.action.data = model.action_id
 
     if rule_type == 4:
-        form.protocol.data = model.protocol        
+        form.protocol.data = model.protocol
 
     if rule_type == 6:
-        form.next_header.data = model.next_header    
+        form.next_header.data = model.next_header
 
-    #do not need to validate - all is readonly    
+    # do not need to validate - all is readonly
     if request.method == 'POST':
         model.expires = models.webpicker_to_datetime(form.expires.data)
         db_commit(db)
         flash(u'Rule reactivated', 'alert-success')
-        #announce routes
+        # announce routes
         announce_routes()
         return redirect(url_for('index'))
     else:
-        flash_errors(form)        
+        flash_errors(form)
 
     form.expires.data = models.datetime_to_webpicker(model.expires)
     for field in form:
@@ -211,8 +219,6 @@ def reactivate_rule(rule_type, rule_id):
             field.render_kw = {'disabled': 'disabled'}
 
     action_url = url_for('reactivate_rule', rule_type=rule_type, rule_id=rule_id)
-
-    
 
     return render_template(data_templates[rule_type], form=form, action_url=action_url)
 
@@ -229,37 +235,35 @@ def delete_rule(rule_type, rule_id):
     model_name = data_models[rule_type]
     form_name = data_forms[rule_type]
     route_model = route_models[rule_type]
-    
+
     model = db.session.query(model_name).get(rule_id)
-    
-    #withdraw route
+
+    # withdraw route
     route = route_model(model, messages.WITHDRAW)
     withdraw_route(route)
 
-    #delete from db
+    # delete from db
     db.session.delete(model)
     db_commit(db)
     flash(u'Rule deleted', 'alert-success')
-    
+
     return redirect(url_for('index'))
 
 
 @app.route('/add_ipv4_rule', methods=['GET', 'POST'])
 @auth_required
 def ipv4_rule():
-
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv4Form(request.form)
 
-    #add values to form instance
+    # add values to form instance
     form.action.choices = [(g.id, g.name)
-                             for g in db.session.query(models.Action).order_by('name')]
+                           for g in db.session.query(models.Action).order_by('name')]
 
     form.net_ranges = net_ranges
 
     if request.method == 'POST' and form.validate():
 
-        
         model = models.Flowspec4(
             source=form.source.data,
             source_mask=form.source_mask.data,
@@ -279,9 +283,9 @@ def ipv4_rule():
         db_commit(db)
         flash(u'IPv4 Rule saved', 'alert-success')
 
-        #announce routes
+        # announce routes
         announce_routes()
-        return redirect(url_for('index')) 
+        return redirect(url_for('index'))
     else:
         for field, errors in form.errors.items():
             for error in errors:
@@ -290,9 +294,8 @@ def ipv4_rule():
                     error
                 ))
 
-    default_expires = datetime.now() + timedelta(days=7) 
+    default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = models.datetime_to_webpicker(default_expires)
-
 
     return render_template('forms/ipv4_rule.j2', form=form, action_url=url_for('ipv4_rule'))
 
@@ -300,15 +303,12 @@ def ipv4_rule():
 @app.route('/add_ipv6_rule', methods=['GET', 'POST'])
 @auth_required
 def ipv6_rule():
-
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.IPv6Form(request.form)
     form.action.choices = [(g.id, g.name)
-                             for g in db.session.query(models.Action).order_by('name')]
+                           for g in db.session.query(models.Action).order_by('name')]
 
-    
     form.net_ranges = net_ranges
-
 
     if request.method == 'POST' and form.validate():
 
@@ -331,9 +331,9 @@ def ipv6_rule():
         db_commit(db)
         flash(u'IPv6 Rule saved', 'alert-success')
 
-        #announce routes
+        # announce routes
         announce_routes()
-        return redirect(url_for('index')) 
+        return redirect(url_for('index'))
     else:
         for field, errors in form.errors.items():
             for error in errors:
@@ -342,9 +342,8 @@ def ipv6_rule():
                     error
                 ))
 
-    default_expires = datetime.now() + timedelta(days=7) 
+    default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = models.datetime_to_webpicker(default_expires)
-
 
     return render_template('forms/ipv6_rule.j2', form=form, action_url=url_for('ipv6_rule'))
 
@@ -352,17 +351,15 @@ def ipv6_rule():
 @app.route('/add_rtbh_rule', methods=['GET', 'POST'])
 @auth_required
 def rtbh_rule():
-
     net_ranges = models.get_user_nets(session['user_id'])
     form = forms.RTBHForm(request.form)
-    
-    #add validator to instance but only once                             
+
+    # add validator to instance but only once
     if len(form.ipv4.validators) == 2:
         form.ipv4.validators.append(forms.NetInRange(net_ranges))
 
     if len(form.ipv6.validators) == 2:
         form.ipv6.validators.append(forms.NetInRange(net_ranges))
-    
 
     if request.method == 'POST' and form.validate():
 
@@ -380,9 +377,9 @@ def rtbh_rule():
         db_commit(db)
         flash(u'RTBH Rule saved', 'alert-success')
 
-        #announce routes
+        # announce routes
         announce_routes()
-        return redirect(url_for('index')) 
+        return redirect(url_for('index'))
     else:
         for field, errors in form.errors.items():
             for error in errors:
@@ -391,9 +388,8 @@ def rtbh_rule():
                     error
                 ))
 
-    default_expires = datetime.now() + timedelta(days=7) 
+    default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = models.datetime_to_webpicker(default_expires)
-
 
     return render_template('forms/rtbh_rule.j2', form=form, action_url=url_for('rtbh_rule'))
 
@@ -401,7 +397,6 @@ def rtbh_rule():
 @app.route('/user', methods=['GET', 'POST'])
 @auth_required
 def user():
-
     form = forms.UserForm(request.form)
     form.role_ids.choices = [(g.id, g.name)
                              for g in db.session.query(models.Role).order_by('name')]
@@ -442,8 +437,9 @@ def edit_user(user_id):
     form.org_ids.data = [org.id for org in user.organization]
     action_url = url_for('edit_user', user_id=user_id)
 
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(user.email), form=form,
+                           action_url=action_url)
 
-    return render_template('forms/simple_form.j2', title=u"Editing {}".format(user.email), form=form, action_url=action_url)
 
 @app.route('/user/delete/<int:user_id>', methods=['GET'])
 @auth_required
@@ -453,7 +449,7 @@ def delete_user(user_id):
     db.session.delete(user)
     db_commit(db)
     flash(u'User {} deleted'.format(username), 'alert-success')
-    
+
     return redirect(url_for('users'))
 
 
@@ -475,7 +471,7 @@ def organizations():
 @auth_required
 def organization():
     form = forms.OrganizationForm(request.form)
-    
+
     if request.method == 'POST' and form.validate():
         # test if user is unique
         exist = db.session.query(models.Organization).filter_by(name=form.name.data).first()
@@ -490,7 +486,8 @@ def organization():
                 form.name.data), 'alert-danger')
 
     action_url = url_for('organization')
-    return render_template('forms/simple_form.j2', title="Add new organization to Flowspec", form=form, action_url=action_url)
+    return render_template('forms/simple_form.j2', title="Add new organization to Flowspec", form=form,
+                           action_url=action_url)
 
 
 @app.route('/organization/edit/<int:org_id>', methods=['GET', 'POST'])
@@ -506,7 +503,8 @@ def edit_organization(org_id):
         return redirect(url_for('organizations'))
 
     action_url = url_for('edit_organization', org_id=org.id)
-    return render_template('forms/simple_form.j2', title=u"Editing {}".format(org.name), form=form, action_url=action_url)
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(org.name), form=form,
+                           action_url=action_url)
 
 
 @app.route('/organization/delete/<int:org_id>', methods=['GET'])
@@ -517,7 +515,7 @@ def delete_organization(org_id):
     db.session.delete(org)
     db_commit(db)
     flash(u'Organization {} deleted'.format(aname), 'alert-success')
-    
+
     return redirect(url_for('organizations'))
 
 
@@ -532,7 +530,7 @@ def actions():
 @auth_required
 def action():
     form = forms.ActionForm(request.form)
-    
+
     if request.method == 'POST' and form.validate():
         # test if Acttion is unique
         exist = db.session.query(models.Action).filter_by(name=form.name.data).first()
@@ -563,7 +561,8 @@ def edit_action(action_id):
         return redirect(url_for('actions'))
 
     action_url = url_for('edit_action', action_id=action.id)
-    return render_template('forms/simple_form.j2', title=u"Editing {}".format(action.name), form=form, action_url=action_url)
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(action.name), form=form,
+                           action_url=action_url)
 
 
 @app.route('/action/delete/<int:action_id>', methods=['GET'])
@@ -574,15 +573,13 @@ def delete_action(action_id):
     db.session.delete(action)
     db_commit(db)
     flash(u'Action {} deleted'.format(aname), 'alert-success')
-    
-    return redirect(url_for('actions'))
 
+    return redirect(url_for('actions'))
 
 
 @app.route('/export')
 @auth_required
 def export():
-
     rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
     rules = {4: rules4, 6: rules6}
@@ -593,9 +590,8 @@ def export():
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
 
     announce_routes()
-    
-    return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
 
+    return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
 
 
 @app.teardown_appcontext
@@ -611,6 +607,7 @@ def flash_errors(form):
                 error
             ))
 
+
 def db_commit(db):
     try:
         db.session.commit()
@@ -623,9 +620,11 @@ def announce_routes():
     get actual valid routes from db and send it to ExaBGB api
     curl --form "command=announce route 100.10.0.0/24 next-hop self" http://localhost:5000/
     """
-    today=datetime.now()
-    rules4 = db.session.query(models.Flowspec4).filter(models.Flowspec4.expires >= today).order_by(models.Flowspec4.expires.desc()).all()
-    rules6 = db.session.query(models.Flowspec6).filter(models.Flowspec6.expires >= today).order_by(models.Flowspec6.expires.desc()).all()
+    today = datetime.now()
+    rules4 = db.session.query(models.Flowspec4).filter(models.Flowspec4.expires >= today).order_by(
+        models.Flowspec4.expires.desc()).all()
+    rules6 = db.session.query(models.Flowspec6).filter(models.Flowspec6.expires >= today).order_by(
+        models.Flowspec6.expires.desc()).all()
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
 
     output4 = [messages.create_ipv4(rule) for rule in rules4]
@@ -638,7 +637,7 @@ def announce_routes():
     output.extend(output_rtbh)
 
     for message in output:
-        requests.post('http://localhost:5000/', data = {'command':message})
+        requests.post('http://localhost:5000/', data={'command': message})
 
 
 @app.errorhandler(500)
@@ -651,7 +650,8 @@ def withdraw_route(route):
     """
     withdraw deleted route
     """
-    requests.post('http://localhost:5000/', data = {'command':route})
+    requests.post('http://localhost:5000/', data={'command': route})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
