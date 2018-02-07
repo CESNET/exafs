@@ -28,10 +28,10 @@
         {% endfor %}
         </td>
         <td>
-        <a class="btn btn-info" href="{{ url_for('edit_user', user_id=user.id) }}" role="button">
+        <a class="btn btn-info btn-sm" href="{{ url_for('edit_user', user_id=user.id) }}" role="button">
             <span class="glyphicon glyphicon-edit"></span>
         </a>
-        <a class="btn btn-danger" href="{{ url_for('delete_user', user_id=user.id) }}" role="button">
+        <a class="btn btn-danger btn-sm" href="{{ url_for('delete_user', user_id=user.id) }}" role="button">
             <span class="glyphicon glyphicon-remove"></span>
         </a>
         </td>
