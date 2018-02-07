@@ -95,9 +95,16 @@ def address_in_range(address, address_range):
 
 
 class UserForm(FlaskForm):
+    """
+    User Form
+    """
     email = StringField(
         'Email', validators=[Optional(),
                              Email("Please provide valid email")]
+    )
+
+    comment = StringField(
+        'Notice', validators=[Optional()]
     )
 
     role_ids = SelectMultipleField(u'Role',

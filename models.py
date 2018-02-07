@@ -40,8 +40,12 @@ user_organization = db.Table('user_organization',
 
 
 class User(db.Model):
+    """
+    App User
+    """
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(80), unique=True)
+    comment = db.Column(db.String(500))
     role = db.relationship(
         'Role',
         secondary=user_role,
@@ -54,17 +58,18 @@ class User(db.Model):
         lazy='dynamic',
         backref='user')
 
-    def __init__(self, email):
+    def __init__(self, email, comment):
         self.email = email
-
-    def __repr__(self):
-        return '<User %r>' % (self.email)
+        self.comment = comment
 
     def update(self, form):
         """
-        update with values from edit form
+        update the user with values from form object
+        :param form: flask form from request
+        :return: None
         """
         self.email = form.email.data
+        self.comment = form.comment.data
 
         # first clear existing roles and orgs
         for role in self.role:
@@ -298,11 +303,16 @@ def insert_users(users):
     db.session.commit()
 
 
-def insert_user(email, role_ids, org_ids):
+def insert_user(email, comment, role_ids, org_ids):
     """
-    inser user with multiple roles and organizations
+    insert new user with multiple roles and organizations
+    :param email: string email
+    :param comment: string comment / notice
+    :param role_ids: list of roles
+    :param org_ids: list of orgs
+    :return: None
     """
-    u = User(email=email)
+    u = User(email=email, comment=comment)
 
     for role_id in role_ids:
         r = Role.query.filter_by(id=role_id).first()

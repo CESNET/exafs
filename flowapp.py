@@ -162,7 +162,7 @@ def check_auth(email):
         session['user_id'] = 1
         session['user_roles'] = ['admin']
         session['user_org'] = ['TU Liberec']
-        session['user_role_ids'] = [1]
+        session['user_role_ids'] = [3]
         session['user_org_ids'] = [1]
         session['can_edit'] = all(i > 1 for i in session['user_role_ids'])
         return True
@@ -177,7 +177,6 @@ def not_found(error):
 @app.route('/')
 @auth_required
 def index():
-    print("USER ROLES: ", session.get('user_role_ids'))
     net_ranges = models.get_user_nets(session['user_id'])
     rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()

@@ -3,14 +3,20 @@
 {% block content %}
     <table class="table table-hover">
     <tr>
-    <th>email</th>
-    <th>role(s)</th>
-    <th>organization(s)</th>
-    <th>action</th>
+    <th>Email</th>
+    <th>Notice</th>
+    <th>Role(s)</th>
+    <th>Organization(s)</th>
+    <th>Action</th>
     </tr>
     {% for user in users %}
         <tr>
         <td>{{ user.email }}</td>
+        <td>
+        {% if user.comment %}
+            {{ user.comment }}
+        {% endif %}
+        </td>
         <td>
         {% for role in user.role %}
           {{ role.name }} 
