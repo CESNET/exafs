@@ -244,7 +244,7 @@ class Action(db.Model):
 class Log(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     time = db.Column(db.DateTime)
-    task = db.Column(db.String(20))
+    task = db.Column(db.String(1000))
     rule_type = db.Column(db.Integer)
     rule_id = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
