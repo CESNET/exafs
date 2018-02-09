@@ -1,26 +1,6 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event
 from datetime import datetime
-import ipaddress
-
-# utls
-db = SQLAlchemy()
-
-
-def webpicker_to_datetime(webtime):
-    """
-    convert 'MM/DD/YYYY HH:mm' to datetime
-    """
-    return datetime.strptime(webtime, '%m/%d/%Y %H:%M')
-
-
-def datetime_to_webpicker(python_time):
-    """
-    convert 'MM/DD/YYYY HH:mm' to datetime
-    """
-    return datetime.strftime(python_time, '%m/%d/%Y %H:%M')
-
+from flowapp import db
 
 # models and tables
 
@@ -337,5 +317,3 @@ def get_user_nets(user_id):
         result.extend(org.arange.split())
 
     return result
-
-

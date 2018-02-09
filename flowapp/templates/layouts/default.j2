@@ -49,21 +49,21 @@
           <ul class="nav navbar-nav">
             
             {% if session['can_edit'] %}
-              <li><a href="{{ url_for('ipv4_rule') }}">Add IPv4</a></li>
-              <li><a href="{{ url_for('ipv6_rule') }}">Add IPv6</a></li>
-               <li><a href="{{ url_for('rtbh_rule') }}">Add RTBH</a></li>
+              <li><a href="{{ url_for('rules.ipv4_rule') }}">Add IPv4</a></li>
+              <li><a href="{{ url_for('rules.ipv6_rule') }}">Add IPv6</a></li>
+               <li><a href="{{ url_for('rules.rtbh_rule') }}">Add RTBH</a></li>
             {% endif %}
             
             {% if 3 in session['user_role_ids'] %}
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Admin <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li><a href="{{ url_for('users') }}">Users</a></li>
-                <li><a href="{{ url_for('user') }}">Add User</a></li>
-                <li><a href="{{ url_for('organizations') }}">Organizations</a></li>
-                <li><a href="{{ url_for('organization') }}">Add Org.</a></li>
-                <li><a href="{{ url_for('actions') }}">Action</a></li>
-                <li><a href="{{ url_for('action') }}">Add action</a></li>
+                <li><a href="{{ url_for('admin.users') }}">Users</a></li>
+                <li><a href="{{ url_for('admin.user') }}">Add User</a></li>
+                <li><a href="{{ url_for('admin.organizations') }}">Organizations</a></li>
+                <li><a href="{{ url_for('admin.organization') }}">Add Org.</a></li>
+                <li><a href="{{ url_for('admin.actions') }}">Action</a></li>
+                <li><a href="{{ url_for('admin.action') }}">Add action</a></li>
               </ul>
             </li>
             {% endif %}

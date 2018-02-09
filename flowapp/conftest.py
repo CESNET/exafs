@@ -6,8 +6,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from flowapp import app as _app
-from flowapp import db as _db
+from __init__ import app as _app
+from __init__ import db as _db
 import models
 
 TESTDB = 'test_project.db'
