@@ -12,10 +12,11 @@ from flowapp import db, messages
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
+RULE_TYPES = {'RTBH': 1, 'IPv4': 4, 'IPv6': 6}
 DATA_MODELS = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
 DATA_FORMS = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
 DATA_TEMPLATES = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
-DATA_TABLES = {1: 'RTBH', 4: 'flow string - type of rule to be deletedspec4', 6: 'flowspec6'}
+DATA_TABLES = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
 ROUTE_MODELS = {1: messages.create_rtbh, 4: messages.create_ipv4, 6: messages.create_ipv6}
 
 
@@ -53,6 +54,9 @@ def reactivate_rule(rule_type, rule_id):
         flash(u'Rule reactivated', 'alert-success')
         # announce routes
         announce_routes()
+        # log changes
+        log_route(model, rule_type)
+
         return redirect(url_for('index'))
     else:
         flash_errors(form)
@@ -84,6 +88,8 @@ def delete_rule(rule_type, rule_id):
     # withdraw route
     route = route_model(model, messages.WITHDRAW)
     withdraw_route(route)
+
+    log_withdraw(route, rule_type, model.id)
 
     # delete from db
     db.session.delete(model)
@@ -129,6 +135,9 @@ def ipv4_rule():
 
         # announce routes
         announce_routes()
+        # log changes
+        log_route(model, RULE_TYPES['IPv4'])
+
         return redirect(url_for('index'))
     else:
         for field, errors in form.errors.items():
@@ -178,6 +187,10 @@ def ipv6_rule():
 
         # announce routes
         announce_routes()
+
+        # log changes
+        log_route(model, RULE_TYPES['IPv6'])
+
         return redirect(url_for('index'))
     else:
         for field, errors in form.errors.items():
@@ -225,6 +238,10 @@ def rtbh_rule():
 
         # announce routes
         announce_routes()
+
+        # log changes
+        log_route(model, RULE_TYPES['RTBH'])
+
         return redirect(url_for('index'))
     else:
         for field, errors in form.errors.items():
@@ -299,11 +316,35 @@ def withdraw_route(route):
     """
     requests.post('http://localhost:5000/', data={'command': route})
 
-def log_route(route_model, route_type):
+
+def log_route(route_model, rule_type):
     """
     Convert route to EXAFS message and log it to database
     :param route_model: model with route object
     :param route_type: string
     :return: None
     """
+    converter = ROUTE_MODELS[rule_type]
+    task = converter(route_model)
+    log = Log(time=datetime.now(),
+              task=task,
+              rule_type=rule_type,
+              rule_id=route_model.id,
+              user_id=session['user_id'])
+    db.session.add(log)
+    db.session.commit()
+
+
+def log_withdraw(task, rule_type, deleted_id):
+    """
+    Log the withdraw command to database
+    :param task: command message
+    """
+    log = Log(time=datetime.now(),
+              task=task,
+              rule_type=rule_type,
+              rule_id=deleted_id,
+              user_id=session['user_id'])
+    db.session.add(log)
+    db.session.commit()
 
