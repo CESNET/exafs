@@ -66,12 +66,6 @@ def logout():
     return redirect(app.config.get('LOGOUT_URL'))
 
 
-# Sample HTTP error handling
-@app.errorhandler(404)
-def not_found(error):
-    return render_template('errors/404.j2'), 404
-
-
 @app.route('/')
 @auth_required
 def index():
@@ -100,6 +94,11 @@ def index():
 def shutdown_session(exception=None):
     db.session.remove()
 
+
+# HTTP error handling
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('errors/404.j2'), 404
 
 @app.errorhandler(500)
 def internal_error(exception):

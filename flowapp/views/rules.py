@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, redirect, flash, request, url_for,
 import requests
 
 from ..forms import RTBHForm, IPv4Form, IPv6Form, NetInRange
-from ..models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets
+from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets
 from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker
 
@@ -12,18 +12,24 @@ from flowapp import db, messages
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
+DATA_MODELS = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
+DATA_FORMS = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
+DATA_TEMPLATES = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
+DATA_TABLES = {1: 'RTBH', 4: 'flow string - type of rule to be deletedspec4', 6: 'flowspec6'}
+ROUTE_MODELS = {1: messages.create_rtbh, 4: messages.create_ipv4, 6: messages.create_ipv6}
+
 
 @rules.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
 @auth_required
 @user_or_admin_required
 def reactivate_rule(rule_type, rule_id):
-    data_models = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
-    data_forms = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
-    data_templates = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
-    data_tables = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
-
-    model_name = data_models[rule_type]
-    form_name = data_forms[rule_type]
+    """
+    Set new time for the rule of given type identified by id
+    :param rule_type: string - type of rule
+    :param rule_id: integer - id of the rule
+    """
+    model_name = DATA_MODELS[rule_type]
+    form_name = DATA_FORMS[rule_type]
 
     model = db.session.query(model_name).get(rule_id)
     form = form_name(request.form, obj=model)
@@ -58,22 +64,20 @@ def reactivate_rule(rule_type, rule_id):
 
     action_url = url_for('rules.reactivate_rule', rule_type=rule_type, rule_id=rule_id)
 
-    return render_template(data_templates[rule_type], form=form, action_url=action_url)
+    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url)
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
 @auth_required
 @user_or_admin_required
 def delete_rule(rule_type, rule_id):
-    data_models = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
-    data_forms = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
-    data_templates = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
-    data_tables = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
-    route_models = {1: messages.create_rtbh, 4: messages.create_ipv4, 6: messages.create_ipv6}
-
-    model_name = data_models[rule_type]
-    form_name = data_forms[rule_type]
-    route_model = route_models[rule_type]
+    """
+    Delete rule with given id and type
+    :param rule_type: string - type of rule to be deleted
+    :param rule_id: integer - rule id
+    """
+    model_name = DATA_MODELS[rule_type]
+    route_model = ROUTE_MODELS[rule_type]
 
     model = db.session.query(model_name).get(rule_id)
 
@@ -294,3 +298,12 @@ def withdraw_route(route):
     @TODO take the request away, use some kind of messaging (maybe celery?)
     """
     requests.post('http://localhost:5000/', data={'command': route})
+
+def log_route(route_model, route_type):
+    """
+    Convert route to EXAFS message and log it to database
+    :param route_model: model with route object
+    :param route_type: string
+    :return: None
+    """
+
