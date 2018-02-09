@@ -88,6 +88,13 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 * systemctl restart httpd
 * systemctl restart supervisord
 
+## MariaDB character encoding
+set utf-8 if needed
+```
+ALTER DATABASE databasename CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+ALTER TABLE tablename CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+```
+
 ## MariaDB backup
 
 ### as Mysql root
@@ -140,3 +147,6 @@ docker run --name=flowspec-db --env="MYSQL_ROOT_PASSWORD=my-secret-pw"  --volume
 
 - neexistující uživatel vyvolá 500 - potřeba ošetřit 
 - doinstalovat guarda / service pro restart serveru
+
+
+### Runtiome
