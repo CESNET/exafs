@@ -20,7 +20,7 @@ SSO_ATTRIBUTE_MAP = {
 }
 
 app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
-app.config.setdefault('SSO_LOGIN_URL', url_for('login'))
+app.config.setdefault('SSO_LOGIN_URL', '/login')
 
 # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
 ext = SSO(app=app)
