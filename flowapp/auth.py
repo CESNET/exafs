@@ -14,7 +14,7 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
-            return redirect(url_for('login'))
+            return redirect('/login')
         return f(*args, **kwargs)
 
     return decorated
