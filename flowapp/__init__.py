@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, redirect, render_template, session
+from flask import Flask, redirect, render_template, session,  url_for
 from flask_sso import SSO
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
@@ -20,7 +20,7 @@ SSO_ATTRIBUTE_MAP = {
 }
 
 app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
-app.config.setdefault('SSO_LOGIN_URL', '/login')
+app.config.setdefault('SSO_LOGIN_URL', url_for('login'))
 
 # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
 ext = SSO(app=app)
