@@ -67,21 +67,21 @@ def get_user():
     get user from session
     """
     try:
-        email = session['user_uuid']
+        uuid = session['user_uuid']
     except KeyError:
-        email = False
+        uuid = False
 
-    return email
+    return uuid
 
 
-def check_auth(email):
+def check_auth(uuid):
     """
     This function is every time when someone accessing the endpoint /
     password combination is valid.
     """
     exist = False
-    if email:
-        exist = db.session.query(User).filter_by(email=email).first()
+    if uuid:
+        exist = db.session.query(User).filter_by(uuid=uuid).first()
 
     if app.config.get('SSO_AUTH'):
         return exist
