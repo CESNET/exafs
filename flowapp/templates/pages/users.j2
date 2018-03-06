@@ -3,7 +3,10 @@
 {% block content %}
     <table class="table table-hover">
     <tr>
+    <th>UUID</th>
+    <th>Name</th>
     <th>Email</th>
+    <th>Phone</th>
     <th>Notice</th>
     <th>Role(s)</th>
     <th>Organization(s)</th>
@@ -11,12 +14,11 @@
     </tr>
     {% for user in users %}
         <tr>
-        <td>{{ user.email }}</td>
-        <td>
-        {% if user.comment %}
-            {{ user.comment }}
-        {% endif %}
-        </td>
+        <td>{{ user.uuid }}</td>
+        <td>{{ user.name if user.name }}</td>
+        <td>{{ user.phone if user.name }}</td>
+        <td>{{ user.email if user.name }}</td>
+        <td>{{ user.comment if user.comment }}</td>
         <td>
         {% for role in user.role %}
           {{ role.name }} 

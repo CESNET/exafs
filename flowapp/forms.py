@@ -98,6 +98,11 @@ class UserForm(FlaskForm):
     """
     User Form
     """
+    uuid = StringField(
+        'Unique User ID', validators=[DataRequired("Please provide UUID"),
+                             Email("Please provide valid email")]
+    )
+
     email = StringField(
         'Email', validators=[Optional(),
                              Email("Please provide valid email")]
@@ -105,6 +110,14 @@ class UserForm(FlaskForm):
 
     comment = StringField(
         'Notice', validators=[Optional()]
+    )
+
+    name = StringField(
+        'Name', validators=[Optional()]
+    )
+
+    phone = StringField(
+        'Contact phone', validators=[Optional()]
     )
 
     role_ids = SelectMultipleField(u'Role',
