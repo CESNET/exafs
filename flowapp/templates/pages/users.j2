@@ -16,8 +16,8 @@
         <tr>
         <td>{{ user.uuid }}</td>
         <td>{{ user.name if user.name }}</td>
-        <td>{{ user.phone if user.name }}</td>
         <td>{{ user.email if user.name }}</td>
+        <td>{{ user.phone if user.name }}</td>
         <td>{{ user.comment if user.comment }}</td>
         <td>
         {% for role in user.role %}
