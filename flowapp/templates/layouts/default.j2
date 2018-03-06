@@ -15,6 +15,7 @@
 
     <!-- Bootstrap core CSS -->
     <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- Bootstrap theme -->
     <link href="/static/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
   
@@ -47,13 +48,13 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            
+
             {% if session['can_edit'] %}
               <li><a href="{{ url_for('rules.ipv4_rule') }}">Add IPv4</a></li>
               <li><a href="{{ url_for('rules.ipv6_rule') }}">Add IPv6</a></li>
                <li><a href="{{ url_for('rules.rtbh_rule') }}">Add RTBH</a></li>
             {% endif %}
-            
+
             {% if 3 in session['user_role_ids'] %}
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Admin <span class="caret"></span></a>
@@ -69,13 +70,13 @@
             {% endif %}
 
           </ul>
-          <p class="navbar-text">Logged in as {{ session['user_email'] }}, role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_org']|join(", ") }}</p> 
+          <p class="navbar-text">Logged in as {{ session['user_email'] }}, role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_org']|join(", ") }}</p>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
 
     <div class="container theme-showcase" role="main">
-   
+
       {% with messages = get_flashed_messages(with_categories=true)  %}
         {% if messages %}
           {% for category, message in messages %}

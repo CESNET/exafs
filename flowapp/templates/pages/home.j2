@@ -13,52 +13,63 @@
     <th>Expires</th>
     <th>Action</th>
     <th>Flags</th>
-    <th>Comment</th>
     <th>Action</th>
     </tr>
     {% for key, value in rules.items() %}
         {% for rule in value %}
             <tr {% if rule.expires < today %} class="warning" {% endif %}>
-            <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
-            <td>
-                {{ rule.source_port }}
-            </td>
-            <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{ rule.dest_mask|default("", True) }}</td>
-            <td>
-                {{ rule.dest_port }}
-            </td>
-            <td>
-                {% if key == 4 %}
-                    {{ rule.protocol }}
-                {% elif key == 6 %}    
-                    {{ rule.next_header }}
-                {% endif %}    
-            </td>
-            <td>
-                {{ rule.expires }}                
-            </td>
-            <td>
-                {{ actions[rule.action_id].name }}
-            </td>
-            <td>
-                {{ rule.flags}}
-            </td>
-            <td title="{{ rule.comment }}">
-                {% if rule.comment %}
-                {{ rule.comment[:20] }} ...
+                <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
+                <td>
+                    {{ rule.source_port }}
+                </td>
+                <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{ rule.dest_mask|default("", True) }}</td>
+                <td>
+                    {{ rule.dest_port }}
+                </td>
+                <td>
+                    {% if key == 4 %}
+                        {{ rule.protocol }}
+                    {% elif key == 6 %}
+                        {{ rule.next_header }}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ rule.expires }}
+                </td>
+                <td>
+                    {{ actions[rule.action_id].name }}
+                </td>
+                <td>
+                    {{ rule.flags}}
+                </td>
+                <td rowspan="2" class="bottom_row">
+                {% if session['can_edit'] %}
+                    <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
+                         <span class="glyphicon glyphicon-time"></span>
+                    </a>
+                    <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=key, rule_id=rule.id) }}" role="button">
+                         <span class="glyphicon glyphicon-remove"></span>
+                    </a>
                 {% endif %}
-            </td>
-            <td>
-            {% if session['can_edit'] %}
-                <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
-                     <span class="glyphicon glyphicon-time"></span>
-                </a>
-                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=key, rule_id=rule.id) }}" role="button">
-                     <span class="glyphicon glyphicon-remove"></span>
-                </a>
-            {% endif %}
-            </td>
+                </td>
             </tr>
+            <tr {% if rule.expires < today %}
+                    class="warning bottom_row"
+                {% else %}
+                    class="bottom_row"
+                {% endif %} >
+                <th>Comment:</th>
+                <td title="{{ rule.comment }}" colspan="3">
+                    {% if rule.comment %}
+                    {{ rule.comment[:20] }} ...
+                    {% endif %}
+                </td>
+                <th>Created by:</th>
+                <td colspan="3">
+                    {{ rule.user.comment }}
+                </td>
+            </tr>
+
         {% endfor %}
       
     {% endfor %}
@@ -71,7 +82,7 @@
     <th>IP adress (v4 or v6)</th>
     <th>Community</th>
     <th>Expires</th>
-     <th>Action</th>
+    <th>Action</th>
     </tr>
     {% for rule in rules_rtbh %}
         <tr {% if rule.expires < today %} class="warning"  {% endif %}>

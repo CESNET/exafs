@@ -16,3 +16,21 @@ body {
 .theme-showcase .navbar .container {
   width: auto;
 }
+
+
+tr.bottom_row > td {
+    border-bottom: solid black 1px;
+    padding-bottom: 1em;
+}
+
+tr.bottom_row > th {
+    border-bottom: solid black 1px;
+    padding-bottom: 1em;
+}
+
+
+td.bottom_row {
+    border-bottom: solid black 1px;
+    padding-bottom: 1em;
+}
+
