@@ -41,13 +41,13 @@ app.register_blueprint(rules, url_prefix='/rules')
 @ext.login_handler
 def login(user_info):
     try:
-        email = user_info.get('eppn')
+        uuid = user_info.get('eppn')
     except KeyError:
-        email = False
+        uuid = False
         return redirect('/')
     else:
-        user = db.session.query(models.User).filter_by(email=email).first()
-        session['user_email'] = user.email
+        user = db.session.query(models.User).filter_by(uuid=uuid).first()
+        session['user_uuid'] = user.uuid
         session['user_id'] = user.id
         session['user_roles'] = [role.name for role in user.role.all()]
         session['user_org'] = [org.name for org in user.organization.all()]
@@ -60,7 +60,7 @@ def login(user_info):
 
 @app.route('/logout')
 def logout():
-    session['user_email'] = False
+    session['user_uuid'] = False
     session['user_id'] = False
     session.clear()
     return redirect(app.config.get('LOGOUT_URL'))

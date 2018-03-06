@@ -24,8 +24,11 @@ class User(db.Model):
     App User
     """
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(80), unique=True)
+    uuid = db.Column(db.String(255), unique=True)
     comment = db.Column(db.String(500))
+    email = db.Column(db.String(255))
+    name = db.Column(db.String(255))
+    phone = db.Column(db.String(255))
     role = db.relationship(
         'Role',
         secondary=user_role,
@@ -38,7 +41,10 @@ class User(db.Model):
         lazy='dynamic',
         backref='user')
 
-    def __init__(self, email, comment):
+    def __init__(self, uuid, name, phone, email, comment):
+        self.uuid = uuid
+        self.phone = phone
+        self.name = name
         self.email = email
         self.comment = comment
 
@@ -48,7 +54,10 @@ class User(db.Model):
         :param form: flask form from request
         :return: None
         """
+        self.uuid = form.uuid.data
+        self.name = form.name.data
         self.email = form.email.data
+        self.phone = form.phone.data
         self.comment = form.comment.data
 
         # first clear existing roles and orgs

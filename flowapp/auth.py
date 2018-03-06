@@ -67,7 +67,7 @@ def get_user():
     get user from session
     """
     try:
-        email = session['user_email']
+        email = session['user_uuid']
     except KeyError:
         email = False
 
@@ -88,7 +88,7 @@ def check_auth(email):
     else:
         # no login
         print('LOCALHOST login')
-        session['user_email'] = 'jiri.vrany@tul.cz'
+        session['user_uuid'] = 'jiri.vrany@tul.cz'
         session['user_id'] = 1
         session['user_roles'] = ['admin']
         session['user_org'] = ['TU Liberec']
