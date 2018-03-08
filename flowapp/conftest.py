@@ -58,6 +58,7 @@ def db(app, request):
         os.unlink(TESTDB_PATH)
 
     with app.app_context():
+        _db.init_app(app)
         print "#: cleaning database"
         _db.reflect()
         _db.drop_all()

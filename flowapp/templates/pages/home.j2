@@ -61,12 +61,12 @@
                 <th>Comment:</th>
                 <td title="{{ rule.comment }}" colspan="3">
                     {% if rule.comment %}
-                    {{ rule.comment[:20] }} ...
+                    {{ rule.comment[:60] }} ...
                     {% endif %}
                 </td>
                 <th>Created by:</th>
                 <td colspan="3">
-                    {{ rule.user.comment }}
+                    {{ rule.user.name }}
                 </td>
             </tr>
 

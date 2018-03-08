@@ -6,7 +6,7 @@ import requests
 from ..forms import RTBHForm, IPv4Form, IPv6Form, NetInRange
 from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets
 from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
-from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker
+from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
 from flowapp import db, messages
 
@@ -49,7 +49,7 @@ def reactivate_rule(rule_type, rule_id):
 
     # do not need to validate - all is readonly
     if request.method == 'POST':
-        model.expires = webpicker_to_datetime(form.expires.data)
+        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
         db.session.commit()
         flash(u'Rule reactivated', 'alert-success')
         # announce routes
@@ -124,7 +124,7 @@ def ipv4_rule():
             protocol=form.protocol.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
-            expires=webpicker_to_datetime(form.expires.data),
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
             comment=form.comment.data,
             action_id=form.action.data,
             user_id=session['user_id']
@@ -176,7 +176,7 @@ def ipv6_rule():
             next_header=form.next_header.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
-            expires=webpicker_to_datetime(form.expires.data),
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
             comment=form.comment.data,
             action_id=form.action.data,
             user_id=session['user_id']
@@ -228,7 +228,7 @@ def rtbh_rule():
             ipv6=form.ipv6.data,
             ipv6_mask=form.ipv6_mask.data,
             community=form.community.data,
-            expires=webpicker_to_datetime(form.expires.data),
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
             comment=form.comment.data,
             user_id=session['user_id']
         )

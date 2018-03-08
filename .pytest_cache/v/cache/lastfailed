@@ -1,1 +1,3 @@
-{}
+{
+  "flowapp/test_flowapp.py::test_create_survey": true
+}
