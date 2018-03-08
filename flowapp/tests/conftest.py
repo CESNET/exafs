@@ -6,9 +6,9 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from __init__ import app as _app
-from __init__ import db as _db
-import models
+from flowapp import app as _app
+from flowapp import db as _db
+import flowapp.models
 
 TESTDB = 'test_project.db'
 TESTDB_PATH = "/tmp/{}".format(TESTDB)
@@ -24,6 +24,7 @@ def app(request):
     _app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI=TEST_DATABASE_URI,
+        SQLALCHEMY_TRACK_MODIFICATIONS=False
     )
 
     print('\n----- CREATE FLASK APPLICATION\n')
@@ -71,7 +72,7 @@ def db(app, request):
             {"name": "adamec@cesnet.cz", "role_id": 3, "org_id": 2}
         ]
         print "#: inserting users"
-        models.insert_users(users)
+        flowapp.models.insert_users(users)
 
     def teardown():
         _db.session.commit()

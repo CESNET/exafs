@@ -21,10 +21,16 @@ def user():
 
     if request.method == 'POST' and form.validate():
         # test if user is unique
-        exist = db.session.query(User).filter_by(email=form.email.data).first()
+        exist = db.session.query(User).filter_by(uuid=form.uuid.data).first()
         if not exist:
             insert_user(
-                form.email.data, form.role_ids.data, form.org_ids.data)
+                uuid=form.uuid.data,
+                name=form.name.data,
+                phone=form.phone.data,
+                email=form.email.data,
+                comment=form.comment.data,
+                role_ids=form.role_ids.data,
+                org_ids=form.org_ids.data)
             flash('User saved')
             return redirect(url_for('admin.users'))
         else:

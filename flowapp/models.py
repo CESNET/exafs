@@ -41,7 +41,7 @@ class User(db.Model):
         lazy='dynamic',
         backref='user')
 
-    def __init__(self, uuid, name, phone, email, comment):
+    def __init__(self, uuid, name=None, phone=None, email=None, comment=None):
         self.uuid = uuid
         self.phone = phone
         self.name = name
@@ -284,7 +284,7 @@ def insert_users(users):
     for user in users:
         r = Role.query.filter_by(id=user['role_id']).first()
         o = Organization.query.filter_by(id=user['org_id']).first()
-        u = User(email=user['name'])
+        u = User(uuid=user['name'])
         u.role.append(r)
         u.organization.append(o)
         db.session.add(u)
@@ -292,16 +292,19 @@ def insert_users(users):
     db.session.commit()
 
 
-def insert_user(email, comment, role_ids, org_ids):
+def insert_user(uuid, role_ids, org_ids, name=None, phone=None, email=None, comment=None):
     """
     insert new user with multiple roles and organizations
+    :param uuid: string unique user id (eppn or similar)
+    :param phone: string phone number
+    :param name: string user name
     :param email: string email
     :param comment: string comment / notice
     :param role_ids: list of roles
     :param org_ids: list of orgs
     :return: None
     """
-    u = User(email=email, comment=comment)
+    u = User(uuid=uuid, name=name, phone=phone, comment=comment, email=email)
 
     for role_id in role_ids:
         r = Role.query.filter_by(id=role_id).first()
