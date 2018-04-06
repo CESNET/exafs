@@ -18,11 +18,19 @@
     {% for key, value in rules.items() %}
         {% for rule in value %}
             <tr {% if rule.expires < today %} class="warning" {% endif %}>
-                <td>{{ rule.source }} {{ '/' if rule.source_mask else '' }} {{rule.source_mask|default("", True)}}</td>
+                <td>
+                    {{ rule.source }}
+                    {{ '/' if rule.source_mask >= 0 else '' }}
+                    {{ rule.source_mask if rule.source_mask >= 0 else '' }}
+                </td>
                 <td>
                     {{ rule.source_port }}
                 </td>
-                <td>{{ rule.dest }} {{ '/' if rule.dest_mask else '' }} {{ rule.dest_mask|default("", True) }}</td>
+                <td>
+                    {{ rule.dest }}
+                    {{ '/' if rule.dest_mask >= 0 else '' }}
+                    {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
+                </td>
                 <td>
                     {{ rule.dest_port }}
                 </td>

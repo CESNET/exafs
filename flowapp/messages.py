@@ -1,11 +1,11 @@
 from flowspec import translate_sequence as trps
 from flowspec import MAX_PORT, MAX_PACKET
 
-
 ANNOUNCE = 1
 WITHDRAW = 2
 IPV4_DEFMASK = 32
 IPV6_DEFMASK = 128
+
 
 def create_ipv4(rule, message_type=ANNOUNCE):
     """
@@ -32,6 +32,7 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     create ExaBpg text message for IPv6 rule
     @param rule models.Flowspec6
     @return string message
+    :param message_type:
     """
     protocol = 'next-header ={};'.format(
         rule.next_header) if rule.next_header else ''
@@ -58,17 +59,24 @@ def create_rtbh(rule, message_type=ANNOUNCE):
         action = 'withdraw'
 
     if rule.ipv4:
+        if 0 <= rule.ipv4_mask <= IPV4_DEFMASK:
+            my_mask = rule.ipv4_mask
+        else:
+            my_mask = IPV4_DEFMASK
+
         source = '{}'.format(rule.ipv4) if rule.ipv4 else ''
-        source += '/{}'.format(
-            rule.ipv4_mask if rule.ipv4_mask else IPV4_DEFMASK) if rule.ipv4 else ''
+        source += '/{}'.format(my_mask) if rule.ipv4 else ''
         nexthop = '192.0.2.1'
 
     if rule.ipv6:
-        source = '{}'.format(rule.ipv6) if rule.ipv6 else ''
-        source += '/{}'.format(
-            rule.ipv6_mask if rule.ipv6_mask else IPV6_DEFMASK) if rule.ipv6 else ''
-        nexthop = '100::1'
+        if 0 <= rule.ipv4_mask <= IPV6_DEFMASK:
+            my_mask = rule.ipv4_mask
+        else:
+            my_mask = IPV6_DEFMASK
 
+        source = '{}'.format(rule.ipv6) if rule.ipv6 else ''
+        source += '/{}'.format(my_mask) if rule.ipv6 else ''
+        nexthop = '100::1'
 
     return "{action} route {source} next-hop {nexthop} community [{community} no-export]".format(
         action=action,
@@ -96,15 +104,16 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     if message_type == WITHDRAW:
         action = 'withdraw'
 
+    smask = get_mask_from_rule(rule, ipv_specific['mask'])
     source = 'source {}'.format(rule.source) if rule.source else ''
-    source += '/{};'.format(
-        rule.source_mask if rule.source_mask else ipv_specific['mask']) if rule.source else ''
+    source += '/{};'.format(smask) if rule.source else ''
 
     source_port = 'source-port {};'.format(
         trps(rule.source_port)) if rule.source_port else ''
 
+    dmask = get_mask_from_rule(rule, ipv_specific['mask'])
     dest = ' destination {}'.format(rule.dest) if rule.dest else ''
-    dest += '/{};'.format(rule.dest_mask if rule.dest_mask else ipv_specific['mask']) if rule.dest else ''
+    dest += '/{};'.format(dmask) if rule.dest else ''
 
     dest_port = 'destination-port {};'.format(
         trps(rule.dest_port)) if rule.dest_port else ''
@@ -134,5 +143,14 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     return message_body
 
 
-if __name__ == '__main__':
-    print create_text2(None)
+def get_mask_from_rule(rule, default_mask = IPV4_DEFMASK):
+    """
+    Get mask / prefix from rule
+    :param default_mask: default mask to return if mask is not in the rule
+    :param rule: flowspec rule
+    :return: int mask
+    """
+    if 0 <= rule.source_mask <= default_mask:
+        return rule.source_mask
+    else:
+        return default_mask
