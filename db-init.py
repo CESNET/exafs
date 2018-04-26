@@ -1,7 +1,7 @@
 
 from flask import Flask
-from models import db
-from models import *
+from flowapp import app, db
+from flowapp.models import *
 
 import config
 from os import environ
@@ -31,13 +31,6 @@ def create_app():
         print "#: creating tables"
         db.create_all()
 
-        users = [
-            {"name": "jiri.vrany@tul.cz", "role_id": 3, "org_id": 1},
-            {"name": "petr.adamec@tul.cz", "role_id": 3, "org_id": 1},
-            {"name": "adamec@cesnet.cz", "role_id": 3, "org_id": 2}
-        ]
-        print "#: inserting users"
-        insert_users(users)
 
     return app
 
