@@ -148,7 +148,8 @@ class RTBH(db.Model):
     rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
     rstate = db.relationship('Rstate', backref='rtbh')
 
-    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community, expires, user_id, comment=None, created=None):
+    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community, expires, user_id, comment=None, created=None,
+                 rstate_id=1):
         self.ipv4 = ipv4
         self.ipv4_mask = ipv4_mask
         self.ipv6 = ipv6
@@ -160,6 +161,7 @@ class RTBH(db.Model):
         if created is None:
             created = datetime.utcnow()
         self.created = created
+        self.rstate_id = rstate_id
 
     def update_time(self, form):
         self.expires = webpicker_to_datetime(form.expire_date.data)
@@ -188,7 +190,7 @@ class Flowspec4(db.Model):
     rstate = db.relationship('Rstate', backref='flowspec4')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol,
-                 flags, packet_len, expires, user_id, action_id, created=None, comment=None):
+                 flags, packet_len, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
         self.source = source
         self.source_mask = source_mask
         self.dest = destination
@@ -205,6 +207,7 @@ class Flowspec4(db.Model):
         if created is None:
             created = datetime.utcnow()
         self.created = created
+        self.rstate_id = rstate_id
 
 
 class Flowspec6(db.Model):
@@ -229,7 +232,7 @@ class Flowspec6(db.Model):
     rstate = db.relationship('Rstate', backref='flowspec6')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header,
-                 flags, packet_len, expires, user_id, action_id, created=None, comment=None):
+                 flags, packet_len, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
         self.source = source
         self.source_mask = source_mask
         self.dest = destination
@@ -246,6 +249,7 @@ class Flowspec6(db.Model):
         if created is None:
             created = datetime.utcnow()
         self.created = created
+        self.rstate_id = rstate_id
 
 
 class Log(db.Model):
