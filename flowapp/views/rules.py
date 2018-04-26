@@ -50,7 +50,10 @@ def reactivate_rule(rule_type, rule_id):
 
     # do not need to validate - all is readonly
     if request.method == 'POST':
+        # set new expiration date
         model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        # set again the active state
+        model.rstate_id = 1
         db.session.commit()
         flash(u'Rule reactivated', 'alert-success')
         # announce routes
@@ -128,7 +131,8 @@ def ipv4_rule():
             expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
             comment=form.comment.data,
             action_id=form.action.data,
-            user_id=session['user_id']
+            user_id=session['user_id'],
+            rstate_id=1
         )
         db.session.add(model)
         db.session.commit()
@@ -180,7 +184,8 @@ def ipv6_rule():
             expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
             comment=form.comment.data,
             action_id=form.action.data,
-            user_id=session['user_id']
+            user_id=session['user_id'],
+            rstate_id=1
         )
         db.session.add(model)
         db.session.commit()
@@ -231,7 +236,8 @@ def rtbh_rule():
             community=form.community.data,
             expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
             comment=form.comment.data,
-            user_id=session['user_id']
+            user_id=session['user_id'],
+            rstate_id=1
         )
         db.session.add(model)
         db.session.commit()
