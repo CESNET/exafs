@@ -1,6 +1,10 @@
 from os import environ
+
 from flowapp import app, db
 import config
+
+
+
 
 # Configurations
 try:
@@ -15,6 +19,7 @@ else:
 
 # init database object
 db.init_app(app)
+
 # run app
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)

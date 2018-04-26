@@ -24,7 +24,7 @@ class User(db.Model):
     App User
     """
     id = db.Column(db.Integer, primary_key=True)
-    uuid = db.Column(db.String(255), unique=True)
+    uuid = db.Column(db.String(180), unique=True)
     comment = db.Column(db.String(500))
     email = db.Column(db.String(255))
     name = db.Column(db.String(255))
@@ -105,6 +105,34 @@ class Organization(db.Model):
         return self.name
 
 
+class Action(db.Model):
+    """
+    Action for rule
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=True)
+    command = db.Column(db.String(120), unique=True)
+    description = db.Column(db.String(260))
+
+    def __init__(self, name, command, description):
+        self.name = name
+        self.command = command
+        self.description = description
+
+
+class Rstate(db.Model):
+    """
+    State for Rules
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(260))
+
+    def __init__(self, description):
+        self.description = description
+
+
 class RTBH(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ipv4 = db.Column(db.String(255))
@@ -117,8 +145,11 @@ class RTBH(db.Model):
     created = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='rtbh')
+    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
+    rstate = db.relationship('Rstate', backref='rtbh')
 
-    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community, expires, user_id, comment=None, created=None):
+    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community, expires, user_id, comment=None, created=None,
+                 rstate_id=1):
         self.ipv4 = ipv4
         self.ipv4_mask = ipv4_mask
         self.ipv6 = ipv6
@@ -130,6 +161,7 @@ class RTBH(db.Model):
         if created is None:
             created = datetime.utcnow()
         self.created = created
+        self.rstate_id = rstate_id
 
     def update_time(self, form):
         self.expires = webpicker_to_datetime(form.expire_date.data)
@@ -154,9 +186,11 @@ class Flowspec4(db.Model):
     action = db.relationship('Action', backref='flowspec4')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='flowspec4')
+    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
+    rstate = db.relationship('Rstate', backref='flowspec4')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol,
-                 flags, packet_len, expires, user_id, action_id, created=None, comment=None):
+                 flags, packet_len, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
         self.source = source
         self.source_mask = source_mask
         self.dest = destination
@@ -173,6 +207,7 @@ class Flowspec4(db.Model):
         if created is None:
             created = datetime.utcnow()
         self.created = created
+        self.rstate_id = rstate_id
 
 
 class Flowspec6(db.Model):
@@ -193,9 +228,11 @@ class Flowspec6(db.Model):
     action = db.relationship('Action', backref='flowspec6')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='flowspec6')
+    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
+    rstate = db.relationship('Rstate', backref='flowspec6')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header,
-                 flags, packet_len, expires, user_id, action_id, created=None, comment=None):
+                 flags, packet_len, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
         self.source = source
         self.source_mask = source_mask
         self.dest = destination
@@ -212,22 +249,7 @@ class Flowspec6(db.Model):
         if created is None:
             created = datetime.utcnow()
         self.created = created
-
-
-class Action(db.Model):
-    """
-    Action for rule
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), unique=True)
-    command = db.Column(db.String(120), unique=True)
-    description = db.Column(db.String(260))
-
-    def __init__(self, name, command, description):
-        self.name = name
-        self.command = command
-        self.description = description
+        self.rstate_id = rstate_id
 
 
 class Log(db.Model):
@@ -251,7 +273,7 @@ class Log(db.Model):
 
 
 # DDL
-@event.listens_for(Action.__table__, 'after_create')
+# @event.listens_for(Action.__table__, 'after_create')
 def insert_initial_actions(*args, **kwargs):
     db.session.add(Action(name='QoS 100 kbps', command='rate-limit 12800', description='QoS'))
     db.session.add(Action(name='QoS 1Mbps', command='rate-limit 13107200', description='QoS'))
@@ -260,7 +282,7 @@ def insert_initial_actions(*args, **kwargs):
     db.session.commit()
 
 
-@event.listens_for(Role.__table__, 'after_create')
+# @event.listens_for(Role.__table__, 'after_create')
 def insert_initial_roles(*args, **kwargs):
     db.session.add(Role(name='view', description='just view, no edit'))
     db.session.add(Role(name='user', description='can edit'))
@@ -268,10 +290,19 @@ def insert_initial_roles(*args, **kwargs):
     db.session.commit()
 
 
-@event.listens_for(Organization.__table__, 'after_create')
+# @event.listens_for(Organization.__table__, 'after_create')
 def insert_initial_organizations(*args, **kwargs):
     db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16\n2001:718:1c01::/48'))
     db.session.add(Organization(name='Cesnet', arange='147.230.0.0/16\n2001:718:1c01::/48'))
+
+    db.session.commit()
+
+
+@event.listens_for(Rstate.__table__, 'after_create')
+def insert_initial_rulestates(*args, **kwargs):
+    db.session.add(Rstate(description='active rule'))
+    db.session.add(Rstate(description='withdrawed rule'))
+    db.session.add(Rstate(description='deleted rule'))
 
     db.session.commit()
 
