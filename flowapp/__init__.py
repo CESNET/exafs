@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-
-from flask import Flask, redirect, render_template, session,  url_for
+import requests
+from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 db = SQLAlchemy()
-
 
 # Add a secret key for encrypting session information
 app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
@@ -24,7 +23,6 @@ app.config.setdefault('SSO_LOGIN_URL', '/login')
 
 # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
 ext = SSO(app=app)
-
 
 import messages
 import forms
@@ -99,6 +97,7 @@ def shutdown_session(exception=None):
 @app.errorhandler(404)
 def not_found(error):
     return render_template('errors/404.j2'), 404
+
 
 @app.errorhandler(500)
 def internal_error(exception):

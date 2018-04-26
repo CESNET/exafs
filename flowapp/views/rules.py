@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, flash, request, url_for, session
 import requests
+from operator import ge, lt
 
 from ..forms import RTBHForm, IPv4Form, IPv6Form, NetInRange
 from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets
@@ -278,27 +279,36 @@ def export():
 @rules.route('/announce_all', methods=['GET'])
 @localhost_only
 def announce_all():
-    print(request.remote_addr)
-    announce_routes()
+    announce_routes(messages.ANNOUNCE)
     return ' '
 
 
-def announce_routes():
+@rules.route('/withdraw_expired', methods=['GET'])
+@localhost_only
+def withdraw_expired():
+    announce_routes(messages.WITHDRAW)
+    return ' '
+
+
+def announce_routes(action=messages.ANNOUNCE):
     """
-    get actual valid routes from db and send it to ExaBGB api
-    curl --form "command=announce route 100.10.0.0/24 next-hop self" http://localhost:5000/
+    get routes from db and send it to ExaBGB api
+
     @TODO take the request away, use some kind of messaging (maybe celery?)
+    :param action: action with routes - announce valid routes or withdraw expired routes
     """
     today = datetime.now()
-    rules4 = db.session.query(Flowspec4).filter(Flowspec4.expires >= today).order_by(
-        Flowspec4.expires.desc()).all()
-    rules6 = db.session.query(Flowspec6).filter(Flowspec6.expires >= today).order_by(
-        Flowspec6.expires.desc()).all()
-    rules_rtbh = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
+    comp_func = ge if action == messages.ANNOUNCE else lt
 
-    output4 = [messages.create_ipv4(rule) for rule in rules4]
-    output6 = [messages.create_ipv6(rule) for rule in rules6]
-    output_rtbh = [messages.create_rtbh(rule) for rule in rules_rtbh]
+    rules4 = db.session.query(Flowspec4).filter(comp_func(Flowspec4.expires, today)).order_by(
+        Flowspec4.expires.desc()).all()
+    rules6 = db.session.query(Flowspec6).filter(comp_func(Flowspec6.expires, today)).order_by(
+        Flowspec6.expires.desc()).all()
+    rules_rtbh = db.session.query(RTBH).filter(ge(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
+
+    output4 = [messages.create_ipv4(rule, action) for rule in rules4]
+    output6 = [messages.create_ipv6(rule, action) for rule in rules6]
+    output_rtbh = [messages.create_rtbh(rule, action) for rule in rules_rtbh]
 
     output = []
     output.extend(output4)
@@ -347,4 +357,3 @@ def log_withdraw(task, rule_type, deleted_id):
               user_id=session['user_id'])
     db.session.add(log)
     db.session.commit()
-

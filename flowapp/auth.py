@@ -56,6 +56,8 @@ def localhost_only(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if request.remote_addr != app.config.get('LOCAL_IP'):
+            print(request.remote_addr)
+            print(app.config.get('LOCAL_IP'))
             abort(403)  # Forbidden
         return f(*args, **kwargs)
 
