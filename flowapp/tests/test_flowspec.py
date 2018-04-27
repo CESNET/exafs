@@ -65,3 +65,13 @@ def test_lower_equal_than():
     test for <x to >=0&<=0
     """
     assert ">=0&<=10" == flowapp.flowspec.translate_sequence("<=10")
+
+
+@pytest.mark.parametrize("address, mask, expected", [
+    ("147.230.23.25", "24", False),
+    ("147.230.23.0", "24", True),
+    ("2001:718:1C01:1111::1111", "64", False),
+    ("2001:718:1C01:1111::", "64", True),
+])
+def test_is_valid_address_with_mask(address, mask, expected):
+    assert flowapp.flowspec.is_valid_address_with_mask(address, mask) == expected

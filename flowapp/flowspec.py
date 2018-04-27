@@ -11,7 +11,7 @@ MAX_PORT = 65535
 MAX_PACKET = 9216
 
 
-def adress_in_range(address, net_ranges):
+def address_in_range(address, net_ranges):
     """
     check if given ip address is in user network ranges
     :param address: string ip_address
@@ -28,6 +28,22 @@ def adress_in_range(address, net_ranges):
     return result
 
 
+def is_valid_address_with_mask(address, mask):
+    """
+    check if given ip address is in user network ranges
+    :param address: string ip_address
+    :param net_ranges: list of network ranges
+    :return: boolean
+    """
+    merged = u"{}/{}".format(address, mask)
+    try:
+        ipaddress.ip_network(merged)
+    except ValueError:
+        return False
+
+    return True
+
+
 def filer_rules(net_ranges, rules):
     """
     Return only rules matching user net ranges
@@ -36,8 +52,8 @@ def filer_rules(net_ranges, rules):
     :return: filtered list of rules
     """
     return [rule for rule in rules if
-            adress_in_range(rule.source, net_ranges)
-            or adress_in_range(rule.dest, net_ranges)]
+            address_in_range(rule.source, net_ranges)
+            or address_in_range(rule.dest, net_ranges)]
 
 
 def translate_sequence(sequence, max_val=MAX_PORT):

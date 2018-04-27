@@ -72,7 +72,7 @@ def index():
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
     # only admin can see all the rules
-    if 3 not in session['user_role_ids']:
+    if 333 not in session['user_role_ids']:
         rules4 = flowspec.filer_rules(net_ranges, rules4)
         rules6 = flowspec.filer_rules(net_ranges, rules6)
         rules_rtbh = flowspec.filer_rules(net_ranges, rules_rtbh)

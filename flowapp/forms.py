@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField
-from wtforms.validators import DataRequired, Length, Email, IPAddress, NumberRange, Optional, ValidationError
+from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional, ValidationError
 
 import flowspec
 import ipaddress
@@ -79,19 +79,27 @@ class NetInRange(object):
             for adr_range in self.net_ranges:
                 result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
 
-        if result == False:
+        if not result:
             raise ValidationError(self.message)
 
 
-def address_in_range(address, address_range):
-    result = False
-    try:
-        for adr_range in address_range:
-            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
-    except ValueError:
-        result = False
+class IPAddress(object):
+    """
+    Validator for IP address - the original from WTForms is not working for ipv6 correctly
+    """
 
-    return result
+    def __init__(self, message=None):
+        if not message:
+            message = u'This does not look like valid IPAddress: '
+        self.message = message
+
+    def __call__(self, form, field):
+        print("VALIDATOR CALL")
+        result = False
+        result = result or ipaddress.ip_address(field.data)
+
+        if not result:
+            raise ValidationError(self.message + str(field.data))
 
 
 class UserForm(FlaskForm):
@@ -156,14 +164,14 @@ class ActionForm(FlaskForm):
 
 class RTBHForm(FlaskForm):
     ipv4 = StringField('Source IPv4 address',
-                       validators=[Optional(), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+                       validators=[Optional(), IPAddress(message='provide valid IPv4 adress')]
                        )
 
     ipv4_mask = IntegerField('Source IPv4  mask (bytes)',
                              validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
 
     ipv6 = StringField('Source IPv6 address',
-                       validators=[Optional(), IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
+                       validators=[Optional(), IPAddress(message='provide valid IPv6 adress')]
                        )
     ipv6_mask = IntegerField('Source mask (bytes)',
                              validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
@@ -186,14 +194,14 @@ class IPv4Form(FlaskForm):
         self.net_ranges = None
 
     source = StringField('Source address',
-                         validators=[Optional(), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+                         validators=[Optional(), IPAddress(message='provide valid IPv4 adress')]
                          )
 
     source_mask = IntegerField('Source mask (bytes)',
                                validators=[Optional(), NumberRange(min=0, max=32, message='invalid mask value (0-32)')])
 
     dest = StringField('Destination address',
-                       validators=[Optional(), IPAddress(ipv4=True, ipv6=False, message='provide valid IPv4 adress')]
+                       validators=[Optional(), IPAddress(message='provide valid IPv4 adress')]
                        )
 
     dest_mask = IntegerField('Destination mask (bytes)',
@@ -234,8 +242,8 @@ class IPv4Form(FlaskForm):
         if not FlaskForm.validate(self):
             return False
 
-        source_in_range = address_in_range(self.source.data, self.net_ranges)
-        dest_in_range = address_in_range(self.dest.data, self.net_ranges)
+        source_in_range = flowspec.address_in_range(self.source.data, self.net_ranges)
+        dest_in_range = flowspec.address_in_range(self.dest.data, self.net_ranges)
 
         if not (source_in_range or dest_in_range):
             self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
@@ -255,7 +263,7 @@ class IPv6Form(FlaskForm):
         self.net_ranges = None
 
     source = StringField('Source address',
-                         validators=[Optional(), IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
+                         validators=[Optional(), IPAddress(message='provide valid IPv6 adress')]
                          )
 
     source_mask = IntegerField('Source prefix length (bytes)',
@@ -263,7 +271,7 @@ class IPv6Form(FlaskForm):
                                            NumberRange(min=64, max=128, message='invalid prefix value (64-128)')])
 
     dest = StringField('Destination address',
-                       validators=[Optional(), IPAddress(ipv6=True, ipv4=False, message='provide valid IPv6 adress')]
+                       validators=[Optional(), IPAddress(message='provide valid IPv6 adress')]
                        )
 
     dest_mask = IntegerField('Destination prefix length (bytes)',
@@ -305,8 +313,8 @@ class IPv6Form(FlaskForm):
         if not FlaskForm.validate(self):
             return False
 
-        source_in_range = address_in_range(self.source.data, self.net_ranges)
-        dest_in_range = address_in_range(self.dest.data, self.net_ranges)
+        source_in_range = flowspec.address_in_range(self.source.data, self.net_ranges)
+        dest_in_range = flowspec.address_in_range(self.dest.data, self.net_ranges)
 
         if not (source_in_range or dest_in_range):
             self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))

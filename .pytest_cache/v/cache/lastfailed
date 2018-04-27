@@ -1,3 +1,5 @@
 {
-  "flowapp/test_flowapp.py::test_create_survey": true
+  "flowapp/test_flowapp.py::test_create_survey": true, 
+  "flowapp/tests/test_flowspec.py::test_check_ipv6[2001:718:1C01:1111::-True]": true, 
+  "flowapp/tests/test_flowspec.py::test_check_ipv6[2001:718:1C01:1111::1111-False]": true
 }
