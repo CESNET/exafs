@@ -4,7 +4,8 @@ from flask import Blueprint, render_template, redirect, flash, request, url_for,
 import requests
 from operator import ge, lt
 
-from ..forms import RTBHForm, IPv4Form, IPv6Form, NetInRange
+from ..forms import RTBHForm, IPv4Form, IPv6Form
+from ..validators import NetInRange
 from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets
 from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes

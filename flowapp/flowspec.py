@@ -28,22 +28,6 @@ def address_in_range(address, net_ranges):
     return result
 
 
-def is_valid_address_with_mask(address, mask):
-    """
-    check if given ip address is in user network ranges
-    :param address: string ip_address
-    :param net_ranges: list of network ranges
-    :return: boolean
-    """
-    merged = u"{}/{}".format(address, mask)
-    try:
-        ipaddress.ip_network(merged)
-    except ValueError:
-        return False
-
-    return True
-
-
 def filer_rules(net_ranges, rules):
     """
     Return only rules matching user net ranges
