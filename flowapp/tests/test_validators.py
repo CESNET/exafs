@@ -8,9 +8,23 @@ class FieldMock():
         self.data = "tbd"
 
 
+class RuleMock():
+
+    def __init__(self):
+        self.source = None
+        self.source_mask = None
+        self.dest = None
+        self.dest_mask = None
+
+
 @pytest.fixture
 def field():
     return FieldMock()
+
+
+@pytest.fixture
+def rule():
+    return RuleMock()
 
 
 @pytest.mark.parametrize("address, mask, expected", [
@@ -34,6 +48,7 @@ def test_ipaddress_passes(field, address):
     field.data = address
     adr(None, field)
 
+
 @pytest.mark.parametrize("address", [
     u"147.230.1000.25",
     u"2001:718::::",
@@ -43,3 +58,13 @@ def test_ipaddress_raises(field, address):
     field.data = address
     with pytest.raises(flowapp.validators.ValidationError):
         adr(None, field)
+
+
+@pytest.mark.parametrize("address, mask, ranges, expected", [
+    (u"147.230.23.0", u"24", [u"147.230.0.0/16", u"147.251.0.0/16"], True),
+    (u"147.230.23.0", u"24", [u"147.230.0.0/16", u"147.251.0.0/16"], True)
+])
+def test_editable_rule(rule, address, mask, ranges, expected):
+    rule.source = address
+    rule.source_mask = mask
+    assert flowapp.validators.editable_range(rule, ranges) == expected

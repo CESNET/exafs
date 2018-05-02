@@ -5,6 +5,8 @@ from flask_sso import SSO
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 
+import flowapp.validators
+
 app = Flask(__name__)
 db = SQLAlchemy()
 
@@ -72,7 +74,7 @@ def index():
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
     # only admin can see all the rules
-    if 333 not in session['user_role_ids']:
+    if 3 not in session['user_role_ids']:
         rules4 = flowspec.filer_rules(net_ranges, rules4)
         rules6 = flowspec.filer_rules(net_ranges, rules6)
         rules_rtbh = flowspec.filer_rules(net_ranges, rules_rtbh)
@@ -103,3 +105,14 @@ def not_found(error):
 def internal_error(exception):
     app.logger.error(exception)
     return render_template('errors/500.j2'), 500
+
+
+@app.context_processor
+def utility_processor():
+    def editable_rule(rule):
+        if rule:
+            flowapp.validators.editable_range(rule, models.get_user_nets(session['user_id']))
+            return True
+        return False
+
+    return dict(editable_rule=editable_rule)

@@ -4,6 +4,23 @@ import flowspec
 import ipaddress
 
 
+def address_in_range(address, net_ranges):
+    """
+    check if given ip address is in user network ranges
+    :param address: string ip_address
+    :param net_ranges: list of network ranges
+    :return: boolean
+    """
+    result = False
+    try:
+        for adr_range in net_ranges:
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+    except ValueError:
+        return False
+
+    return result
+
+
 def address_with_mask(address, mask):
     """
     check if given ip address is in user network ranges
@@ -56,7 +73,7 @@ class PacketString(object):
             raise ValidationError(self.message + str(e.args[0]))
 
 
-class NetRageString(object):
+class NetRangeString(object):
     """
     Validator for  IP adress network range
     each part of string must be valid ip address separated by spaces, newlines
@@ -109,3 +126,27 @@ class IPAddress(object):
             ipaddress.ip_address(field.data)
         except ValueError:
             raise ValidationError(self.message + str(field.data))
+
+
+def editable_range(rule, net_ranges):
+    """
+    check if the rule is editable for user
+    choice is based on user network ranges
+    :param net_ranges: list of user networks
+    :param rule: object IPV4 or IPV6 rule
+    """
+    result = False
+
+    for adr_range in net_ranges:
+        net = ipaddress.ip_network(adr_range)
+        if rule.source and ipaddress.ip_address(rule.source) in net:
+            adr, pref = adr_range.split("/")
+            if rule.source_mask and int(rule.source_mask) >= int(pref):
+                result = True
+
+        if rule.dest and ipaddress.ip_address(rule.dest) in net:
+            adr, pref = adr_range.split("/")
+            if rule.dest_mask and int(rule.dest_mask) >= int(pref):
+                result = True
+
+    return result

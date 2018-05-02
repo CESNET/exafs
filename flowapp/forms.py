@@ -3,7 +3,7 @@ from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerFiel
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
 import flowspec
-from validators import IPAddress, NetRageString, PortString, PacketString
+from validators import IPAddress, NetRangeString, PortString, PacketString, address_with_mask, address_in_range
 
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
              ('ECE', 'ECE'), ('CWR', 'CWR'), ('NS', 'NS')]
@@ -51,7 +51,7 @@ class OrganizationForm(FlaskForm):
     )
 
     arange = TextAreaField('Organization Adress Range - one range per row',
-                           validators=[Optional(), NetRageString()]
+                           validators=[Optional(), NetRangeString()]
                            )
 
 
@@ -138,30 +138,41 @@ class IPv4Form(FlaskForm):
                          coerce=int,
                          validators=[DataRequired()])
 
-    expires = StringField(
-        'Expires'
-    )
+    expires = StringField('Expires')
 
-    comment = arange = TextAreaField('Comments'
-                                     )
+    comment = arange = TextAreaField('Comments')
 
     def validate(self):
-        if not FlaskForm.validate(self):
-            return False
+        result = True
 
-        source_in_range = flowspec.address_in_range(self.source.data, self.net_ranges)
-        dest_in_range = flowspec.address_in_range(self.dest.data, self.net_ranges)
+        if not FlaskForm.validate(self):
+            result = False
+
+        if self.source.data and not address_with_mask(self.source.data, self.source_mask.data):
+            self.source.errors.append(
+                "This is not valid combination of address {} and mask {}.".format(self.source.data,
+                                                                                  self.source_mask.data))
+            result = False
+
+        if self.dest.data and not address_with_mask(self.dest.data, self.dest_mask.data):
+            self.dest.errors.append(
+                "This is not valid combination of address {} and mask {}.".format(self.dest.data,
+                                                                                  self.dest_mask.data))
+            result = False
+
+        source_in_range = address_in_range(self.source.data, self.net_ranges)
+        dest_in_range = address_in_range(self.dest.data, self.net_ranges)
 
         if not (source_in_range or dest_in_range):
             self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
             self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
-            return False
+            result = False
 
         if len(self.flags.data) > 0 and self.protocol.data != 'tcp':
             self.flags.errors.append("Can not set TCP flags for protocol {} !".format(self.protocol.data.upper()))
-            return False
+            result = False
 
-        return True
+        return result
 
 
 class IPv6Form(FlaskForm):
@@ -217,19 +228,32 @@ class IPv6Form(FlaskForm):
                                      )
 
     def validate(self):
+        result = True
         if not FlaskForm.validate(self):
-            return False
+            result = False
 
-        source_in_range = flowspec.address_in_range(self.source.data, self.net_ranges)
-        dest_in_range = flowspec.address_in_range(self.dest.data, self.net_ranges)
+        if self.source.data and not address_with_mask(self.source.data, self.source_mask.data):
+            self.source.errors.append(
+                "This is not valid combination of address {} and mask {}.".format(self.source.data,
+                                                                                  self.source_mask.data))
+            result = False
+
+        if self.dest.data and not address_with_mask(self.dest.data, self.dest_mask.data):
+            self.dest.errors.append(
+                "This is not valid combination of address {} and mask {}.".format(self.dest.data,
+                                                                                  self.dest_mask.data))
+            result = False
+
+        source_in_range = address_in_range(self.source.data, self.net_ranges)
+        dest_in_range = address_in_range(self.dest.data, self.net_ranges)
 
         if not (source_in_range or dest_in_range):
             self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
             self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
-            return False
+            result = False
 
         if len(self.flags.data) > 0 and self.next_header.data != 'tcp':
             self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.protocol.data.upper()))
-            return False
+            result = False
 
-        return True
+        return result

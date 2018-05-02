@@ -1,5 +1,6 @@
 import re
-import ipaddress
+import validators
+
 
 NUMBER = re.compile(r'^\d+$', re.IGNORECASE)
 RANGE = re.compile(r'^(\d+)-(\d+)$', re.IGNORECASE)
@@ -11,23 +12,6 @@ MAX_PORT = 65535
 MAX_PACKET = 9216
 
 
-def address_in_range(address, net_ranges):
-    """
-    check if given ip address is in user network ranges
-    :param address: string ip_address
-    :param net_ranges: list of network ranges
-    :return: boolean
-    """
-    result = False
-    try:
-        for adr_range in net_ranges:
-            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
-    except ValueError:
-        return False
-
-    return result
-
-
 def filer_rules(net_ranges, rules):
     """
     Return only rules matching user net ranges
@@ -36,8 +20,8 @@ def filer_rules(net_ranges, rules):
     :return: filtered list of rules
     """
     return [rule for rule in rules if
-            address_in_range(rule.source, net_ranges)
-            or address_in_range(rule.dest, net_ranges)]
+            validators.address_in_range(rule.source, net_ranges)
+            or validators.address_in_range(rule.dest, net_ranges)]
 
 
 def translate_sequence(sequence, max_val=MAX_PORT):
@@ -95,3 +79,5 @@ def check_limit(value, max_value):
         raise ValueError("Invalid value number: {} is too big. Max is {}.".format(value, max_value))
     else:
         return value
+
+

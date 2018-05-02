@@ -6,5 +6,6 @@
   "flowapp/tests/test_flowspec.py::test_is_valid_address_with_mask[147.230.23.25-24-False]": true, 
   "flowapp/tests/test_flowspec.py::test_is_valid_address_with_mask[2001:718:1C01:1111::-64-True]": true, 
   "flowapp/tests/test_flowspec.py::test_is_valid_address_with_mask[2001:718:1C01:1111::1111-64-False]": true, 
+  "flowapp/tests/test_validators.py::test_editable_rule[147.230.23.0-24-ranges1-False]": true, 
   "flowapp/tests/test_validators.py::test_ipaddress": true
 }
