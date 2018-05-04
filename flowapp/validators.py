@@ -21,6 +21,26 @@ def address_in_range(address, net_ranges):
     return result
 
 
+def whole_world_range(net_ranges, address=u"0.0.0.0"):
+    """
+    check if  user can specify network address for whole world
+    :param address: 0.0.0.0/0 or ::/0
+    :param net_ranges: list of network ranges
+    :return: boolean
+    """
+    result = False
+
+    try:
+        for adr_range in net_ranges:
+            print(adr_range)
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+    except ValueError:
+        print("ValueError")
+        return False
+
+    return result
+
+
 def address_with_mask(address, mask):
     """
     check if given ip address is in user network ranges

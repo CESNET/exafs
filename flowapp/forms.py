@@ -3,7 +3,7 @@ from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerFiel
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
 import flowspec
-from validators import IPAddress, NetRangeString, PortString, PacketString, address_with_mask, address_in_range
+from validators import IPAddress, NetRangeString, PortString, PacketString, address_with_mask, address_in_range, whole_world_range
 
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
              ('ECE', 'ECE'), ('CWR', 'CWR'), ('NS', 'NS')]
@@ -160,13 +160,21 @@ class IPv4Form(FlaskForm):
                                                                                   self.dest_mask.data))
             result = False
 
-        source_in_range = address_in_range(self.source.data, self.net_ranges)
-        dest_in_range = address_in_range(self.dest.data, self.net_ranges)
+        if not (self.source.data or self.dest.data):
+            whole_world_member = whole_world_range(self.net_ranges, u"::")
+            print(whole_world_member)
+            if not whole_world_member:
+                result = False
+                self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+        else:
+            source_in_range = address_in_range(self.source.data, self.net_ranges)
+            dest_in_range = address_in_range(self.dest.data, self.net_ranges)
 
-        if not (source_in_range or dest_in_range):
-            self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
-            self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
-            result = False
+            if not (source_in_range or dest_in_range):
+                self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                result = False
 
         if len(self.flags.data) > 0 and self.protocol.data != 'tcp':
             self.flags.errors.append("Can not set TCP flags for protocol {} !".format(self.protocol.data.upper()))
@@ -186,7 +194,7 @@ class IPv6Form(FlaskForm):
 
     source_mask = IntegerField('Source prefix length (bytes)',
                                validators=[Optional(),
-                                           NumberRange(min=64, max=128, message='invalid prefix value (64-128)')])
+                                           NumberRange(min=0, max=128, message='invalid prefix value (0-128)')])
 
     dest = StringField('Destination address',
                        validators=[Optional(), IPAddress(message='provide valid IPv6 adress')]
@@ -194,7 +202,7 @@ class IPv6Form(FlaskForm):
 
     dest_mask = IntegerField('Destination prefix length (bytes)',
                              validators=[Optional(),
-                                         NumberRange(min=64, max=128, message='invalid prefix value (64-128)')])
+                                         NumberRange(min=0, max=128, message='invalid prefix value (0-128)')])
 
     next_header = SelectField('Next Header',
                               choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
@@ -229,28 +237,39 @@ class IPv6Form(FlaskForm):
 
     def validate(self):
         result = True
+
+        # WTForms validation
         if not FlaskForm.validate(self):
             result = False
 
+        # Source Address and mask must fit together
         if self.source.data and not address_with_mask(self.source.data, self.source_mask.data):
             self.source.errors.append(
                 "This is not valid combination of address {} and mask {}.".format(self.source.data,
                                                                                   self.source_mask.data))
             result = False
-
+        # Dest Address and mask must fit together
         if self.dest.data and not address_with_mask(self.dest.data, self.dest_mask.data):
             self.dest.errors.append(
                 "This is not valid combination of address {} and mask {}.".format(self.dest.data,
                                                                                   self.dest_mask.data))
             result = False
 
-        source_in_range = address_in_range(self.source.data, self.net_ranges)
-        dest_in_range = address_in_range(self.dest.data, self.net_ranges)
+        if not (self.source.data or self.dest.data):
+            whole_world_member = whole_world_range(self.net_ranges, u"::")
+            print(whole_world_member)
+            if not whole_world_member:
+                result = False
+                self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+        else:
+            source_in_range = address_in_range(self.source.data, self.net_ranges)
+            dest_in_range = address_in_range(self.dest.data, self.net_ranges)
 
-        if not (source_in_range or dest_in_range):
-            self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
-            self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
-            result = False
+            if not (source_in_range or dest_in_range):
+                self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                result = False
 
         if len(self.flags.data) > 0 and self.next_header.data != 'tcp':
             self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.protocol.data.upper()))

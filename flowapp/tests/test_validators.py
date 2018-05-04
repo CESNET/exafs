@@ -30,6 +30,7 @@ def rule():
 @pytest.mark.parametrize("address, mask, expected", [
     ("147.230.23.25", "24", False),
     ("147.230.23.0", "24", True),
+    ("0.0.0.0", "0", True),
     ("2001:718:1C01:1111::1111", "64", False),
     ("2001:718:1C01:1111::", "64", True),
 ])
