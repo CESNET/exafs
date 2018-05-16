@@ -40,14 +40,34 @@ def test_is_valid_address_with_mask(address, mask, expected):
 
 @pytest.mark.parametrize("address", [
     u"147.230.23.25",
-    u"147.230.23.0",
+    u"147.230.23.0"
+])
+def test_ip4address_passes(field, address):
+    adr = flowapp.validators.IPv4Address()
+    field.data = address
+    adr(None, field)
+
+
+@pytest.mark.parametrize("address", [
     u"2001:718:1C01:1111::1111",
     u"2001:718:1C01:1111::",
 ])
-def test_ipaddress_passes(field, address):
-    adr = flowapp.validators.IPAddress()
+def test_ip6address_passes(field, address):
+    adr = flowapp.validators.IPv6Address()
     field.data = address
     adr(None, field)
+
+
+@pytest.mark.parametrize("address", [
+    u"2001:718:1C01:1111::1111",
+    u"2001:718:1C01:1111::",
+])
+def test_ip6address_passes(field, address):
+    adr = flowapp.validators.IPv4Address()
+    field.data = address
+    with pytest.raises(flowapp.validators.ValidationError):
+        adr(None, field)
+
 
 
 @pytest.mark.parametrize("address", [
@@ -55,7 +75,7 @@ def test_ipaddress_passes(field, address):
     u"2001:718::::",
 ])
 def test_ipaddress_raises(field, address):
-    adr = flowapp.validators.IPAddress()
+    adr = flowapp.validators.IPv6Address()
     field.data = address
     with pytest.raises(flowapp.validators.ValidationError):
         adr(None, field)

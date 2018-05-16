@@ -131,20 +131,43 @@ class NetInRange(object):
             raise ValidationError(self.message)
 
 
-class IPAddress(object):
+class IPv6Address(object):
     """
-    Validator for IP address - the original from WTForms is not working for ipv6 correctly
+    Validator for IPv6 address - the original from WTForms is not working for ipv6 correctly
     """
 
     def __init__(self, message=None):
         if not message:
-            message = u'This does not look like valid IPAddress: '
+            message = u'This does not look like valid IPv6 Address: '
         self.message = message
 
     def __call__(self, form, field):
         try:
-            ipaddress.ip_address(field.data)
+            address = ipaddress.ip_address(field.data)
         except ValueError:
+            raise ValidationError(self.message + str(field.data))
+
+        if not isinstance(address, ipaddress.IPv6Address):
+            raise ValidationError(self.message + str(field.data))
+
+
+class IPv4Address(object):
+    """
+    Validator for IPv4 address - the original from WTForms is not working for ipv6 correctly
+    """
+
+    def __init__(self, message=None):
+        if not message:
+            message = u'This does not look like valid IPv4 Address: '
+        self.message = message
+
+    def __call__(self, form, field):
+        try:
+            address = ipaddress.ip_address(field.data)
+        except ValueError:
+            raise ValidationError(self.message + str(field.data))
+
+        if not isinstance(address, ipaddress.IPv4Address):
             raise ValidationError(self.message + str(field.data))
 
 

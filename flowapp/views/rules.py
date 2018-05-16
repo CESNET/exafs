@@ -224,12 +224,7 @@ def rtbh_rule():
     net_ranges = get_user_nets(session['user_id'])
     form = RTBHForm(request.form)
 
-    # add validator to instance but only once
-    if len(form.ipv4.validators) == 2:
-        form.ipv4.validators.append(NetInRange(net_ranges))
-
-    if len(form.ipv6.validators) == 2:
-        form.ipv6.validators.append(NetInRange(net_ranges))
+    form.net_ranges = net_ranges
 
     if request.method == 'POST' and form.validate():
 

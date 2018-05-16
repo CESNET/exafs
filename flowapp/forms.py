@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
-from validators import IPAddress, NetRangeString, PortString, address_with_mask, address_in_range, \
+from validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
     whole_world_range
 
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
@@ -82,18 +82,25 @@ class RTBHForm(FlaskForm):
     """
     RoadToBlackHole rule form
     """
+
+    def __init__(self, *args, **kwargs):
+        super(RTBHForm, self).__init__(*args, **kwargs)
+        self.net_ranges = None
+
     ipv4 = StringField('Source IPv4 address',
-                       validators=[Optional(), IPAddress(message='provide valid IPv4 adress')]
+                       validators=[Optional(), IPv4Address(message='provide valid IPv4 adress')]
                        )
 
     ipv4_mask = IntegerField('Source IPv4  mask (bytes)',
-                             validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+                             validators=[Optional(),
+                                         NumberRange(min=0, max=32, message='invalid IPv4 mask value (0-32)')])
 
     ipv6 = StringField('Source IPv6 address',
-                       validators=[Optional(), IPAddress(message='provide valid IPv6 adress')]
+                       validators=[Optional(), IPv6Address(message='provide valid IPv6 adress')]
                        )
     ipv6_mask = IntegerField('Source mask (bytes)',
-                             validators=[Optional(), NumberRange(min=0, max=255, message='invalid mask value (0-255)')])
+                             validators=[Optional(),
+                                         NumberRange(min=0, max=128, message='invalid IPv6 mask value (0-128)')])
 
     community = SelectField('Community',
                             choices=[('2852:666', '2852:666'), ('40965:666', '40965:666'), ('xxxxx:666', 'xxxxx:666')],
@@ -106,11 +113,44 @@ class RTBHForm(FlaskForm):
     comment = arange = TextAreaField('Comments'
                                      )
 
+    def validate(self):
+        """
+        custom validation method
+        :return: boolean
+        """
+        result = True
+
+        if not FlaskForm.validate(self):
+            result = False
+
+        if self.ipv4.data and not address_with_mask(self.ipv4.data, self.ipv4_mask.data):
+            self.ipv4.errors.append(
+                "This is not valid combination of address {} and mask {}.".format(self.ipv4.data,
+                                                                                  self.ipv4_mask.data))
+            result = False
+
+        if self.ipv6.data and not address_with_mask(self.ipv6.data, self.ipv6_mask.data):
+            self.ipv6.errors.append(
+                "This is not valid combination of address {} and mask {}.".format(self.ipv6.data,
+                                                                                  self.ipv6_mask.data))
+            result = False
+
+        ipv6_in_range = address_in_range(self.ipv6.data, self.net_ranges)
+        ipv4_in_range = address_in_range(self.ipv4.data, self.net_ranges)
+
+        if not (ipv6_in_range or ipv4_in_range):
+            self.ipv6.errors.append("IPv4 or IPv6 address must be in organization range : {}.".format(self.net_ranges))
+            self.ipv4.errors.append("IPv4 or IPv6 address must be in organization range : {}.".format(self.net_ranges))
+            result = False
+
+        return result
+
 
 class IPForm(FlaskForm):
     """
     Base class for IPv4 and IPv6 rules
     """
+
     def __init__(self, *args, **kwargs):
         super(IPForm, self).__init__(*args, **kwargs)
         self.net_ranges = None
@@ -195,7 +235,6 @@ class IPForm(FlaskForm):
         """
         if not (self.source.data or self.dest.data):
             whole_world_member = whole_world_range(self.net_ranges, self.zero_address)
-            print(whole_world_member)
             if not whole_world_member:
                 self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
                 self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
@@ -222,20 +261,21 @@ class IPv4Form(IPForm):
     """
     IPv4 form object
     """
+
     def __init__(self, *args, **kwargs):
         super(IPv4Form, self).__init__(*args, **kwargs)
         self.net_ranges = None
 
     zero_address = u"0.0.0.0"
     source = StringField('Source address',
-                         validators=[Optional(), IPAddress(message='provide valid IPv4 adress')]
+                         validators=[Optional(), IPv4Address(message='provide valid IPv4 adress')]
                          )
 
     source_mask = IntegerField('Source mask (bytes)',
                                validators=[Optional(), NumberRange(min=0, max=32, message='invalid mask value (0-32)')])
 
     dest = StringField('Destination address',
-                       validators=[Optional(), IPAddress(message='provide valid IPv4 adress')]
+                       validators=[Optional(), IPv4Address(message='provide valid IPv4 adress')]
                        )
 
     dest_mask = IntegerField('Destination mask (bytes)',
@@ -261,13 +301,14 @@ class IPv6Form(IPForm):
     """
     IPv6 form object
     """
+
     def __init__(self, *args, **kwargs):
         super(IPv6Form, self).__init__(*args, **kwargs)
         self.net_ranges = None
 
     zero_address = u"::"
     source = StringField('Source address',
-                         validators=[Optional(), IPAddress(message='provide valid IPv6 adress')]
+                         validators=[Optional(), IPv6Address(message='provide valid IPv6 adress')]
                          )
 
     source_mask = IntegerField('Source prefix length (bytes)',
@@ -275,7 +316,7 @@ class IPv6Form(IPForm):
                                            NumberRange(min=0, max=128, message='invalid prefix value (0-128)')])
 
     dest = StringField('Destination address',
-                       validators=[Optional(), IPAddress(message='provide valid IPv6 adress')]
+                       validators=[Optional(), IPv6Address(message='provide valid IPv6 adress')]
                        )
 
     dest_mask = IntegerField('Destination prefix length (bytes)',
