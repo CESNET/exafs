@@ -47,7 +47,7 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 
 #### As deploy user
 
-* clone source from repository: git clone git@homeproj.cesnet.cz:flowspec www
+* clone source from repository: git clone git@github.com:CESNET/exafs.git www
 * cd www
 * virtualenv venv
 * source venv/bin/activate
