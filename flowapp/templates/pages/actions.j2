@@ -6,6 +6,7 @@
     <th>Name</th>
     <th>Command</th>
     <th>Description</th>
+    <th>Minimum level</th>
     <th>action</th>
     </tr>
     {% for action in actions %}
@@ -14,6 +15,9 @@
         <td>{{ action.command }}</td>
         <td>
             {{ action.description }}
+        </td>
+        <td>
+            {{ action.role }}
         </td>
         <td>
         <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_action', action_id=action.id) }}" role="button">

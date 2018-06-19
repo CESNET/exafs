@@ -166,7 +166,10 @@ def action():
         # test if Acttion is unique
         exist = get_existing_action(form.name.data, form.command.data)
         if not exist:
-            action = Action(name=form.name.data, command=form.command.data, description=form.description.data)
+            action = Action(name=form.name.data,
+                            command=form.command.data,
+                            description=form.description.data,
+                            role_id=form.role_id.data)
             db.session.add(action)
             db.session.commit()
             flash('Action saved', 'alert-success')
@@ -184,18 +187,13 @@ def action():
 @admin_required
 def edit_action(action_id):
     action = db.session.query(Action).get(action_id)
+    print(action.role_id)
     form = ActionForm(request.form, obj=action)
-
     if request.method == 'POST' and form.validate():
-        exist = get_existing_action(form.name.data, form.command.data)
-        if not exist:
-            form.populate_obj(action)
-            db.session.commit()
-            flash('Action updated')
-            return redirect(url_for('admin.actions'))
-        else:
-            flash(u'Action with name {} or command {} already exists'.format(
-                form.name.data, form.command.data), 'alert-danger')
+        form.populate_obj(action)
+        db.session.commit()
+        flash('Action updated')
+        return redirect(url_for('admin.actions'))
 
     action_url = url_for('admin.edit_action', action_id=action.id)
     return render_template('forms/simple_form.j2', title=u"Editing {}".format(action.name), form=form,

@@ -77,6 +77,10 @@ class ActionForm(FlaskForm):
 
     description = StringField('Action description')
 
+    role_id = SelectField('Minimal required role',
+                            choices=[('2', 'user'), ('3', 'admin')],
+                            validators=[DataRequired()])
+
 
 class RTBHForm(FlaskForm):
     """
