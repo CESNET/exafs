@@ -3,9 +3,6 @@ from os import environ
 from flowapp import app, db
 import config
 
-
-
-
 # Configurations
 try:
     env = environ['USERNAME']

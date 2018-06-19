@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import requests
 from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 
 import flowapp.validators
+
+__version__ = '0.1.6'
 
 app = Flask(__name__)
 db = SQLAlchemy()
@@ -20,6 +21,7 @@ SSO_ATTRIBUTE_MAP = {
     'cn': (False, 'cn'),
 }
 
+app.config.setdefault('VERSION', __version__)
 app.config.setdefault('SSO_ATTRIBUTE_MAP', SSO_ATTRIBUTE_MAP)
 app.config.setdefault('SSO_LOGIN_URL', '/login')
 
