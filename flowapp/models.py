@@ -364,6 +364,21 @@ def get_user_nets(user_id):
 
     return result
 
+
+def get_user_actions(user_roles):
+    """
+    Return list of actions based on current user role
+    """
+    max_role = max(user_roles)
+    if max_role == 3:
+        actions = db.session.query(Action).order_by('name')
+    else:
+        actions = db.session.query(Action).filter_by(role_id=max_role).order_by('name')
+
+    return [(g.id, g.name) for g in actions]
+
+
+
 def get_existing_action(name=None, command=None):
     """
     return Action with given name or command if the action exists

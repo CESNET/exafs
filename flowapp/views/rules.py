@@ -6,7 +6,7 @@ from operator import ge, lt
 
 from ..forms import RTBHForm, IPv4Form, IPv6Form
 from ..validators import NetInRange
-from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets
+from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions
 from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
@@ -113,9 +113,9 @@ def ipv4_rule():
     net_ranges = get_user_nets(session['user_id'])
     form = IPv4Form(request.form)
 
+
     # add values to form instance
-    form.action.choices = [(g.id, g.name)
-                           for g in db.session.query(Action).order_by('name')]
+    form.action.choices = get_user_actions(session['user_role_ids'])
 
     form.net_ranges = net_ranges
 
@@ -168,9 +168,7 @@ def ipv4_rule():
 def ipv6_rule():
     net_ranges = get_user_nets(session['user_id'])
     form = IPv6Form(request.form)
-    form.action.choices = [(g.id, g.name)
-                           for g in db.session.query(Action).order_by('name')]
-
+    form.action.choices = get_user_actions(session['user_role_ids'])
     form.net_ranges = net_ranges
 
     if request.method == 'POST' and form.validate():

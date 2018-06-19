@@ -24,6 +24,18 @@ def filer_rules(net_ranges, rules):
             or validators.address_in_range(rule.dest, net_ranges)]
 
 
+def filer_rtbh_rules(net_ranges, rules):
+    """
+    Return only rules matching user net ranges
+    :param net_ranges: list of network ranges
+    :param rules: list of RTBH rules
+    :return: filtered list of rules
+    """
+    return [rule for rule in rules if
+            validators.address_in_range(rule.ipv4, net_ranges)
+            or validators.address_in_range(rule.ipv6, net_ranges)]
+
+
 def translate_sequence(sequence, max_val=MAX_PORT):
     """
     translate command sequence sepparated by ; to ExaBGP command format

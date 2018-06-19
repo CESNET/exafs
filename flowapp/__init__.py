@@ -79,7 +79,7 @@ def index():
     if 3 not in session['user_role_ids']:
         rules4 = flowspec.filer_rules(net_ranges, rules4)
         rules6 = flowspec.filer_rules(net_ranges, rules6)
-        rules_rtbh = flowspec.filer_rules(net_ranges, rules_rtbh)
+        rules_rtbh = flowspec.filer_rtbh_rules(net_ranges, rules_rtbh)
 
     rules = {4: rules4, 6: rules6}
     my_actions = db.session.query(models.Action).all()
