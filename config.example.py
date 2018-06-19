@@ -8,14 +8,14 @@ class Config(object):
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://user:password@localhost/flowspec?charset=utf8'
+    SQLALCHEMY_DATABASE_URI = 'mysql://user:password@localhost/exafs?charset=utf8'
     LOCAL_IP = '127.0.0.1'
     SSO_AUTH = True
     DEBUG = True
 
 
 class DevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:my-secret-pw@127.0.0.1:3306/flowtest?host=127.0.0.1?port=3306?charset=utf8'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:my-secret-pw@127.0.0.1:3306/exafs?host=127.0.0.1?port=3306?charset=utf8'
     LOCAL_IP = '127.0.0.1'
     DEBUG = True
 

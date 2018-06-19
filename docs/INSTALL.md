@@ -1,8 +1,9 @@
-# FlowSpec tool
+# ExaFS tool
 ## Production install and config notes
 
 Example of full instalation and deployment in production enviroment. 
 Includes: shibboleth auth, mariadb, uwsgi, supervisord
+
 
 ### shibboleth config:
 ```
@@ -14,7 +15,7 @@ Includes: shibboleth auth, mariadb, uwsgi, supervisord
 
 ```
 
-### httpd ssl.conf
+### httpd ssl.conf with shibboleth
 
 ```
 # Proxy everything to the WSGI server except /Shibboleth.sso and
@@ -27,37 +28,56 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 
 ### Flask app
 
-#### As root
-* yum install -y python-devel gcc
-* yum install mod_proxy_uwsgi   
-* yum install mariadb mariadb-server mariadb-devel
-* systemctl start mariadb
-* mysql_secure_installation
-* systemctl enable mariadb
-* pip install virtualenv honcho uwsgi
-* mysql -p
+#### Install python runtime and other deps 
+As root. Install dependencies. If you are using Debian or Ubunutu, you must of course use apt and sudo instead yum.
+```
+yum install -y python-devel gcc
+yum install mod_proxy_uwsgi   
+yum install mariadb mariadb-server mariadb-devel
+```
+Start db and secure instalation
+```
+systemctl start mariadb
+mysql_secure_installation
+systemctl enable mariadb
+```
+Install python dependencies
+```
+pip install virtualenv honcho uwsgi
+```
 
-#### As mysql root
-* create database flowspec;
-* CREATE USER 'flowspec'@'localhost' IDENTIFIED BY 'password'; insert some real password
-* use flowspec;
-* GRANT ALL PRIVILEGES ON flowspec.* TO 'flowspec'@'localhost';
-* FLUSH PRIVILEGES;
-* exit;
+#### Prepare the db
 
-#### As deploy user
+Now prepare the database. Start mysql client with
+```
+mysql -u root -p 
+```
+Now create the db and user
+```
+create database exafs;
+CREATE USER 'exafs'@'localhost' IDENTIFIED BY 'password'; insert some real password
+use exafs;
+GRANT ALL PRIVILEGES ON exafs.* TO 'exafs'@'localhost';
+FLUSH PRIVILEGES;
+exit;
+```
 
-* clone source from repository: git clone git@github.com:CESNET/exafs.git www
-* cd www
-* virtualenv venv
-* source venv/bin/activate
-* pip install -r requirements.txt
+#### App instalation
+As deploy user pull the source codes, create virtualenv and install required python dependencies.
+```
+clone source from repository: git clone git@github.com:CESNET/exafs.git www
+cd www
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-#### As root
-* make selinux happy: setsebool httpd_can_network_connect 1 
-* pip install supervisor
+#### make selinux happy - As root
+```
+setsebool httpd_can_network_connect 1
+``` 
 
-#### Supervisor as root
+#### Supervisord - install as root
 1. install:
    `pip install supervisor`
 2. configure:
@@ -75,17 +95,23 @@ ProxyPass / uwsgi://127.0.0.1:8000/
    `systemctl status supervisord`
 6. auto start service on system startup: 
    `systemctl enable supervisord`
-7. copy flowspec.conf to supervisord.conf
+7. copy exafs.supervisord.conf to /etc/supervisord/
+  `cp exafs.supervisord.conf /etc/supervisord/conf.d/`
 
-#### As deploy user
-
-* cd ~/www
-* source venv/bin/activate
-* honcho export -a myapp supervisord /etc/supervisor/conf.d
-* v /etc/supervisor/conf.d change user to deploy
-
+#### Final steps - as deploy user
+Create and populate database tables.
+```
+cd ~/www
+source venv/bin/activate
+python db-init.py
+```
 
 #### As root
-* mkdir /var/log/flowspec/
-* systemctl restart httpd
-* systemctl restart supervisord
+Prepare the log dir, start services.
+```
+mkdir /var/log/flowspec/
+systemctl start httpd
+systemctl start supervisord
+```
+
+You are ready to go ;-)
