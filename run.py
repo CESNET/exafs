@@ -5,11 +5,11 @@ import config
 
 # Configurations
 try:
-    env = environ['USERNAME']
+    env = environ['EXAFS_ENV']
 except KeyError as e:
     env = 'Production'
 
-if env == 'albert':
+if env == 'devel':
     app.config.from_object(config.DevelopmentConfig)
 else:
     app.config.from_object(config.ProductionConfig)
