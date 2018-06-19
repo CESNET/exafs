@@ -360,3 +360,14 @@ def get_user_nets(user_id):
         result.extend(org.arange.split())
 
     return result
+
+def get_existing_action(name=None, command=None):
+    """
+    return Action with given name or command if the action exists
+    return None if action not exists
+    :param name: string action name
+    :param command: string action command
+    :return: action id
+    """
+    action = Action.query.filter((Action.name == name) | (Action.command == command)).first()
+    return action.id if hasattr(action, 'id') else None

@@ -1,8 +1,8 @@
 # flowapp/views/admin.py
-
+from sqlalchemy import or_
 from flask import Blueprint, render_template, redirect, flash, request, url_for
 from ..forms import UserForm, ActionForm, OrganizationForm
-from ..models import User, Action, Organization, Role, insert_user
+from ..models import User, Action, Organization, Role, insert_user, get_existing_action
 from ..auth import auth_required, admin_required
 from flowapp import db
 
@@ -164,7 +164,7 @@ def action():
 
     if request.method == 'POST' and form.validate():
         # test if Acttion is unique
-        exist = db.session.query(Action).filter_by(name=form.name.data).first()
+        exist = get_existing_action(form.name.data, form.command.data)
         if not exist:
             action = Action(name=form.name.data, command=form.command.data, description=form.description.data)
             db.session.add(action)
@@ -172,8 +172,8 @@ def action():
             flash('Action saved', 'alert-success')
             return redirect(url_for('admin.actions'))
         else:
-            flash(u'Action {} already exists'.format(
-                form.name.data), 'alert-danger')
+            flash(u'Action with name {} or command {} already exists'.format(
+                form.name.data, form.command.data), 'alert-danger')
 
     action_url = url_for('admin.action')
     return render_template('forms/simple_form.j2', title="Add new action to Flowspec", form=form, action_url=action_url)
@@ -187,10 +187,15 @@ def edit_action(action_id):
     form = ActionForm(request.form, obj=action)
 
     if request.method == 'POST' and form.validate():
-        form.populate_obj(action)
-        db.session.commit()
-        flash('Action updated')
-        return redirect(url_for('admin.actions'))
+        exist = get_existing_action(form.name.data, form.command.data)
+        if not exist:
+            form.populate_obj(action)
+            db.session.commit()
+            flash('Action updated')
+            return redirect(url_for('admin.actions'))
+        else:
+            flash(u'Action with name {} or command {} already exists'.format(
+                form.name.data, form.command.data), 'alert-danger')
 
     action_url = url_for('admin.edit_action', action_id=action.id)
     return render_template('forms/simple_form.j2', title=u"Editing {}".format(action.name), form=form,
