@@ -113,7 +113,6 @@ def ipv4_rule():
     net_ranges = get_user_nets(session['user_id'])
     form = IPv4Form(request.form)
 
-
     # add values to form instance
     form.action.choices = get_user_actions(session['user_role_ids'])
 

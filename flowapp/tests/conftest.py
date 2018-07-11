@@ -15,6 +15,37 @@ TESTDB_PATH = "/tmp/{}".format(TESTDB)
 TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 
 
+class FieldMock():
+
+    def __init__(self):
+        self.data = "tbd"
+        self.errors = []
+
+
+class RuleMock():
+
+    def __init__(self):
+        self.source = None
+        self.source_mask = None
+        self.dest = None
+        self.dest_mask = None
+
+
+@pytest.fixture
+def field():
+    return FieldMock()
+
+
+@pytest.fixture
+def field_class():
+    return FieldMock
+
+
+@pytest.fixture
+def rule():
+    return RuleMock()
+
+
 @pytest.fixture(scope='session')
 def app(request):
     """

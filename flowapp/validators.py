@@ -16,6 +16,44 @@ def address_in_range(address, net_ranges):
         for adr_range in net_ranges:
             result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
     except ValueError:
+        print("VALUE ERROR for", address, adr_range)
+        return False
+
+    return result
+
+
+def network_in_range(address, mask, net_ranges):
+    """
+    check if given ip address is in user network ranges
+    :param address: string ip_address
+    :param net_ranges: list of network ranges
+    :return: boolean
+    """
+    result = False
+    network = u"{}/{}".format(address, mask)
+    try:
+        for adr_range in net_ranges:
+            result = result or ipaddress.ip_network(network).subnet_of(ipaddress.ip_network(adr_range))
+    except ValueError:
+        print(address, adr_range)
+        return False
+
+    return result
+
+def range_in_network(address, mask, net_ranges):
+    """
+    check if given ip address is in user network ranges
+    :param address: string ip_address
+    :param net_ranges: list of network ranges
+    :return: boolean
+    """
+    result = False
+    network = u"{}/{}".format(address, mask)
+    try:
+        for adr_range in net_ranges:
+            result = result or ipaddress.ip_network(network).supernet_of(ipaddress.ip_network(adr_range))
+    except ValueError:
+        print(address, adr_range)
         return False
 
     return result
@@ -43,7 +81,7 @@ def whole_world_range(net_ranges, address=u"0.0.0.0"):
 
 def address_with_mask(address, mask):
     """
-    check if given ip address is in user network ranges
+    check if given ip address and mask combination is valid
     :param address: string ip_address
     :param mask: int net prefix/mask
     :return: boolean

@@ -3,7 +3,7 @@ from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerFiel
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
 from validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
-    whole_world_range
+    whole_world_range, network_in_range
 
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
              ('ECE', 'ECE'), ('CWR', 'CWR'), ('NS', 'NS')]
@@ -210,13 +210,13 @@ class IPForm(FlaskForm):
         validate source address, set error message if validation fails
         :return: boolean validation result
         """
-        if self.source.data and not address_with_mask(self.source.data, self.source_mask.data):
+        if self.source.data and address_with_mask(self.source.data, self.source_mask.data):
+            return True
+        else:
             self.source.errors.append(
                 "This is not valid combination of address {} and mask {}.".format(self.source.data,
                                                                                   self.source_mask.data))
             return False
-
-        return True
 
     def validate_dest_address(self):
         """
@@ -244,9 +244,8 @@ class IPForm(FlaskForm):
                 self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
                 return False
         else:
-            source_in_range = address_in_range(self.source.data, self.net_ranges)
-            dest_in_range = address_in_range(self.dest.data, self.net_ranges)
-
+            source_in_range = network_in_range(self.source.data, self.source_mask.data, self.net_ranges)
+            dest_in_range = network_in_range(self.dest.data, self.dest_mask.data, self.net_ranges)
             if not (source_in_range or dest_in_range):
                 self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
                 self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
