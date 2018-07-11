@@ -12,7 +12,7 @@ MAX_PORT = 65535
 MAX_PACKET = 9216
 
 
-def filer_rules(net_ranges, rules):
+def filter_rules_in_network(net_ranges, rules):
     """
     Return only rules matching user net ranges
     :param net_ranges: list of network ranges
@@ -20,11 +20,11 @@ def filer_rules(net_ranges, rules):
     :return: filtered list of rules
     """
     return [rule for rule in rules if
-            validators.address_in_range(rule.source, net_ranges)
-            or validators.address_in_range(rule.dest, net_ranges)]
+            validators.network_in_range(rule.source, rule.source_mask, net_ranges)
+            or validators.network_in_range(rule.dest, rule.dest_mask, net_ranges)]
 
 
-def filer_rtbh_rules(net_ranges, rules):
+def filter_rtbh_rules(net_ranges, rules):
     """
     Return only rules matching user net ranges
     :param net_ranges: list of network ranges
@@ -32,8 +32,8 @@ def filer_rtbh_rules(net_ranges, rules):
     :return: filtered list of rules
     """
     return [rule for rule in rules if
-            validators.address_in_range(rule.ipv4, net_ranges)
-            or validators.address_in_range(rule.ipv6, net_ranges)]
+            validators.network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges)
+            or validators.network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges)]
 
 
 def translate_sequence(sequence, max_val=MAX_PORT):
@@ -93,3 +93,18 @@ def check_limit(value, max_value):
         return value
 
 
+def filter_rules_action(user_actions, rules):
+    """
+    Divide the list of rules by user_actions to editable and viewonly subsets
+    :param user_actions: list of actions allowed for normal user
+    :param rules: list of rules to be filtered
+    :return: editable, viewonly lists
+    """
+    editable = []
+    viewonly = []
+    for rule in rules:
+        if rule.action_id in user_actions:
+            editable.append(rule)
+        else:
+            viewonly.append(rule)
+    return editable, viewonly

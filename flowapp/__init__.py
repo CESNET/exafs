@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 import flowapp.validators
 
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 
 app = Flask(__name__)
 db = SQLAlchemy()
@@ -55,7 +55,8 @@ def login(user_info):
         session['user_org'] = [org.name for org in user.organization.all()]
         session['user_role_ids'] = [role.id for role in user.role.all()]
         session['user_org_ids'] = [org.id for org in user.organization.all()]
-        session['can_edit'] = all(i > 1 for i in session['user_role_ids'])
+        roles = [i > 1 for i in session['user_role_ids']]
+        session['can_edit'] = True if all(roles) and roles else []
 
         return redirect('/')
 
@@ -71,26 +72,42 @@ def logout():
 @app.route('/')
 @auth_required
 def index():
+    all_actions = db.session.query(models.Action).all()
+    all_actions = {act.id: act for act in all_actions}
     net_ranges = models.get_user_nets(session['user_id'])
+
     rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
-    # only admin can see all the rules
-    if 3 not in session['user_role_ids']:
-        rules4 = flowspec.filer_rules(net_ranges, rules4)
-        rules6 = flowspec.filer_rules(net_ranges, rules6)
-        rules_rtbh = flowspec.filer_rtbh_rules(net_ranges, rules_rtbh)
 
-    rules = {4: rules4, 6: rules6}
-    my_actions = db.session.query(models.Action).all()
-    my_actions = {act.id: act for act in my_actions}
+    # admin can see and edit any rules
+    if 3 in session['user_role_ids']:
+        rules = {4: rules4, 6: rules6}
+        return render_template('pages/dashboard_admin.j2',
+                               rules=rules,
+                               actions=all_actions,
+                               rules_rtbh=rules_rtbh,
+                               today=datetime.now())
+    # filter out the rules for normal users
+    else:
+        rules4 = flowspec.filter_rules_in_network(net_ranges, rules4)
+        rules6 = flowspec.filter_rules_in_network(net_ranges, rules6)
+        rules_rtbh = flowspec.filter_rtbh_rules(net_ranges, rules_rtbh)
 
-    return render_template('pages/home.j2',
-                           rules=rules,
-                           actions=my_actions,
-                           rules_rtbh=rules_rtbh,
-                           today=datetime.now())
+        user_actions = models.get_user_actions(session['user_role_ids'])
+        user_actions = [act[0] for act in user_actions]
 
+        rules4_editable, rules4_visible = flowspec.filter_rules_action(user_actions, rules4)
+        rules6_editable, rules6_visible = flowspec.filter_rules_action(user_actions, rules6)
+
+        rules_editable = {4: rules4_editable, 6: rules6_editable}
+        rules_visible = {4: rules4_visible, 6: rules6_visible}
+        return render_template('pages/dashboard_user.j2',
+                               rules_editable=rules_editable,
+                               rules_visible=rules_visible,
+                               actions=all_actions,
+                               rules_rtbh=rules_rtbh,
+                               today=datetime.now())
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):

@@ -276,7 +276,7 @@ def export():
 
     announce_all_routes()
 
-    return render_template('pages/home.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
+    return render_template('pages/dashboard_admin.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
 
 
 @rules.route('/announce_all', methods=['GET'])

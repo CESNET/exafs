@@ -29,6 +29,7 @@ def network_in_range(address, mask, net_ranges):
     :param net_ranges: list of network ranges
     :return: boolean
     """
+    print("TEST", address, mask, net_ranges)
     result = False
     network = u"{}/{}".format(address, mask)
     try:
