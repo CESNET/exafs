@@ -104,14 +104,14 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     if message_type == WITHDRAW:
         action = 'withdraw'
 
-    smask = get_mask_from_rule(rule, ipv_specific['mask'])
+    smask = sanitize_mask(rule.source_mask, ipv_specific['mask'])
     source = 'source {}'.format(rule.source) if rule.source else ''
     source += '/{};'.format(smask) if rule.source else ''
 
     source_port = 'source-port {};'.format(
         trps(rule.source_port)) if rule.source_port else ''
 
-    dmask = get_mask_from_rule(rule, ipv_specific['mask'])
+    dmask = sanitize_mask(rule.dest_mask, ipv_specific['mask'])
     dest = ' destination {}'.format(rule.dest) if rule.dest else ''
     dest += '/{};'.format(dmask) if rule.dest else ''
 
@@ -143,14 +143,14 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     return message_body
 
 
-def get_mask_from_rule(rule, default_mask = IPV4_DEFMASK):
+def sanitize_mask(rule_mask, default_mask = IPV4_DEFMASK):
     """
-    Get mask / prefix from rule
+    Sanitize mask / prefix of rule
     :param default_mask: default mask to return if mask is not in the rule
     :param rule: flowspec rule
     :return: int mask
     """
-    if 0 <= rule.source_mask <= default_mask:
-        return rule.source_mask
+    if 0 <= rule_mask <= default_mask:
+        return rule_mask
     else:
         return default_mask
