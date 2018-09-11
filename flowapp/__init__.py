@@ -68,6 +68,15 @@ def logout():
     session.clear()
     return redirect(app.config.get('LOGOUT_URL'))
 
+@app.route('/apikey')
+@auth_required
+def apikey():
+    """
+    Generate API Key for the loged user using PyJWT
+    :return: page with token
+    """
+    key = app.config.get('JWT_SECRET')
+    return render_template('pages/apikey.j2', key=key)
 
 @app.route('/')
 @auth_required
