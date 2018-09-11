@@ -90,9 +90,9 @@ def index():
                                today=datetime.now())
     # filter out the rules for normal users
     else:
-        rules4 = flowspec.filter_rules_in_network(net_ranges, rules4)
-        rules6 = flowspec.filter_rules_in_network(net_ranges, rules6)
-        rules_rtbh = flowspec.filter_rtbh_rules(net_ranges, rules_rtbh)
+        rules4 = validators.filter_rules_in_network(net_ranges, rules4)
+        rules6 = validators.filter_rules_in_network(net_ranges, rules6)
+        rules_rtbh = validators.filter_rtbh_rules(net_ranges, rules_rtbh)
 
         user_actions = models.get_user_actions(session['user_role_ids'])
         user_actions = [act[0] for act in user_actions]
