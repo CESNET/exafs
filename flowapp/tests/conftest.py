@@ -18,7 +18,7 @@ TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 class FieldMock():
 
     def __init__(self):
-        self.data = "tbd"
+        self.data = None
         self.errors = []
 
 
@@ -91,10 +91,10 @@ def db(app, request):
 
     with app.app_context():
         _db.init_app(app)
-        print "#: cleaning database"
+        print("#: cleaning database")
         _db.reflect()
         _db.drop_all()
-        print "#: creating tables"
+        print("#: creating tables")
         _db.create_all()
 
         users = [
@@ -102,7 +102,7 @@ def db(app, request):
             {"name": "petr.adamec@tul.cz", "role_id": 3, "org_id": 1},
             {"name": "adamec@cesnet.cz", "role_id": 3, "org_id": 2}
         ]
-        print "#: inserting users"
+        print("#: inserting users")
         flowapp.models.insert_users(users)
 
     def teardown():

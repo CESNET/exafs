@@ -5,7 +5,6 @@ import requests
 from operator import ge, lt
 
 from ..forms import RTBHForm, IPv4Form, IPv6Form
-from ..validators import NetInRange
 from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions
 from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
-
+import jwt
 import flowapp.validators
 
 __version__ = '0.1.7'
@@ -34,10 +34,12 @@ import models
 import flowspec
 from .views.admin import admin
 from .views.rules import rules
+from .views.apiv1 import api
 from .auth import auth_required
 
 app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(rules, url_prefix='/rules')
+app.register_blueprint(api, url_prefix='/api/v1')
 
 
 @ext.login_handler
@@ -68,6 +70,7 @@ def logout():
     session.clear()
     return redirect(app.config.get('LOGOUT_URL'))
 
+
 @app.route('/apikey')
 @auth_required
 def apikey():
@@ -76,7 +79,20 @@ def apikey():
     :return: page with token
     """
     key = app.config.get('JWT_SECRET')
-    return render_template('pages/apikey.j2', key=key)
+    payload = {
+        'user': {
+            'uuid': session['user_uuid'],
+            'id': session['user_id'],
+            'roles': session['user_roles'],
+            'org': session['user_org'],
+            'role_ids': session['user_role_ids'],
+            'org_ids': session['user_org_ids']
+        },
+        'exp': datetime.utcnow() + timedelta(minutes=30)
+    }
+    encoded = jwt.encode(payload, key, algorithm='HS256')
+    return render_template('pages/apikey.j2', apikey=encoded)
+
 
 @app.route('/')
 @auth_required
@@ -117,6 +133,7 @@ def index():
                                actions=all_actions,
                                rules_rtbh=rules_rtbh,
                                today=datetime.now())
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):

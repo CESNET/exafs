@@ -13,7 +13,8 @@ def ip_form(field_class):
 
 
 def test_ip_form_created(ip_form):
-    assert ip_form.source.data == "tbd"
+    assert ip_form.source.data is None
+    assert ip_form.source.errors == []
 
 
 @pytest.mark.parametrize("address, mask, expected", [
@@ -40,6 +41,18 @@ def test_ip_form_validate_dest_address(ip_form, address, mask, expected):
     ip_form.dest.data = address
     ip_form.dest_mask.data = mask
     assert ip_form.validate_dest_address() == expected
+
+
+@pytest.mark.parametrize("address, mask, ranges, expected", [
+    (u"147.230.23.0", u"24",[u'147.230.0.0/16', u'2001:718:1c01::/48'], True),
+    (u"0.0.0.0", u"0",[u'147.230.0.0/16', u'2001:718:1c01::/48'], False),
+    (u"195.113.0.0", u"16", [u"195.113.0.0/18", u"195.113.64.0/21"], False)
+])
+def test_ip_form_validate_address_mask(ip_form, address, mask, ranges, expected):
+    ip_form.net_ranges = ranges
+    ip_form.source.data = address
+    ip_form.source_mask.data = mask
+    assert ip_form.validate_address_ranges() == expected
 
 
 @pytest.mark.parametrize("address, mask, ranges, expected", [
