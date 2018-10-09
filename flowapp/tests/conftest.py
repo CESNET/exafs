@@ -2,6 +2,7 @@
 PyTest configuration file for all tests
 """
 import os
+import json
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -55,7 +56,9 @@ def app(request):
     _app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI=TEST_DATABASE_URI,
-        SQLALCHEMY_TRACK_MODIFICATIONS=False
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        JWT_SECRET='testing',
+        API_KEY='testkey'
     )
 
     print('\n----- CREATE FLASK APPLICATION\n')
@@ -78,7 +81,20 @@ def client(app, request):
     return app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
+def jwt_token(client, request):
+    """
+    Get the test_client from the app, for the whole test session.
+    """
+    print('\n----- GET JWT TEST TOKEN\n')
+    url = '/api/v1/auth/testkey'
+    token = client.get(url)
+    data = json.loads(token.data)
+    return data['token']
+
+
+
+@pytest.fixture(scope='session')
 def db(app, request):
     """
     Create entire database for every test.

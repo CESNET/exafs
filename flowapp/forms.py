@@ -193,17 +193,17 @@ class IPForm(FlaskForm):
         custom validation method
         :return: boolean
         """
-        result = True
 
+        result = True
         if not FlaskForm.validate(self):
             result = False
 
-        result = result and self.validate_source_address()
-        result = result and self.validate_dest_address()
-        result = result and self.validate_address_ranges()
-        result = result and self.validate_ipv_specific()
+        source = self.validate_source_address()
+        dest = self.validate_dest_address()
+        ranges = self.validate_address_ranges()
+        ips = self.validate_ipv_specific()
 
-        return result
+        return result and source and dest and ranges and ips
 
     def validate_source_address(self):
         """

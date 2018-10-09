@@ -312,7 +312,7 @@ class Flowspec6(db.Model):
             "dest": self.dest,
             "dest_mask": self.dest_mask,
             "dest_port": self.dest_port,
-            "protocol": self.protocol,
+            "next_header": self.next_header,
             "flags": self.flags,
             "packet_len": self.packet_len,
             "comment": self.comment,

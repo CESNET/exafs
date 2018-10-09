@@ -3,6 +3,8 @@ from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
+
 import jwt
 import flowapp.validators
 
@@ -10,6 +12,8 @@ __version__ = '0.1.7'
 
 app = Flask(__name__)
 db = SQLAlchemy()
+csrf = CSRFProtect(app)
+
 
 # Add a secret key for encrypting session information
 app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
@@ -37,9 +41,13 @@ from .views.rules import rules
 from .views.apiv1 import api
 from .auth import auth_required
 
+#no need for csrf on api because we use JWT
+csrf.exempt(api)
+
 app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(rules, url_prefix='/rules')
 app.register_blueprint(api, url_prefix='/api/v1')
+
 
 
 @ext.login_handler
@@ -71,7 +79,7 @@ def logout():
     return redirect(app.config.get('LOGOUT_URL'))
 
 
-@app.route('/apikey')
+@app.route('/apikey', methods=['GET'])
 @auth_required
 def apikey():
     """
