@@ -78,8 +78,8 @@ class ActionForm(FlaskForm):
     description = StringField('Action description')
 
     role_id = SelectField('Minimal required role',
-                            choices=[('2', 'user'), ('3', 'admin')],
-                            validators=[DataRequired()])
+                          choices=[('2', 'user'), ('3', 'admin')],
+                          validators=[DataRequired()])
 
 
 class RTBHForm(FlaskForm):
@@ -210,14 +210,14 @@ class IPForm(FlaskForm):
         validate source address, set error message if validation fails
         :return: boolean validation result
         """
-        if self.source.data and address_with_mask(self.source.data, self.source_mask.data):
-            return True
-        else:
+        if self.source.data and not address_with_mask(self.source.data, self.source_mask.data):
             self.source.errors.append(
                 "This is not valid combination of address {} and mask {}.".format(self.source.data,
                                                                                   self.source_mask.data))
             return False
 
+        return True
+        
     def validate_dest_address(self):
         """
         validate dest address, set error message if validation fails
