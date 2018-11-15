@@ -217,7 +217,7 @@ class IPForm(FlaskForm):
             return False
 
         return True
-        
+
     def validate_dest_address(self):
         """
         validate dest address, set error message if validation fails

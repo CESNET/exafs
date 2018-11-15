@@ -31,6 +31,7 @@ class User(db.Model):
     email = db.Column(db.String(255))
     name = db.Column(db.String(255))
     phone = db.Column(db.String(255))
+    apikeys = db.relationship('ApiKey', backref='user', lazy='dynamic')
     role = db.relationship(
         'Role',
         secondary=user_role,
@@ -79,6 +80,14 @@ class User(db.Model):
                 org = self.organization.append(o)
 
         db.session.commit()
+
+
+class ApiKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    machine = db.Column(db.String(255))
+    key = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='apikey')
 
 
 class Role(db.Model):
