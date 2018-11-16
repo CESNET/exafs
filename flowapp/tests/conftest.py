@@ -82,19 +82,6 @@ def client(app, request):
 
 
 @pytest.fixture(scope='session')
-def jwt_token(client, request):
-    """
-    Get the test_client from the app, for the whole test session.
-    """
-    print('\n----- GET JWT TEST TOKEN\n')
-    url = '/api/v1/auth/testkey'
-    token = client.get(url)
-    data = json.loads(token.data)
-    return data['token']
-
-
-
-@pytest.fixture(scope='session')
 def db(app, request):
     """
     Create entire database for every test.
@@ -121,6 +108,15 @@ def db(app, request):
         print("#: inserting users")
         flowapp.models.insert_users(users)
 
+        model = flowapp.models.ApiKey(
+            machine='127.0.0.1',
+            key='testkey',
+            user_id=1
+        )
+
+        _db.session.add(model)
+        _db.session.commit()
+
     def teardown():
         _db.session.commit()
         _db.drop_all()
@@ -128,3 +124,16 @@ def db(app, request):
 
     request.addfinalizer(teardown)
     return _db
+
+
+@pytest.fixture(scope='session')
+def jwt_token(client, db, request):
+    """
+    Get the test_client from the app, for the whole test session.
+    """
+    print('\n----- GET JWT TEST TOKEN\n')
+    url = '/api/v1/auth/testkey'
+    token = client.get(url)
+    data = json.loads(token.data)
+    return data['token']
+

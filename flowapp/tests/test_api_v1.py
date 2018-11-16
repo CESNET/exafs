@@ -69,7 +69,7 @@ def test_create_v6rule(client, db, jwt_token):
 
 def test_validation_v4rule(client, db, jwt_token):
     """
-    test that creating with valid data returns 201
+    test that creating with invalid data returns 404 and errors
     """
     req = client.post('/api/v1/rules/ipv4/',
                       headers={'x-access-token': jwt_token},
@@ -89,14 +89,32 @@ def test_validation_v4rule(client, db, jwt_token):
     assert req.status_code == 404
     data = json.loads(req.data)
     assert len(data['validation_errors']) > 0
-    assert data['validation_errors'][0].startswith('Error in the Destination address')
-    assert data['validation_errors'][1].startswith('Error in the Destination address')
-    assert data['validation_errors'][2].startswith('Error in the Source address')
+    assert data['validation_errors'].keys() == ['dest', 'source']
+    assert len(data['validation_errors']['dest']) == 2
+    assert data['validation_errors']['dest'][0].startswith('This is not')
+    assert data['validation_errors']['dest'][1].startswith('Source or des')
+    assert len(data['validation_errors']['source']) == 1
+    assert data['validation_errors']['source'][0].startswith('Source or des')
+
+
+def test_all_validation_errors(client, db, jwt_token):
+    """
+    test that creating with invalid data returns 404 and errors
+    """
+    req = client.post('/api/v1/rules/ipv4/',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "action": 2
+                      }
+                      )
+    data = json.loads(req.data)
+    print("DATA", data)
+    assert req.status_code == 404
 
 
 def test_validate_v6rule(client, db, jwt_token):
     """
-    test that creating with valid data returns 201
+    test that creating with invalid data returns 404 and errors
     """
     req = client.post('/api/v1/rules/ipv6/',
                       headers={'x-access-token': jwt_token},
@@ -114,10 +132,10 @@ def test_validate_v6rule(client, db, jwt_token):
     print("V6 DATA", data)
     assert req.status_code == 404
     assert len(data['validation_errors']) > 0
-    assert data['validation_errors'][0].startswith('Error in the Action')
-    assert data['validation_errors'][1].startswith('Error in the Source')
-    assert data['validation_errors'][2].startswith('Error in the Next Header')
-
+    assert sorted(data['validation_errors'].keys()) == sorted(['action', 'next_header', 'dest', 'source'])
+    # assert data['validation_errors'][0].startswith('Error in the Action')
+    # assert data['validation_errors'][1].startswith('Error in the Source')
+    # assert data['validation_errors'][2].startswith('Error in the Next Header')
 
 
 def test_rules(client, db, jwt_token):

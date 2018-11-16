@@ -5,10 +5,10 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 from flowapp import app, db, validators, flowspec, csrf, messages
-from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions
-from flowapp.forms import RTBHForm, IPv4Form, IPv6Form
+from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions
+from flowapp.forms import IPv4Form, IPv6Form
 from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime
-from flowapp.views.rules import announce_route, log_route, RULE_TYPES
+from flowapp.views.rules import announce_route
 
 api = Blueprint('apiv1', __name__, template_folder='templates')
 
@@ -44,18 +44,22 @@ def authorize(user_key):
     :return: page with token
     """
     jwt_key = app.config.get('JWT_SECRET')
-    if user_key == app.config.get('API_KEY'):
+    model = db.session.query(ApiKey).filter_by(machine=request.remote_addr).first()
+    print(model)
+    print(model.user)
+    if model and model.key == user_key:
         payload = {
             'user': {
-                'uuid': 'jiri.vrany@tul.cz',
-                'id': 1,
-                'roles': ['admin'],
-                'org': ['TU Liberec'],
-                'role_ids': [2, 3],
-                'org_ids': [1]
+                'uuid': model.user.uuid,
+                'id': model.user.id,
+                'roles': [role.name for role in model.user.role.all()],
+                'org': [org.name for org in model.user.organization.all()],
+                'role_ids': [role.id for role in model.user.role.all()],
+                'org_ids': [org.id for org in model.user.organization.all()]
             },
             'exp': datetime.utcnow() + timedelta(minutes=30)
         }
+        print(payload)
         encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
         return jsonify({'token': encoded})
     else:
@@ -236,17 +240,12 @@ def token_test_get(current_user):
 
 def get_form_errors(form):
     valid_errors = []
-    errors = form.errors.items()
-    if len(errors) > 1:
-        for field, field_errors in form.errors.items():
-            for field_error in field_errors:
-                valid_errors.append(u"Error in the {} - {}".format(
-                    getattr(form, field).label.text, field_error))
-
-        return {'message': 'error - invalid request data','validation_errors': valid_errors}
 
     # if the only error is in CSRF then it is ok - csrf is exempt for this view
-    elif len(errors) == 1 and errors[0][0] != 'csrf_token':
-        return {'message': 'error - invalid request data','validation_errors': errors[0][0]}
-    else:
-        return False
+    del (form.errors['csrf_token'])
+
+    errors = form.errors.items()
+    if len(errors) > 0:
+        return {'message': 'error - invalid request data','validation_errors': form.errors}
+
+    return False
