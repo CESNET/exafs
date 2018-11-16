@@ -31,7 +31,7 @@ class User(db.Model):
     email = db.Column(db.String(255))
     name = db.Column(db.String(255))
     phone = db.Column(db.String(255))
-    apikeys = db.relationship('ApiKey', backref='user', lazy='dynamic')
+    apikeys = db.relationship('ApiKey', backref='user2', lazy='dynamic')
     role = db.relationship(
         'Role',
         secondary=user_role,

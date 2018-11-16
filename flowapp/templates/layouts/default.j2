@@ -53,7 +53,7 @@
               <li><a href="{{ url_for('rules.ipv4_rule') }}">Add IPv4</a></li>
               <li><a href="{{ url_for('rules.ipv6_rule') }}">Add IPv6</a></li>
               <li><a href="{{ url_for('rules.rtbh_rule') }}">Add RTBH</a></li>
-              <li><a href="{{ url_for('apikey') }}">API Key</a></li>
+              <li><a href="{{ url_for('api_keys.all') }}">API Key</a></li>
             {% endif %}
 
             {% if 3 in session['user_role_ids'] %}

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField
+from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
 from validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
@@ -43,6 +43,18 @@ class UserForm(FlaskForm):
     org_ids = SelectMultipleField(u'Organization',
                                   coerce=int,
                                   validators=[DataRequired("Select at last one Organization")])
+
+
+class ApiKeyForm(FlaskForm):
+    """
+    ApiKey for User
+    Each key / machine pair is unique
+    """
+    machine = StringField('Machine address',
+                          validators=[DataRequired(), IPv4Address(message='provide valid IPv4 address')]
+                          )
+
+    key = HiddenField("GeneratedKey")
 
 
 class OrganizationForm(FlaskForm):

@@ -1,0 +1,30 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}ExaFS - ApiKeys{% endblock %}
+{% block content %}
+    <h1>Your machines and ApiKeys</h1>
+    <table class="table table-hover">
+    <tr>
+    <th>Machine address</th>
+    <th>ApiKey</th>
+    <th>Action</th>
+    </tr>
+    {% for row in keys %}
+        <tr>
+        <td>
+            {{ row.machine }}
+        </td>
+        <td>
+            {{ row.key }}
+        </td>
+        <td>
+                    <a class="btn btn-danger btn-sm" href="{{ url_for('api_keys.delete', key_id=row.id) }}" role="button">
+                         <span class="glyphicon glyphicon-remove"></span>
+                    </a>
+                </td>
+        </tr>
+    {% endfor %}
+    </table>
+    <a class="btn btn-info btn-sm" href="{{ url_for('api_keys.add') }}" role="button">
+                         Add new ApiKey
+                    </a>
+{% endblock %}

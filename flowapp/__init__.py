@@ -39,6 +39,7 @@ import flowspec
 from .views.admin import admin
 from .views.rules import rules
 from .views.apiv1 import api
+from .views.api_keys import api_keys
 from .auth import auth_required
 
 #no need for csrf on api because we use JWT
@@ -46,6 +47,7 @@ csrf.exempt(api)
 
 app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(rules, url_prefix='/rules')
+app.register_blueprint(api_keys, url_prefix='/api_keys')
 app.register_blueprint(api, url_prefix='/api/v1')
 
 
@@ -77,29 +79,6 @@ def logout():
     session['user_id'] = False
     session.clear()
     return redirect(app.config.get('LOGOUT_URL'))
-
-
-@app.route('/apikey', methods=['GET'])
-@auth_required
-def apikey():
-    """
-    Generate API Key for the loged user using PyJWT
-    :return: page with token
-    """
-    key = app.config.get('JWT_SECRET')
-    payload = {
-        'user': {
-            'uuid': session['user_uuid'],
-            'id': session['user_id'],
-            'roles': session['user_roles'],
-            'org': session['user_org'],
-            'role_ids': session['user_role_ids'],
-            'org_ids': session['user_org_ids']
-        },
-        'exp': datetime.utcnow() + timedelta(minutes=30)
-    }
-    encoded = jwt.encode(payload, key, algorithm='HS256')
-    return render_template('pages/apikey.j2', apikey=encoded)
 
 
 @app.route('/')
