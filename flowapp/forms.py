@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField
+from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
 from validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
@@ -45,6 +45,18 @@ class UserForm(FlaskForm):
                                   validators=[DataRequired("Select at last one Organization")])
 
 
+class ApiKeyForm(FlaskForm):
+    """
+    ApiKey for User
+    Each key / machine pair is unique
+    """
+    machine = StringField('Machine address',
+                          validators=[DataRequired(), IPv4Address(message='provide valid IPv4 address')]
+                          )
+
+    key = HiddenField("GeneratedKey")
+
+
 class OrganizationForm(FlaskForm):
     """
     Organization form object
@@ -78,8 +90,8 @@ class ActionForm(FlaskForm):
     description = StringField('Action description')
 
     role_id = SelectField('Minimal required role',
-                            choices=[('2', 'user'), ('3', 'admin')],
-                            validators=[DataRequired()])
+                          choices=[('2', 'user'), ('3', 'admin')],
+                          validators=[DataRequired()])
 
 
 class RTBHForm(FlaskForm):
@@ -193,30 +205,30 @@ class IPForm(FlaskForm):
         custom validation method
         :return: boolean
         """
-        result = True
 
+        result = True
         if not FlaskForm.validate(self):
             result = False
 
-        result = result and self.validate_source_address()
-        result = result and self.validate_dest_address()
-        result = result and self.validate_address_ranges()
-        result = result and self.validate_ipv_specific()
+        source = self.validate_source_address()
+        dest = self.validate_dest_address()
+        ranges = self.validate_address_ranges()
+        ips = self.validate_ipv_specific()
 
-        return result
+        return result and source and dest and ranges and ips
 
     def validate_source_address(self):
         """
         validate source address, set error message if validation fails
         :return: boolean validation result
         """
-        if self.source.data and address_with_mask(self.source.data, self.source_mask.data):
-            return True
-        else:
+        if self.source.data and not address_with_mask(self.source.data, self.source_mask.data):
             self.source.errors.append(
                 "This is not valid combination of address {} and mask {}.".format(self.source.data,
                                                                                   self.source_mask.data))
             return False
+
+        return True
 
     def validate_dest_address(self):
         """

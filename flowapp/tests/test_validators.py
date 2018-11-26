@@ -69,7 +69,8 @@ def test_editable_rule(rule, address, mask, ranges, expected):
 @pytest.mark.parametrize("address, mask, ranges, expected", [
     (u"147.230.23.0", u"24", [u"147.230.0.0/16", u"147.251.0.0/16"], True),
     (u"147.233.23.0", u"24", [u"147.230.0.0/16", u"147.251.0.0/16"], False),
-    (u"147.230.23.0", u"24", [u"147.230.0.0/16", u"2001:718:1c01::/48"], True)
+    (u"147.230.23.0", u"24", [u"147.230.0.0/16", u"2001:718:1c01::/48"], True),
+    (u"195.113.0.0", u"16", [u"0.0.0.0/0", u"::/0"], True)
 ])
 def test_address_in_range(address, mask, ranges, expected):
     assert flowapp.validators.address_in_range(address, ranges) == expected
@@ -78,7 +79,9 @@ def test_address_in_range(address, mask, ranges, expected):
 @pytest.mark.parametrize("address, mask, ranges, expected", [
     (u"147.230.23.0", u"24", [u"147.230.0.0/16", u"147.251.0.0/16"], True),
     (u"147.233.23.0", u"24", [u"147.230.0.0/16", u"147.251.0.0/16"], False),
-    (u"195.113.0.0", u"16", [u"195.113.0.0/18", u"195.113.64.0/21"], False)
+    (u"195.113.0.0", u"16", [u"195.113.0.0/18", u"195.113.64.0/21"], False),
+    (u"195.113.0.0", u"16", [u"0.0.0.0/0", u"::/0"], True),
+    (u"195.113.0.0", u"16", [u'147.230.0.0/16', u'2001:718:1c01::/48', u'0.0.0.0/0', u'::/0'], True)
 ])
 def test_network_in_range(address, mask, ranges, expected):
     assert flowapp.validators.network_in_range(address, mask, ranges) == expected
@@ -87,5 +90,5 @@ def test_network_in_range(address, mask, ranges, expected):
 @pytest.mark.parametrize("address, mask, ranges, expected", [
     (u"195.113.0.0", u"16", [u"147.230.0.0/16", u"195.113.250.0/24"], True),
 ])
-def test_network_in_range(address, mask, ranges, expected):
+def test_range_in_network(address, mask, ranges, expected):
     assert flowapp.validators.range_in_network(address, mask, ranges) == expected

@@ -1,7 +1,31 @@
+import ipaddress
 from wtforms.validators import ValidationError
 
-import flowspec
-import ipaddress
+import flowapp.flowspec as flowspec
+
+
+def filter_rules_in_network(net_ranges, rules):
+    """
+    Return only rules matching user net ranges
+    :param net_ranges: list of network ranges
+    :param rules: list of rules (ipv4 or ipv6
+    :return: filtered list of rules
+    """
+    return [rule for rule in rules if
+            network_in_range(rule.source, rule.source_mask, net_ranges)
+            or network_in_range(rule.dest, rule.dest_mask, net_ranges)]
+
+
+def filter_rtbh_rules(net_ranges, rules):
+    """
+    Return only rules matching user net ranges
+    :param net_ranges: list of network ranges
+    :param rules: list of RTBH rules
+    :return: filtered list of rules
+    """
+    return [rule for rule in rules if
+            network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges)
+            or network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges)]
 
 
 def address_in_range(address, net_ranges):
@@ -12,12 +36,12 @@ def address_in_range(address, net_ranges):
     :return: boolean
     """
     result = False
-    try:
-        for adr_range in net_ranges:
+    for adr_range in net_ranges:
+        try:
             result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
-    except ValueError:
-        print("VALUE ERROR for", address, adr_range)
-        return False
+        except ValueError:
+            print("VALUE ERROR for", address, adr_range)
+            return False
 
     return result
 
@@ -29,17 +53,19 @@ def network_in_range(address, mask, net_ranges):
     :param net_ranges: list of network ranges
     :return: boolean
     """
-    print("TEST", address, mask, net_ranges)
     result = False
     network = u"{}/{}".format(address, mask)
-    try:
-        for adr_range in net_ranges:
+    for adr_range in net_ranges:
+        try:
             result = result or ipaddress.ip_network(network).subnet_of(ipaddress.ip_network(adr_range))
-    except ValueError:
-        print(address, adr_range)
-        return False
+        except TypeError:  # V4 can't be a subnet of V6 and vice versa
+            print("TypeError during validation network in range", address, adr_range)
+        except ValueError:
+            print("ValueError during validation network in range", address, adr_range)
+            return False
 
     return result
+
 
 def range_in_network(address, mask, net_ranges):
     """
@@ -50,12 +76,14 @@ def range_in_network(address, mask, net_ranges):
     """
     result = False
     network = u"{}/{}".format(address, mask)
-    try:
-        for adr_range in net_ranges:
+    for adr_range in net_ranges:
+        try:
             result = result or ipaddress.ip_network(network).supernet_of(ipaddress.ip_network(adr_range))
-    except ValueError:
-        print(address, adr_range)
-        return False
+        except TypeError:  # V4 can't be a subnet of V6 and vice versa
+            print("TypeError during validation range in network", address, adr_range)
+        except ValueError:
+            print("ValueError during validation range in network", address, adr_range)
+            return False
 
     return result
 
@@ -110,7 +138,7 @@ class PortString(object):
         try:
             for port_string in field.data.split(";"):
                 flowspec.to_exabgp_string(port_string, flowspec.MAX_PORT)
-        except ValueError, e:
+        except ValueError as e:
             raise ValidationError(self.message + str(e.args[0]))
 
 
@@ -128,7 +156,7 @@ class PacketString(object):
         try:
             for port_string in field.data.split(";"):
                 flowspec.to_exabgp_string(port_string, flowspec.MAX_PACKET)
-        except ValueError, e:
+        except ValueError as e:
             raise ValidationError(self.message + str(e.args[0]))
 
 
@@ -147,7 +175,7 @@ class NetRangeString(object):
         try:
             for net_string in field.data.split():
                 _a = ipaddress.ip_network(net_string)
-        except ValueError, e:
+        except ValueError as e:
             raise ValidationError(self.message + str(e.args[0]))
 
 

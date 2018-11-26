@@ -1,6 +1,8 @@
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db
+from flowapp import utils as utils
+
 
 # models and tables
 
@@ -29,6 +31,7 @@ class User(db.Model):
     email = db.Column(db.String(255))
     name = db.Column(db.String(255))
     phone = db.Column(db.String(255))
+    apikeys = db.relationship('ApiKey', backref='user2', lazy='dynamic')
     role = db.relationship(
         'Role',
         secondary=user_role,
@@ -77,6 +80,14 @@ class User(db.Model):
                 org = self.organization.append(o)
 
         db.session.commit()
+
+
+class ApiKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    machine = db.Column(db.String(255))
+    key = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='apikey')
 
 
 class Role(db.Model):
@@ -167,8 +178,27 @@ class RTBH(db.Model):
         self.rstate_id = rstate_id
 
     def update_time(self, form):
-        self.expires = webpicker_to_datetime(form.expire_date.data)
+        self.expires = utils.webpicker_to_datetime(form.expire_date.data)
         db.session.commit()
+
+    def to_dict(self):
+        """
+        Serialize to dict
+        :return: dictionary
+        """
+        return {
+            "id": self.id,
+            "ipv4": self.ipv4,
+            "ipv4_mask": self.ipv4_mask,
+            "ipv6": self.ipv6,
+            "ipv6_mask": self.ipv6_mask,
+            "community": self.community,
+            "comment": self.comment,
+            "expires": self.expires,
+            "created": self.created,
+            "user": self.user.uuid,
+            "rstate": self.rstate.description
+        }
 
 
 class Flowspec4(db.Model):
@@ -212,6 +242,30 @@ class Flowspec4(db.Model):
         self.created = created
         self.rstate_id = rstate_id
 
+    def to_dict(self):
+        """
+        Serialize to dict
+        :return: dictionary
+        """
+        return {
+            "id": self.id,
+            "source": self.source,
+            "source_mask": self.source_mask,
+            "source_port": self.source_port,
+            "dest": self.dest,
+            "dest_mask": self.dest_mask,
+            "dest_port": self.dest_port,
+            "protocol": self.protocol,
+            "flags": self.flags,
+            "packet_len": self.packet_len,
+            "comment": self.comment,
+            "expires": self.expires,
+            "created": self.created,
+            "action": self.action.name,
+            "user": self.user.uuid,
+            "rstate": self.rstate.description
+        }
+
 
 class Flowspec6(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -253,6 +307,30 @@ class Flowspec6(db.Model):
             created = datetime.utcnow()
         self.created = created
         self.rstate_id = rstate_id
+
+    def to_dict(self):
+        """
+        Serialize to dict
+        :return: dictionary
+        """
+        return {
+            "id": self.id,
+            "source": self.source,
+            "source_mask": self.source_mask,
+            "source_port": self.source_port,
+            "dest": self.dest,
+            "dest_mask": self.dest_mask,
+            "dest_port": self.dest_port,
+            "next_header": self.next_header,
+            "flags": self.flags,
+            "packet_len": self.packet_len,
+            "comment": self.comment,
+            "expires": self.expires,
+            "created": self.created,
+            "action": self.action.name,
+            "user": self.user.uuid,
+            "rstate": self.rstate.description
+        }
 
 
 class Log(db.Model):
@@ -376,7 +454,6 @@ def get_user_actions(user_roles):
         actions = db.session.query(Action).filter_by(role_id=max_role).order_by('name')
 
     return [(g.id, g.name) for g in actions]
-
 
 
 def get_existing_action(name=None, command=None):

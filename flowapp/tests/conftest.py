@@ -2,6 +2,7 @@
 PyTest configuration file for all tests
 """
 import os
+import json
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -18,7 +19,7 @@ TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 class FieldMock():
 
     def __init__(self):
-        self.data = "tbd"
+        self.data = None
         self.errors = []
 
 
@@ -55,7 +56,9 @@ def app(request):
     _app.config.update(
         TESTING=True,
         SQLALCHEMY_DATABASE_URI=TEST_DATABASE_URI,
-        SQLALCHEMY_TRACK_MODIFICATIONS=False
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        JWT_SECRET='testing',
+        API_KEY='testkey'
     )
 
     print('\n----- CREATE FLASK APPLICATION\n')
@@ -78,7 +81,7 @@ def client(app, request):
     return app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='session')
 def db(app, request):
     """
     Create entire database for every test.
@@ -91,10 +94,10 @@ def db(app, request):
 
     with app.app_context():
         _db.init_app(app)
-        print "#: cleaning database"
+        print("#: cleaning database")
         _db.reflect()
         _db.drop_all()
-        print "#: creating tables"
+        print("#: creating tables")
         _db.create_all()
 
         users = [
@@ -102,8 +105,17 @@ def db(app, request):
             {"name": "petr.adamec@tul.cz", "role_id": 3, "org_id": 1},
             {"name": "adamec@cesnet.cz", "role_id": 3, "org_id": 2}
         ]
-        print "#: inserting users"
+        print("#: inserting users")
         flowapp.models.insert_users(users)
+
+        model = flowapp.models.ApiKey(
+            machine='127.0.0.1',
+            key='testkey',
+            user_id=1
+        )
+
+        _db.session.add(model)
+        _db.session.commit()
 
     def teardown():
         _db.session.commit()
@@ -112,3 +124,16 @@ def db(app, request):
 
     request.addfinalizer(teardown)
     return _db
+
+
+@pytest.fixture(scope='session')
+def jwt_token(client, db, request):
+    """
+    Get the test_client from the app, for the whole test session.
+    """
+    print('\n----- GET JWT TEST TOKEN\n')
+    url = '/api/v1/auth/testkey'
+    token = client.get(url)
+    data = json.loads(token.data)
+    return data['token']
+

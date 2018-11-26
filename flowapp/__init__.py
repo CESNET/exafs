@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 
+import jwt
 import flowapp.validators
 
 __version__ = '0.1.7'
 
 app = Flask(__name__)
 db = SQLAlchemy()
+csrf = CSRFProtect(app)
+
 
 # Add a secret key for encrypting session information
 app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
@@ -34,10 +38,18 @@ import models
 import flowspec
 from .views.admin import admin
 from .views.rules import rules
+from .views.apiv1 import api
+from .views.api_keys import api_keys
 from .auth import auth_required
+
+#no need for csrf on api because we use JWT
+csrf.exempt(api)
 
 app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(rules, url_prefix='/rules')
+app.register_blueprint(api_keys, url_prefix='/api_keys')
+app.register_blueprint(api, url_prefix='/api/v1')
+
 
 
 @ext.login_handler
@@ -90,9 +102,9 @@ def index():
                                today=datetime.now())
     # filter out the rules for normal users
     else:
-        rules4 = flowspec.filter_rules_in_network(net_ranges, rules4)
-        rules6 = flowspec.filter_rules_in_network(net_ranges, rules6)
-        rules_rtbh = flowspec.filter_rtbh_rules(net_ranges, rules_rtbh)
+        rules4 = validators.filter_rules_in_network(net_ranges, rules4)
+        rules6 = validators.filter_rules_in_network(net_ranges, rules6)
+        rules_rtbh = validators.filter_rtbh_rules(net_ranges, rules_rtbh)
 
         user_actions = models.get_user_actions(session['user_role_ids'])
         user_actions = [act[0] for act in user_actions]
@@ -108,6 +120,7 @@ def index():
                                actions=all_actions,
                                rules_rtbh=rules_rtbh,
                                today=datetime.now())
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):

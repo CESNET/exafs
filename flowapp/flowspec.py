@@ -1,6 +1,4 @@
 import re
-import validators
-
 
 NUMBER = re.compile(r'^\d+$', re.IGNORECASE)
 RANGE = re.compile(r'^(\d+)-(\d+)$', re.IGNORECASE)
@@ -10,30 +8,6 @@ LOWER = re.compile(r'<[=]?(\d+)$', re.IGNORECASE)
 
 MAX_PORT = 65535
 MAX_PACKET = 9216
-
-
-def filter_rules_in_network(net_ranges, rules):
-    """
-    Return only rules matching user net ranges
-    :param net_ranges: list of network ranges
-    :param rules: list of rules (ipv4 or ipv6
-    :return: filtered list of rules
-    """
-    return [rule for rule in rules if
-            validators.network_in_range(rule.source, rule.source_mask, net_ranges)
-            or validators.network_in_range(rule.dest, rule.dest_mask, net_ranges)]
-
-
-def filter_rtbh_rules(net_ranges, rules):
-    """
-    Return only rules matching user net ranges
-    :param net_ranges: list of network ranges
-    :param rules: list of RTBH rules
-    :return: filtered list of rules
-    """
-    return [rule for rule in rules if
-            validators.network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges)
-            or validators.network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges)]
 
 
 def translate_sequence(sequence, max_val=MAX_PORT):
