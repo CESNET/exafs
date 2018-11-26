@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, redirect, render_template, session, url_for
+from flask import Flask, redirect, render_template, session
 from flask_sso import SSO
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
-import jwt
 import flowapp.validators
 
 __version__ = '0.2.0'
