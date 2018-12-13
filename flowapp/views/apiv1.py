@@ -1,4 +1,5 @@
 import jwt
+import ipaddress
 
 from flask import Blueprint, request, jsonify
 from functools import wraps
@@ -44,10 +45,8 @@ def authorize(user_key):
     :return: page with token
     """
     jwt_key = app.config.get('JWT_SECRET')
-    model = db.session.query(ApiKey).filter_by(machine=request.remote_addr).first()
-    print(model)
-    print(model.user)
-    if model and model.key == user_key:
+    model = db.session.query(ApiKey).filter_by(key=user_key).first()
+    if model and ipaddress.ip_address(model.machine.decode('latin1')) == ipaddress.ip_address(request.remote_addr.decode('latin1')):
         payload = {
             'user': {
                 'uuid': model.user.uuid,

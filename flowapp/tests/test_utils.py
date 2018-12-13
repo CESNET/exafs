@@ -23,4 +23,4 @@ def test_round_to_ten():
 
 ])
 def test_ipv6_comparsion(address_a, address_b):
-    assert ipaddress.IPv6Address(address_a) == ipaddress.IPv6Address(address_b)
+    assert ipaddress.ip_address(address_a) == ipaddress.ip_address(address_b)
