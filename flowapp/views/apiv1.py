@@ -107,7 +107,7 @@ def index(current_user):
         return jsonify(payload)
 
 
-@api.route('/rules/ipv4/', methods=['POST'])
+@api.route('/rules/ipv4', methods=['POST'])
 @csrf.exempt
 @token_required
 def ipv4_rule_create(current_user):
@@ -159,7 +159,7 @@ def ipv4_rule_create(current_user):
     return jsonify({'message': u'IPv4 Rule saved', 'rule': model.to_dict()}), 201
 
 
-@api.route('/rules/ipv6/', methods=['POST'])
+@api.route('/rules/ipv6', methods=['POST'])
 @token_required
 def ipv6_rule(current_user):
     """

@@ -1,6 +1,6 @@
 # flowapp/views/admin.py
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, redirect, flash, request, url_for, session
+from flask import Blueprint, render_template, redirect, flash, request, url_for, session, current_app
 import requests
 from operator import ge, lt
 
@@ -328,10 +328,12 @@ def announce_all_routes(action=messages.ANNOUNCE):
 
 def announce_route(route):
     """
-    withdraw deleted route
+    Announce route to ExaAPI
+
     @TODO take the request away, use some kind of messaging (maybe celery?)
     """
-    requests.post('http://localhost:5000/', data={'command': route})
+    if not current_app.config['TESTING']:
+        requests.post('http://localhost:5000/', data={'command': route})
 
 
 def set_withdraw_state(rule):

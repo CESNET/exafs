@@ -1,4 +1,5 @@
 import json
+from flowapp.views.rules import announce_route
 
 
 def test_token(client, jwt_token):
@@ -19,11 +20,11 @@ def test_withnout_token(client):
     assert req.status_code == 401
 
 
-def test_create_v4rule(client, db, jwt_token):
+def test_create_v4rule(client, db, jwt_token, mocker):
     """
     test that creating with valid data returns 201
     """
-    req = client.post('/api/v1/rules/ipv4/',
+    req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
                       json={
                           "action": 2,
@@ -47,7 +48,7 @@ def test_create_v6rule(client, db, jwt_token):
     """
     test that creating with valid data returns 201
     """
-    req = client.post('/api/v1/rules/ipv6/',
+    req = client.post('/api/v1/rules/ipv6',
                       headers={'x-access-token': jwt_token},
                       json={
                           "action": 3,
@@ -71,7 +72,7 @@ def test_validation_v4rule(client, db, jwt_token):
     """
     test that creating with invalid data returns 404 and errors
     """
-    req = client.post('/api/v1/rules/ipv4/',
+    req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
                       json={
                           "action": 2,
@@ -101,7 +102,7 @@ def test_all_validation_errors(client, db, jwt_token):
     """
     test that creating with invalid data returns 404 and errors
     """
-    req = client.post('/api/v1/rules/ipv4/',
+    req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
                       json={
                           "action": 2
@@ -116,7 +117,7 @@ def test_validate_v6rule(client, db, jwt_token):
     """
     test that creating with invalid data returns 404 and errors
     """
-    req = client.post('/api/v1/rules/ipv6/',
+    req = client.post('/api/v1/rules/ipv6',
                       headers={'x-access-token': jwt_token},
                       json={
                           "action": 32,
