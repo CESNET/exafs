@@ -46,7 +46,8 @@ def authorize(user_key):
     """
     jwt_key = app.config.get('JWT_SECRET')
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
-    if model and ipaddress.ip_address(model.machine.decode('latin1')) == ipaddress.ip_address(request.remote_addr.decode('latin1')):
+    if model and ipaddress.ip_address(model.machine.decode('latin1')) == ipaddress.ip_address(
+            request.remote_addr.decode('latin1')):
         payload = {
             'user': {
                 'uuid': model.user.uuid,
@@ -106,17 +107,38 @@ def index(current_user):
         return jsonify(payload)
 
 
-@api.route('/rules/ipv4', methods=['POST'])
+@api.route('/rules', methods=['POST'])
 @csrf.exempt
 @token_required
-def ipv4_rule_create(current_user):
+def create(current_user):
+    """
+    Api method for new rule
+    :param current_user: data from jwt token
+    :return: json response
+    """
+    data = request.get_json()
+
+    dispatch = {
+        'ipv4': create_ipv4,
+        'ipv6': create_ipv6,
+        'rtbh': create_rtbh
+    }
+
+    try:
+        return dispatch[data['rule_type']](current_user, data)
+    except KeyError:
+        return jsonify({'message': u'Unknown rule type {}'.format(data['rule_type'])}), 401
+
+
+def create_ipv4(current_user, data):
     """
     Api method for new IPv4 rule
+    :param data: parsed json request
     :param current_user: data from jwt token
     :return: json response
     """
     net_ranges = get_user_nets(current_user['id'])
-    form = IPv4Form(data=request.get_json())
+    form = IPv4Form(data=data)
     # add values to form instance
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
@@ -158,16 +180,15 @@ def ipv4_rule_create(current_user):
     return jsonify({'message': u'IPv4 Rule saved', 'rule': model.to_dict()}), 201
 
 
-@api.route('/rules/ipv6', methods=['POST'])
-@token_required
-def ipv6_rule(current_user):
+def create_ipv6(current_user, data):
     """
     Create new IPv6 rule
+    :param data: parsed json request
     :param current_user: data from jwt token
     :return:
     """
     net_ranges = get_user_nets(current_user['id'])
-    form = IPv6Form(data=request.get_json())
+    form = IPv6Form(data=data)
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
 
@@ -200,10 +221,13 @@ def ipv6_rule(current_user):
     announce_route(route)
 
     # log changes
-    #log_route(model, RULE_TYPES['IPv6'])
+    # log_route(model, RULE_TYPES['IPv6'])
 
     return jsonify({'message': u'IPv6 Rule saved', 'rule': model.to_dict()}), 201
 
+
+def create_rtbh(current_user, request):
+    return jsonify({'message': 'not implemented ;-)'}), 401
 
 
 @api.route('/rules/ipv4/<int:rule_id>', methods=['GET'])
@@ -245,6 +269,6 @@ def get_form_errors(form):
 
     errors = form.errors.items()
     if len(errors) > 0:
-        return {'message': 'error - invalid request data','validation_errors': form.errors}
+        return {'message': 'error - invalid request data', 'validation_errors': form.errors}
 
     return False
