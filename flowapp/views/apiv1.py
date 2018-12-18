@@ -45,7 +45,9 @@ def authorize(user_key):
     :return: page with token
     """
     jwt_key = app.config.get('JWT_SECRET')
+
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
+
     if model and ipaddress.ip_address(model.machine.decode('latin1')) == ipaddress.ip_address(
             request.remote_addr.decode('latin1')):
         payload = {
@@ -107,30 +109,10 @@ def index(current_user):
         return jsonify(payload)
 
 
-@api.route('/rules', methods=['POST'])
+@api.route('/rules/ipv4', methods=['POST'])
 @csrf.exempt
 @token_required
-def create(current_user):
-    """
-    Api method for new rule
-    :param current_user: data from jwt token
-    :return: json response
-    """
-    data = request.get_json()
-
-    dispatch = {
-        'ipv4': create_ipv4,
-        'ipv6': create_ipv6,
-        'rtbh': create_rtbh
-    }
-
-    try:
-        return dispatch[data['rule_type']](current_user, data)
-    except KeyError:
-        return jsonify({'message': u'Unknown rule type {}'.format(data['rule_type'])}), 401
-
-
-def create_ipv4(current_user, data):
+def create_ipv4(current_user):
     """
     Api method for new IPv4 rule
     :param data: parsed json request
@@ -138,7 +120,7 @@ def create_ipv4(current_user, data):
     :return: json response
     """
     net_ranges = get_user_nets(current_user['id'])
-    form = IPv4Form(data=data)
+    form = IPv4Form(data=request.get_json())
     # add values to form instance
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
@@ -180,7 +162,10 @@ def create_ipv4(current_user, data):
     return jsonify({'message': u'IPv4 Rule saved', 'rule': model.to_dict()}), 201
 
 
-def create_ipv6(current_user, data):
+@api.route('/rules/ipv6', methods=['POST'])
+@csrf.exempt
+@token_required
+def create_ipv6(current_user):
     """
     Create new IPv6 rule
     :param data: parsed json request
@@ -188,7 +173,7 @@ def create_ipv6(current_user, data):
     :return:
     """
     net_ranges = get_user_nets(current_user['id'])
-    form = IPv6Form(data=data)
+    form = IPv6Form(data=request.get_json())
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
 
@@ -240,6 +225,25 @@ def ipv4_rule_get(current_user, rule_id):
     :return:
     """
     model = db.session.query(Flowspec4).get(rule_id)
+    if model:
+        if model.user_id == current_user['id']:
+            return jsonify(model.to_dict()), 200
+        else:
+            return jsonify({'message': 'not allowed to view this rule'}), 401
+    else:
+        return jsonify({'message': 'rule {} not found '.format(rule_id)}), 404
+
+
+@api.route('/rules/ipv6/<int:rule_id>', methods=['GET'])
+@token_required
+def ipv6_rule_get(current_user, rule_id):
+    """
+    Return IPv6 rule
+    :param current_user:
+    :param rule_id:
+    :return:
+    """
+    model = db.session.query(Flowspec6).get(rule_id)
     if model:
         if model.user_id == current_user['id']:
             return jsonify(model.to_dict()), 200

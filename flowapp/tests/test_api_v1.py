@@ -24,10 +24,9 @@ def test_create_v4rule(client, db, jwt_token, mocker):
     """
     test that creating with valid data returns 201
     """
-    req = client.post('/api/v1/rules',
+    req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
                       json={
-                          "rule_type": "ipv4",
                           "action": 2,
                           "protocol": "tcp",
                           "source": "147.230.17.17",
@@ -48,16 +47,14 @@ def test_create_v6rule(client, db, jwt_token):
     """
     test that creating with valid data returns 201
     """
-    req = client.post('/api/v1/rules',
+    req = client.post('/api/v1/rules/ipv6',
                       headers={'x-access-token': jwt_token},
                       json={
-                          "rule_type": "ipv6",
                           "action": 3,
                           "next_header": "tcp",
                           "source": "2001:718:1C01:1111::",
                           "source_mask": 64,
                           "source_port": "",
-                          "user": "jiri.vrany@tul.cz",
                           "expires": "10/25/2018 14:46"
                       }
                       )
@@ -73,10 +70,9 @@ def test_validation_v4rule(client, db, jwt_token):
     """
     test that creating with invalid data returns 404 and errors
     """
-    req = client.post('/api/v1/rules',
+    req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
                       json={
-                          "rule_type": "ipv4",
                           "action": 2,
                           "dest": "200.200.200.32",
                           "dest_mask": 16,
@@ -84,7 +80,6 @@ def test_validation_v4rule(client, db, jwt_token):
                           "source": "1.1.1.1",
                           "source_mask": 32,
                           "source_port": "",
-                          "user": "jiri.vrany@tul.cz",
                           "expires": "10/15/2018 14:46"
                       }
                       )
@@ -104,10 +99,9 @@ def test_all_validation_errors(client, db, jwt_token):
     """
     test that creating with invalid data returns 404 and errors
     """
-    req = client.post('/api/v1/rules',
+    req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
                       json={
-                          "rule_type": "ipv4",
                           "action": 2
                       }
                       )
@@ -120,16 +114,14 @@ def test_validate_v6rule(client, db, jwt_token):
     """
     test that creating with invalid data returns 404 and errors
     """
-    req = client.post('/api/v1/rules',
+    req = client.post('/api/v1/rules/ipv6',
                       headers={'x-access-token': jwt_token},
                       json={
-                          "rule_type": "ipv6",
                           "action": 32,
                           "next_header": "abc",
                           "source": "2011:78:1C01:1111::",
                           "source_mask": 64,
                           "source_port": "",
-                          "user": "jiri.vrany@tul.cz",
                           "expires": "10/25/2018 14:46"
                       }
                       )
