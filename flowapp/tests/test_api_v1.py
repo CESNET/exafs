@@ -25,8 +25,8 @@ def test_list_actions(client, db, jwt_token):
     test that endpoint returns all action in db
     """
     req = client.get('/api/v1/actions',
-                      headers={'x-access-token': jwt_token}
-                      )
+                     headers={'x-access-token': jwt_token}
+                     )
 
     assert req.status_code == 200
     data = json.loads(req.data)
@@ -56,7 +56,32 @@ def test_create_v4rule(client, db, jwt_token):
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
 
 
-def test_can_not_create_expired_v4rule(client, db, jwt_token, mocker):
+def test_delete_v4rule(client, db, jwt_token):
+    """
+    test that creating with valid data returns 201
+    """
+    req = client.post('/api/v1/rules/ipv4',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "action": 2,
+                          "protocol": "tcp",
+                          "source": "147.230.17.17",
+                          "source_mask": 32,
+                          "source_port": "",
+                          "expires": "10/15/2050 14:46"
+                      }
+                      )
+
+    assert req.status_code == 201
+    data = json.loads(req.data)
+    assert data['rule']['id'] == 2
+    req2 = client.delete('/api/v1/rules/ipv4/2',
+                      headers={'x-access-token': jwt_token}
+                      )
+    assert req2.status_code == 201
+
+
+def test_can_not_create_expired_v4rule(client, db, jwt_token):
     """
     test that creating with valid data returns 201
     """

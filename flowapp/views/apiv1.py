@@ -10,6 +10,7 @@ from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, ge
 from flowapp.forms import IPv4Form, IPv6Form
 from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime
 from flowapp.views.rules import announce_route
+from flowapp.auth import check_access_rights
 
 api = Blueprint('apiv1', __name__, template_folder='templates')
 
@@ -237,13 +238,7 @@ def ipv4_rule_get(current_user, rule_id):
     :return:
     """
     model = db.session.query(Flowspec4).get(rule_id)
-    if model:
-        if model.user_id == current_user['id']:
-            return jsonify(model.to_dict()), 200
-        else:
-            return jsonify({'message': 'not allowed to view this rule'}), 401
-    else:
-        return jsonify({'message': 'rule {} not found '.format(rule_id)}), 404
+    return get_rule(model, rule_id)
 
 
 @api.route('/rules/ipv6/<int:rule_id>', methods=['GET'])
@@ -256,11 +251,71 @@ def ipv6_rule_get(current_user, rule_id):
     :return:
     """
     model = db.session.query(Flowspec6).get(rule_id)
+    return get_rule(model, rule_id)
+
+
+def get_rule(model, rule_id):
+    """
+    Common rule getter - return ipv4 or ipv6 model data
+    :param model: rule model
+    :return: json
+    """
     if model:
-        if model.user_id == current_user['id']:
+        if check_access_rights(current_user, model.user_id):
             return jsonify(model.to_dict()), 200
         else:
             return jsonify({'message': 'not allowed to view this rule'}), 401
+    else:
+        return jsonify({'message': 'rule {} not found '.format(rule_id)}), 404
+
+
+@api.route('/rules/ipv4/<int:rule_id>', methods=['DELETE'])
+@token_required
+def delete_v4_rule(current_user, rule_id):
+    """
+    Delete rule with given id and type
+    :param rule_id: integer - rule id
+    """
+    model_name = Flowspec4
+    route_model = messages.create_ipv4
+    return delete_rule(current_user, rule_id, model_name, route_model)
+
+
+@api.route('/rules/ipv6/<int:rule_id>', methods=['DELETE'])
+@token_required
+def delete_v6_rule(current_user, rule_id):
+    """
+    Delete rule with given id and type
+    :param rule_id: integer - rule id
+    """
+    model_name = Flowspec6
+    route_model = messages.create_ipv6
+    return delete_rule(current_user, rule_id, model_name, route_model)
+
+
+def delete_rule(current_user, rule_id, model_name, route_model):
+    """
+    Common method for deleting ipv4 or ipv6 rules
+    :param current_user:
+    :param rule_id:
+    :param model_name:
+    :param route_model:
+    :return:
+    """
+    model = db.session.query(model_name).get(rule_id)
+    if model:
+        if check_access_rights(current_user, model.user_id):
+            # withdraw route
+            route = route_model(model, messages.WITHDRAW)
+            announce_route(route)
+
+            # log_withdraw(route, rule_type, model.id)
+            # delete from db
+            db.session.delete(model)
+            db.session.commit()
+            return jsonify({'message': 'rule deleted'}), 201
+        else:
+            return jsonify({'message': 'not allowed to delete this rule'}), 401
     else:
         return jsonify({'message': 'rule {} not found '.format(rule_id)}), 404
 

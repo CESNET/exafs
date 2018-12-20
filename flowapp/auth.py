@@ -99,3 +99,21 @@ def check_auth(uuid):
         roles = [i > 1 for i in session['user_role_ids']]
         session['can_edit'] = True if all(roles) and roles else []
         return True
+
+
+def check_access_rights(current_user, model_id):
+    """
+    Check if the current user has right to edit/delete certain model data
+    Used in API
+    Returns true if the user is owner of the record or if the user is admin
+    :param current_user: api current user object
+    :param model_id: user_id from the model data
+    :return: boolean
+    """
+    if model_id == current_user['id']:
+        return True
+
+    if max(current_user['role_ids']) == 3:
+        return True
+
+    return False
