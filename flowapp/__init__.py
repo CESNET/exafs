@@ -7,7 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 
 import flowapp.validators
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 app = Flask(__name__)
 db = SQLAlchemy()
