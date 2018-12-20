@@ -109,6 +109,18 @@ def index(current_user):
         return jsonify(payload)
 
 
+@api.route('/actions')
+@token_required
+def all_actions(current_user):
+    print("ACTIONS", current_user['role_ids'])
+    actions = get_user_actions(current_user['role_ids'])
+    print("ACTIONS", actions)
+    if actions:
+        return jsonify(actions)
+    else:
+        return jsonify({'message': 'no actions for this user?'}), 404
+
+
 @api.route('/rules/ipv4', methods=['POST'])
 @csrf.exempt
 @token_required

@@ -449,9 +449,9 @@ def get_user_actions(user_roles):
     """
     max_role = max(user_roles)
     if max_role == 3:
-        actions = db.session.query(Action).order_by('name')
+        actions = db.session.query(Action).order_by('id')
     else:
-        actions = db.session.query(Action).filter_by(role_id=max_role).order_by('name')
+        actions = db.session.query(Action).filter_by(role_id=max_role).order_by('id')
 
     return [(g.id, g.name) for g in actions]
 
