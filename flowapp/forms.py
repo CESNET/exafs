@@ -3,7 +3,7 @@ from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerFiel
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
 from validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
-    whole_world_range, network_in_range, IPAddress
+    whole_world_range, network_in_range, IPAddress, DateNotExpired
 
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
              ('ECE', 'ECE'), ('CWR', 'CWR'), ('NS', 'NS')]
@@ -196,7 +196,7 @@ class IPForm(FlaskForm):
                          coerce=int,
                          validators=[DataRequired()])
 
-    expires = StringField('Expires')
+    expires = StringField('Expires', validators=[DateNotExpired()])
 
     comment = arange = TextAreaField('Comments')
 

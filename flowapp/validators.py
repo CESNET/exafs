@@ -1,7 +1,9 @@
 import ipaddress
+from datetime import datetime
 from wtforms.validators import ValidationError
 
 import flowapp.flowspec as flowspec
+import utils
 
 
 def filter_rules_in_network(net_ranges, rules):
@@ -122,6 +124,22 @@ def address_with_mask(address, mask):
         return False
 
     return True
+
+
+class DateNotExpired(object):
+    """
+    Validator for date - must be in the future
+    """
+
+    def __init__(self, message=None):
+        if not message:
+            message = u'You can not insert expired rule. Date expired:'
+        self.message = message
+
+    def __call__(self, form, field):
+        expires = utils.webpicker_to_datetime(field.data)
+        if expires < datetime.now():
+            raise ValidationError(self.message + str(field.data))
 
 
 class PortString(object):
