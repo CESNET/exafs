@@ -3,7 +3,6 @@ from datetime import datetime
 from flowapp import db
 from flowapp import utils as utils
 
-
 # models and tables
 
 user_role = db.Table('user_role',
@@ -242,6 +241,32 @@ class Flowspec4(db.Model):
         self.created = created
         self.rstate_id = rstate_id
 
+    def __eq__(self, other):
+        """
+        Two models are equal if all the network parameters equals. User_id and time fields can differ.
+        :param other: other Flowspec4 instance
+        :return: boolean
+        """
+        return self.source == other.source and self.source_mask == other.source_mask and self.dest == other.dest \
+               and self.dest_mask == other.dest_mask and self.source_port == other.source_port \
+               and self.dest_port == other.dest_port and self.protocol == other.protocol \
+               and self.flags == other.flags and self.packet_len == other.packet_len \
+               and self.action_id == other.action_id and self.rstate_id == other.rstate_id
+
+    def __ne__(self, other):
+        """
+        Two models are not equal if all the network parameters are not equal. User_id and time fields can differ.
+        :param other: other Flowspec4 instance
+        :return: boolean
+        """
+        compars = self.source == other.source and self.source_mask == other.source_mask and self.dest == other.dest \
+                  and self.dest_mask == other.dest_mask and self.source_port == other.source_port \
+                  and self.dest_port == other.dest_port and self.protocol == other.protocol \
+                  and self.flags == other.flags and self.packet_len == other.packet_len \
+                  and self.action_id == other.action_id and self.rstate_id == other.rstate_id
+
+        return not compars
+
     def to_dict(self):
         """
         Serialize to dict
@@ -307,6 +332,17 @@ class Flowspec6(db.Model):
             created = datetime.utcnow()
         self.created = created
         self.rstate_id = rstate_id
+
+    def __eq__(self, other):
+        """
+        Two models are equal if all the network parameters equals. User_id and time fields can differ.
+        :param other: other Flowspec4 instance
+        :return: boolean
+        """
+        print("DDDD")
+        print(self.to_dict())
+        print(other.to_dict())
+        return self.source == other.source and self.source_mask == other.source_mask and self.dest == other.destination and self.dest_mask == other.destination_mask and self.source_port == other.source_port and self.dest_port == other.destination_port and self.next_header == other.next_header and self.flags == other.flags and self.packet_len == other.packet_len and self.action_id == other.action_id and self.rstate_id == other.rstate_id
 
     def to_dict(self):
         """
@@ -389,6 +425,31 @@ def insert_initial_rulestates(*args, **kwargs):
 
 
 # Misc functions
+
+
+def get_model_if_exists(model_name, form_data, rstate_id=1):
+    """
+    Check if the record in database exist
+    """
+    record = db.session.query(model_name).filter(model_name.source == form_data['source'],
+                                                    model_name.source_mask == form_data['source_mask'],
+                                                    model_name.source_port == form_data['source_port'],
+                                                    model_name.dest == form_data['dest'],
+                                                    model_name.dest_mask == form_data['dest_mask'],
+                                                    model_name.dest_port == form_data['dest_port'],
+                                                    model_name.protocol == form_data['protocol'],
+                                                    model_name.flags == ";".join(form_data['flags']),
+                                                    model_name.packet_len == form_data['packet_len'],
+                                                    model_name.action_id == form_data['action'],
+                                                    model_name.rstate_id == rstate_id
+                                                    ).first()
+
+    if record:
+        return record
+
+    return False
+
+
 def insert_users(users):
     """
     inser list of users {name: string, role_id: integer} to db

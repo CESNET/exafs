@@ -136,4 +136,3 @@ def jwt_token(client, db, request):
     token = client.get(url)
     data = json.loads(token.data)
     return data['token']
-

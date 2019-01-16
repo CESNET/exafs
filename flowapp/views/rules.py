@@ -117,6 +117,8 @@ def ipv4_rule():
 
     form.net_ranges = net_ranges
 
+    print(form.data)
+
     if request.method == 'POST' and form.validate():
 
         model = Flowspec4(

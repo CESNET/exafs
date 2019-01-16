@@ -113,9 +113,13 @@ def index(current_user):
 @api.route('/actions')
 @token_required
 def all_actions(current_user):
-    print("ACTIONS", current_user['role_ids'])
+    """
+    Returns Actions allowed for current user
+    :param current_user:
+    :return: json response
+    """
+
     actions = get_user_actions(current_user['role_ids'])
-    print("ACTIONS", actions)
     if actions:
         return jsonify(actions)
     else:
