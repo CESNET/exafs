@@ -5,7 +5,7 @@ import requests
 from operator import ge, lt
 
 from ..forms import RTBHForm, IPv4Form, IPv6Form
-from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions
+from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions, get_model_if_exists
 from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
@@ -117,29 +117,35 @@ def ipv4_rule():
 
     form.net_ranges = net_ranges
 
-    print(form.data)
-
     if request.method == 'POST' and form.validate():
 
-        model = Flowspec4(
-            source=form.source.data,
-            source_mask=form.source_mask.data,
-            source_port=form.source_port.data,
-            destination=form.dest.data,
-            destination_mask=form.dest_mask.data,
-            destination_port=form.dest_port.data,
-            protocol=form.protocol.data,
-            flags=";".join(form.flags.data),
-            packet_len=form.packet_len.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-            comment=form.comment.data,
-            action_id=form.action.data,
-            user_id=session['user_id'],
-            rstate_id=1
-        )
-        db.session.add(model)
+        model = get_model_if_exists(Flowspec4, form.data, 1)
+
+        if model:
+            model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+            flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
+        else:
+            model = Flowspec4(
+                source=form.source.data,
+                source_mask=form.source_mask.data,
+                source_port=form.source_port.data,
+                destination=form.dest.data,
+                destination_mask=form.dest_mask.data,
+                destination_port=form.dest_port.data,
+                protocol=form.protocol.data,
+                flags=";".join(form.flags.data),
+                packet_len=form.packet_len.data,
+                expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+                comment=form.comment.data,
+                action_id=form.action.data,
+                user_id=session['user_id'],
+                rstate_id=1
+            )
+            flash_message = u'IPv4 Rule saved'
+            db.session.add(model)
+
         db.session.commit()
-        flash(u'IPv4 Rule saved', 'alert-success')
+        flash(flash_message, 'alert-success')
 
         # announce route
         route = messages.create_ipv4(model, messages.ANNOUNCE)

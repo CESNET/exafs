@@ -6,7 +6,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 from flowapp import app, db, validators, flowspec, csrf, messages
-from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions
+from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions, get_model_if_exists
 from flowapp.forms import IPv4Form, IPv6Form
 from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime
 from flowapp.views.rules import announce_route
@@ -148,24 +148,31 @@ def create_ipv4(current_user):
         if form_errors:
             return jsonify(form_errors), 404
 
-    model = Flowspec4(
-        source=form.source.data,
-        source_mask=form.source_mask.data,
-        source_port=form.source_port.data,
-        destination=form.dest.data,
-        destination_mask=form.dest_mask.data,
-        destination_port=form.dest_port.data,
-        protocol=form.protocol.data,
-        flags=";".join(form.flags.data),
-        packet_len=form.packet_len.data,
-        expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-        comment=form.comment.data,
-        action_id=form.action.data,
-        user_id=current_user['id'],
-        rstate_id=1
-    )
+    model = get_model_if_exists(Flowspec4, form.data, 1)
 
-    db.session.add(model)
+    if model:
+        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
+    else:
+        model = Flowspec4(
+            source=form.source.data,
+            source_mask=form.source_mask.data,
+            source_port=form.source_port.data,
+            destination=form.dest.data,
+            destination_mask=form.dest_mask.data,
+            destination_port=form.dest_port.data,
+            protocol=form.protocol.data,
+            flags=";".join(form.flags.data),
+            packet_len=form.packet_len.data,
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+            comment=form.comment.data,
+            action_id=form.action.data,
+            user_id=current_user['id'],
+            rstate_id=1
+        )
+        flash_message = u'IPv4 Rule saved'
+        db.session.add(model)
+
     db.session.commit()
 
     # announce route
@@ -176,7 +183,7 @@ def create_ipv4(current_user):
     # @TODO - log routes from api
     # log_route(model, RULE_TYPES['IPv4'])
 
-    return jsonify({'message': u'IPv4 Rule saved', 'rule': model.to_dict()}), 201
+    return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
 
 
 @api.route('/rules/ipv6', methods=['POST'])
