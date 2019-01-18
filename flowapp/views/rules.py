@@ -1,24 +1,23 @@
 # flowapp/views/admin.py
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, redirect, flash, request, url_for, session, current_app
+from flask import Blueprint, render_template, redirect, flash, request, url_for, session
 import requests
 from operator import ge, lt
 
-from ..forms import RTBHForm, IPv4Form, IPv6Form
-from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions, get_ipv4_model_if_exists
-from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
-from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
+from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RULE_TYPES
+from flowapp.forms import RTBHForm, IPv4Form, IPv6Form
+from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, get_user_actions, get_ipv4_model_if_exists, get_ipv6_model_if_exists
+from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
+from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
 from flowapp import db, messages
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
-RULE_TYPES = {'RTBH': 1, 'IPv4': 4, 'IPv6': 6}
 DATA_MODELS = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
 DATA_FORMS = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
 DATA_TEMPLATES = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
 DATA_TABLES = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
-ROUTE_MODELS = {1: messages.create_rtbh, 4: messages.create_ipv4, 6: messages.create_ipv6}
 
 
 @rules.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
@@ -61,7 +60,7 @@ def reactivate_rule(rule_type, rule_id):
         route = route_model(model, messages.ANNOUNCE)
         announce_route(route)
         # log changes
-        log_route(model, rule_type)
+        log_route(session['user_id'], model, rule_type)
 
         return redirect(url_for('index'))
     else:
@@ -95,7 +94,7 @@ def delete_rule(rule_type, rule_id):
     route = route_model(model, messages.WITHDRAW)
     announce_route(route)
 
-    log_withdraw(route, rule_type, model.id)
+    log_withdraw(session['user_id'], route, rule_type, model.id)
 
     # delete from db
     db.session.delete(model)
@@ -151,7 +150,7 @@ def ipv4_rule():
         route = messages.create_ipv4(model, messages.ANNOUNCE)
         announce_route(route)
         # log changes
-        log_route(model, RULE_TYPES['IPv4'])
+        log_route(session['user_id'], model, RULE_TYPES['IPv4'])
 
         return redirect(url_for('index'))
     else:
@@ -179,32 +178,41 @@ def ipv6_rule():
 
     if request.method == 'POST' and form.validate():
 
-        model = Flowspec6(
-            source=form.source.data,
-            source_mask=form.source_mask.data,
-            source_port=form.source_port.data,
-            destination=form.dest.data,
-            destination_mask=form.dest_mask.data,
-            destination_port=form.dest_port.data,
-            next_header=form.next_header.data,
-            flags=";".join(form.flags.data),
-            packet_len=form.packet_len.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-            comment=form.comment.data,
-            action_id=form.action.data,
-            user_id=session['user_id'],
-            rstate_id=1
-        )
-        db.session.add(model)
+        model = get_ipv6_model_if_exists(form.data, 1)
+
+        if model:
+            model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+            flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
+        else:
+
+            model = Flowspec6(
+                source=form.source.data,
+                source_mask=form.source_mask.data,
+                source_port=form.source_port.data,
+                destination=form.dest.data,
+                destination_mask=form.dest_mask.data,
+                destination_port=form.dest_port.data,
+                next_header=form.next_header.data,
+                flags=";".join(form.flags.data),
+                packet_len=form.packet_len.data,
+                expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+                comment=form.comment.data,
+                action_id=form.action.data,
+                user_id=session['user_id'],
+                rstate_id=1
+            )
+            flash_message = u'IPv6 Rule saved'
+            db.session.add(model)
+
         db.session.commit()
-        flash(u'IPv6 Rule saved', 'alert-success')
+        flash(flash_message, 'alert-success')
 
         # announce routes
         route = messages.create_ipv6(model, messages.ANNOUNCE)
         announce_route(route)
 
         # log changes
-        log_route(model, RULE_TYPES['IPv6'])
+        log_route(session['user_id'], model, RULE_TYPES['IPv6'])
 
         return redirect(url_for('index'))
     else:
@@ -251,7 +259,7 @@ def rtbh_rule():
         route = messages.create_rtbh(model, messages.ANNOUNCE)
         announce_route(route)
         # log changes
-        log_route(model, RULE_TYPES['RTBH'])
+        log_route(session['user_id'], model, RULE_TYPES['RTBH'])
 
         return redirect(url_for('index'))
     else:
@@ -334,16 +342,6 @@ def announce_all_routes(action=messages.ANNOUNCE):
         map(set_withdraw_state, rules_rtbh)
 
 
-def announce_route(route):
-    """
-    Announce route to ExaAPI
-
-    @TODO take the request away, use some kind of messaging (maybe celery?)
-    """
-    if not current_app.config['TESTING']:
-        requests.post('http://localhost:5000/', data={'command': route})
-
-
 def set_withdraw_state(rule):
     """
     set rule state to withdrawed in db
@@ -354,33 +352,3 @@ def set_withdraw_state(rule):
     db.session.commit()
 
 
-def log_route(route_model, rule_type):
-    """
-    Convert route to EXAFS message and log it to database
-    :param route_model: model with route object
-    :param route_type: string
-    :return: None
-    """
-    converter = ROUTE_MODELS[rule_type]
-    task = converter(route_model)
-    log = Log(time=datetime.now(),
-              task=task,
-              rule_type=rule_type,
-              rule_id=route_model.id,
-              user_id=session['user_id'])
-    db.session.add(log)
-    db.session.commit()
-
-
-def log_withdraw(task, rule_type, deleted_id):
-    """
-    Log the withdraw command to database
-    :param task: command message
-    """
-    log = Log(time=datetime.now(),
-              task=task,
-              rule_type=rule_type,
-              rule_id=deleted_id,
-              user_id=session['user_id'])
-    db.session.add(log)
-    db.session.commit()

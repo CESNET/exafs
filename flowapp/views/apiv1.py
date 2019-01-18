@@ -6,11 +6,12 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 from flowapp import app, db, validators, flowspec, csrf, messages
-from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions, get_ipv4_model_if_exists
+from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions, get_ipv4_model_if_exists, get_ipv6_model_if_exists
 from flowapp.forms import IPv4Form, IPv6Form
 from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime
-from flowapp.views.rules import announce_route
 from flowapp.auth import check_access_rights
+from flowapp.output import ROUTE_MODELS, RULE_TYPES, announce_route, log_route, log_withdraw
+
 
 api = Blueprint('apiv1', __name__, template_folder='templates')
 
@@ -177,11 +178,9 @@ def create_ipv4(current_user):
 
     # announce route
     route = messages.create_ipv4(model, messages.ANNOUNCE)
-    # @TODO - refactor move announce route out of rules view
     announce_route(route)
     # log changes
-    # @TODO - log routes from api
-    # log_route(model, RULE_TYPES['IPv4'])
+    log_route(current_user['id'], model, RULE_TYPES['IPv4'])
 
     return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
 
@@ -206,23 +205,32 @@ def create_ipv6(current_user):
         if form_errors:
             return jsonify(form_errors), 404
 
-    model = Flowspec6(
-        source=form.source.data,
-        source_mask=form.source_mask.data,
-        source_port=form.source_port.data,
-        destination=form.dest.data,
-        destination_mask=form.dest_mask.data,
-        destination_port=form.dest_port.data,
-        next_header=form.next_header.data,
-        flags=";".join(form.flags.data),
-        packet_len=form.packet_len.data,
-        expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-        comment=form.comment.data,
-        action_id=form.action.data,
-        user_id=current_user['id'],
-        rstate_id=1
-    )
-    db.session.add(model)
+    model = get_ipv6_model_if_exists(form.data, 1)
+
+    if model:
+        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        flash_message = u'Existing IPv6 Rule found. Expiration time was updated to new value.'
+    else:
+
+        model = Flowspec6(
+            source=form.source.data,
+            source_mask=form.source_mask.data,
+            source_port=form.source_port.data,
+            destination=form.dest.data,
+            destination_mask=form.dest_mask.data,
+            destination_port=form.dest_port.data,
+            next_header=form.next_header.data,
+            flags=";".join(form.flags.data),
+            packet_len=form.packet_len.data,
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+            comment=form.comment.data,
+            action_id=form.action.data,
+            user_id=current_user['id'],
+            rstate_id=1
+        )
+        flash_message = u'IPv6 Rule saved'
+        db.session.add(model)
+
     db.session.commit()
 
     # announce routes
@@ -230,9 +238,9 @@ def create_ipv6(current_user):
     announce_route(route)
 
     # log changes
-    # log_route(model, RULE_TYPES['IPv6'])
+    log_route(current_user['id'], model, RULE_TYPES['IPv6'])
 
-    return jsonify({'message': u'IPv6 Rule saved', 'rule': model.to_dict()}), 201
+    return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
 
 
 def create_rtbh(current_user, request):

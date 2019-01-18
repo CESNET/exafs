@@ -1,5 +1,5 @@
 import json
-from flowapp.views.rules import announce_route
+from flowapp.output import announce_route
 
 
 def test_token(client, jwt_token):
