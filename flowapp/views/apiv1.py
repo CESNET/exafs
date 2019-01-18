@@ -6,7 +6,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 from flowapp import app, db, validators, flowspec, csrf, messages
-from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions, get_model_if_exists
+from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions, get_ipv4_model_if_exists
 from flowapp.forms import IPv4Form, IPv6Form
 from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime
 from flowapp.views.rules import announce_route
@@ -148,7 +148,7 @@ def create_ipv4(current_user):
         if form_errors:
             return jsonify(form_errors), 404
 
-    model = get_model_if_exists(Flowspec4, form.data, 1)
+    model = get_ipv4_model_if_exists(form.data, 1)
 
     if model:
         model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))

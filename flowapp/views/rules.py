@@ -5,7 +5,7 @@ import requests
 from operator import ge, lt
 
 from ..forms import RTBHForm, IPv4Form, IPv6Form
-from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions, get_model_if_exists
+from ..models import Action, RTBH, Flowspec4, Flowspec6, Log, get_user_nets, get_user_actions, get_ipv4_model_if_exists
 from ..auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from ..utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
@@ -119,7 +119,7 @@ def ipv4_rule():
 
     if request.method == 'POST' and form.validate():
 
-        model = get_model_if_exists(Flowspec4, form.data, 1)
+        model = get_ipv4_model_if_exists(form.data, 1)
 
         if model:
             model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))

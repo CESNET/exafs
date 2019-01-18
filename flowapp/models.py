@@ -339,10 +339,11 @@ class Flowspec6(db.Model):
         :param other: other Flowspec4 instance
         :return: boolean
         """
-        print("DDDD")
-        print(self.to_dict())
-        print(other.to_dict())
-        return self.source == other.source and self.source_mask == other.source_mask and self.dest == other.destination and self.dest_mask == other.destination_mask and self.source_port == other.source_port and self.dest_port == other.destination_port and self.next_header == other.next_header and self.flags == other.flags and self.packet_len == other.packet_len and self.action_id == other.action_id and self.rstate_id == other.rstate_id
+        return self.source == other.source and self.source_mask == other.source_mask and self.dest == other.dest\
+               and self.dest_mask == other.dest_mask and self.source_port == other.source_port\
+               and self.dest_port == other.dest_port and self.next_header == other.next_header\
+               and self.flags == other.flags and self.packet_len == other.packet_len\
+               and self.action_id == other.action_id and self.rstate_id == other.rstate_id
 
     def to_dict(self):
         """
@@ -427,22 +428,45 @@ def insert_initial_rulestates(*args, **kwargs):
 # Misc functions
 
 
-def get_model_if_exists(model_name, form_data, rstate_id=1):
+def get_ipv4_model_if_exists(form_data, rstate_id=1):
     """
     Check if the record in database exist
     """
-    record = db.session.query(model_name).filter(model_name.source == form_data['source'],
-                                                    model_name.source_mask == form_data['source_mask'],
-                                                    model_name.source_port == form_data['source_port'],
-                                                    model_name.dest == form_data['dest'],
-                                                    model_name.dest_mask == form_data['dest_mask'],
-                                                    model_name.dest_port == form_data['dest_port'],
-                                                    model_name.protocol == form_data['protocol'],
-                                                    model_name.flags == ";".join(form_data['flags']),
-                                                    model_name.packet_len == form_data['packet_len'],
-                                                    model_name.action_id == form_data['action'],
-                                                    model_name.rstate_id == rstate_id
-                                                    ).first()
+    record = db.session.query(Flowspec4).filter(Flowspec4.source == form_data['source'],
+                                                Flowspec4.source_mask == form_data['source_mask'],
+                                                Flowspec4.source_port == form_data['source_port'],
+                                                Flowspec4.dest == form_data['dest'],
+                                                Flowspec4.dest_mask == form_data['dest_mask'],
+                                                Flowspec4.dest_port == form_data['dest_port'],
+                                                Flowspec4.protocol == form_data['protocol'],
+                                                Flowspec4.flags == ";".join(form_data['flags']),
+                                                Flowspec4.packet_len == form_data['packet_len'],
+                                                Flowspec4.action_id == form_data['action'],
+                                                Flowspec4.rstate_id == rstate_id
+                                                ).first()
+
+    if record:
+        return record
+
+    return False
+
+
+def get_ipv6_model_if_exists(form_data, rstate_id=1):
+    """
+    Check if the record in database exist
+    """
+    record = db.session.query(Flowspec6).filter(Flowspec6.source == form_data['source'],
+                                                Flowspec6.source_mask == form_data['source_mask'],
+                                                Flowspec6.source_port == form_data['source_port'],
+                                                Flowspec6.dest == form_data['dest'],
+                                                Flowspec6.dest_mask == form_data['dest_mask'],
+                                                Flowspec6.dest_port == form_data['dest_port'],
+                                                Flowspec6.next_header == form_data['next_header'],
+                                                Flowspec6.flags == ";".join(form_data['flags']),
+                                                Flowspec6.packet_len == form_data['packet_len'],
+                                                Flowspec6.action_id == form_data['action'],
+                                                Flowspec6.rstate_id == rstate_id
+                                                ).first()
 
     if record:
         return record

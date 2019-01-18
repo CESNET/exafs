@@ -65,7 +65,7 @@ def test_delete_v4rule(client, db, jwt_token):
                       json={
                           "action": 2,
                           "protocol": "tcp",
-                          "source": "147.230.17.17",
+                          "source": "147.230.17.12",
                           "source_mask": 32,
                           "source_port": "",
                           "expires": "10/15/2050 14:46"
@@ -75,7 +75,7 @@ def test_delete_v4rule(client, db, jwt_token):
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data['rule']['id'] == 2
-    req2 = client.delete('/api/v1/rules/ipv4/2',
+    req2 = client.delete('/api/v1/rules/ipv4/{}'.format(data['rule']['id']),
                       headers={'x-access-token': jwt_token}
                       )
     assert req2.status_code == 201

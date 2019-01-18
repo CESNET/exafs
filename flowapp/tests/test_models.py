@@ -28,7 +28,7 @@ def test_insert_ipv4(db):
     db.session.commit()
 
 
-def test_get_model_if_exists(db):
+def test_get_ipv4_model_if_exists(db):
     """
     test if the function find existing model correctly
     :param db: conftest fixture
@@ -65,9 +65,52 @@ def test_get_model_if_exists(db):
         'action': 1
     }
 
-    result = models.get_model_if_exists(models.Flowspec4, form_data, 1)
+    result = models.get_ipv4_model_if_exists(form_data, 1)
     assert result
     assert result == model
+
+
+def test_get_ipv6_model_if_exists(db):
+    """
+    test if the function find existing model correctly
+    :param db: conftest fixture
+    :return:
+    """
+    model = models.Flowspec6(
+        source="2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+        source_mask="32",
+        source_port="80",
+        destination="",
+        destination_mask="",
+        destination_port="",
+        next_header="tcp",
+        flags="",
+        packet_len="",
+        action_id=1,
+        expires=datetime.now(),
+        user_id=4,
+        rstate_id=1
+    )
+    db.session.add(model)
+    db.session.commit()
+
+    form_data = {
+        'source': '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
+        'source_mask': '32',
+        'source_port': '80',
+        'dest': '',
+        'dest_mask': '',
+        'dest_port': '',
+        'next_header': 'tcp',
+        'flags': '',
+        'packet_len': '',
+        'action': 1
+    }
+
+    result = models.get_ipv6_model_if_exists(form_data, 1)
+    assert result
+    assert result == model
+
 
 def test_ipv4_eq(db):
     """
@@ -106,7 +149,6 @@ def test_ipv4_eq(db):
     )
 
     assert model_A == model_B
-
 
 
 def test_ipv4_ne(db):
