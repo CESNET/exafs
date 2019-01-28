@@ -188,3 +188,34 @@ def test_ipv4_ne(db):
     )
 
     assert model_A != model_B
+
+
+
+def test_rtbj_eq(db):
+    """
+    test that two equal rtbh rules are equal
+    """
+    model_A = models.RTBH(
+        ipv4="192.168.1.1",
+        ipv4_mask="32",
+        ipv6="",
+        ipv6_mask="",
+        community_id=1,
+        expires="123",
+        user_id=4,
+        rstate_id=1
+    )
+
+    model_B = models.RTBH(
+        ipv4="192.168.1.1",
+        ipv4_mask="32",
+        ipv6="",
+        ipv6_mask="",
+        community_id=1,
+        expires="123456",
+        user_id=1,
+        rstate_id=1
+    )
+
+    assert model_A == model_B
+

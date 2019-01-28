@@ -7,7 +7,8 @@ from operator import ge, lt
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RULE_TYPES
 from flowapp.forms import RTBHForm, IPv4Form, IPv6Form
 from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, get_user_actions, \
-    get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, Community
+    get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, Community, \
+    get_rtbh_model_if_exists
 from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
@@ -247,21 +248,29 @@ def rtbh_rule():
 
     if request.method == 'POST' and form.validate():
 
-        model = RTBH(
-            ipv4=form.ipv4.data,
-            ipv4_mask=form.ipv4_mask.data,
-            ipv6=form.ipv6.data,
-            ipv6_mask=form.ipv6_mask.data,
-            community=form.community.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-            comment=form.comment.data,
-            user_id=session['user_id'],
-            rstate_id=1
-        )
-        db.session.add(model)
-        db.session.commit()
-        flash(u'RTBH Rule saved', 'alert-success')
+        model = get_rtbh_model_if_exists(form.data, 1)
 
+        if model:
+            model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+            flash_message = u'Existing RTBH Rule found. Expiration time was updated to new value.'
+        else:
+
+            model = RTBH(
+                ipv4=form.ipv4.data,
+                ipv4_mask=form.ipv4_mask.data,
+                ipv6=form.ipv6.data,
+                ipv6_mask=form.ipv6_mask.data,
+                community_id=form.community.data,
+                expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+                comment=form.comment.data,
+                user_id=session['user_id'],
+                rstate_id=1
+            )
+            db.session.add(model)
+            db.session.commit()
+            flash_message = u'RTBH Rule saved'
+
+        flash(flash_message, 'alert-success')
         # announce routes
         route = messages.create_rtbh(model, messages.ANNOUNCE)
         announce_route(route)

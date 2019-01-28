@@ -171,22 +171,23 @@ class RTBH(db.Model):
     ipv4_mask = db.Column(db.Integer)
     ipv6 = db.Column(db.String(255))
     ipv6_mask = db.Column(db.Integer)
-    community = db.Column(db.String(255))
+    community_id = db.Column(db.Integer, db.ForeignKey('community.id'))
+    community = db.relationship('Community', backref='rtbh')
     comment = db.Column(db.Text)
     expires = db.Column(db.DateTime)
     created = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref='rtbh')
     rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
-    rstate = db.relationship('Rstate', backref='rtbh')
+    rstate = db.relationship('Rstate', backref='RTBH')
 
-    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community, expires, user_id, comment=None, created=None,
+    def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community_id, expires, user_id, comment=None, created=None,
                  rstate_id=1):
         self.ipv4 = ipv4
         self.ipv4_mask = ipv4_mask
         self.ipv6 = ipv6
         self.ipv6_mask = ipv6_mask
-        self.community = community
+        self.community_id = community_id
         self.expires = expires
         self.user_id = user_id
         self.comment = comment
@@ -194,6 +195,28 @@ class RTBH(db.Model):
             created = datetime.utcnow()
         self.created = created
         self.rstate_id = rstate_id
+
+    def __eq__(self, other):
+        """
+        Two models are equal if all the network parameters equals. User_id and time fields can differ.
+        :param other: other RTBH instance
+        :return: boolean
+        """
+        return self.ipv4 == other.ipv4 and self.ipv4_mask == other.ipv4_mask and self.ipv6 == other.ipv6 \
+               and self.ipv6_mask == other.ipv6_mask and self.community_id == other.community_id \
+               and self.rstate_id == other.rstate_id
+
+    def __ne__(self, other):
+        """
+        Two models are not equal if all the network parameters are not equal. User_id and time fields can differ.
+        :param other: other RTBH instance
+        :return: boolean
+        """
+        compars = self.ipv4 == other.ipv4 and self.ipv4_mask == other.ipv4_mask and self.ipv6 == other.ipv6 \
+                  and self.ipv6_mask == other.ipv6_mask and self.community_id == other.community_id \
+                  and self.rstate_id == other.rstate_id
+
+        return not compars
 
     def update_time(self, form):
         self.expires = utils.webpicker_to_datetime(form.expire_date.data)
@@ -494,6 +517,25 @@ def get_ipv6_model_if_exists(form_data, rstate_id=1):
                                                 Flowspec6.action_id == form_data['action'],
                                                 Flowspec6.rstate_id == rstate_id
                                                 ).first()
+
+    if record:
+        return record
+
+    return False
+
+
+def get_rtbh_model_if_exists(form_data, rstate_id=1):
+    """
+    Check if the record in database exist
+    """
+
+    record = db.session.query(RTBH).filter(RTBH.ipv4 == form_data['ipv4'],
+                                           RTBH.ipv4_mask == form_data['ipv4_mask'],
+                                           RTBH.ipv6 == form_data['ipv6'],
+                                           RTBH.ipv6_mask == form_data['ipv6_mask'],
+                                           RTBH.community_id == form_data['community'],
+                                           RTBH.rstate_id == rstate_id
+                                           ).first()
 
     if record:
         return record
