@@ -1,0 +1,35 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}Flowspec RTBH communities{% endblock %}
+{% block content %}
+    <table class="table table-hover">
+    <tr>
+    <th>Id</th>
+    <th>Display Name</th>
+    <th>EXA Command</th>
+    <th>Description</th>
+    <th>Minimum level</th>
+    <th>Community</th>
+    </tr>
+    {% for community in communities %}
+        <tr>
+        <td>{{ community.id }}</td>
+        <td>{{ community.name }}</td>
+        <td>{{ community.command }}</td>
+        <td>
+            {{ community.description }}
+        </td>
+        <td>
+            {{ community.role }}
+        </td>
+        <td>
+        <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_community', community_id=community.id) }}" role="button">
+            <span class="glyphicon glyphicon-edit"></span>
+        </a>
+        <a class="btn btn-danger btn-sm" href="{{ url_for('admin.delete_community', community_id=community.id) }}" role="button">
+            <span class="glyphicon glyphicon-remove"></span>
+        </a>
+        </td>
+        </tr>
+    {% endfor %}
+    </table>
+{% endblock %}

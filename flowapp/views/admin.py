@@ -1,7 +1,7 @@
 # flowapp/views/admin.py
 from flask import Blueprint, render_template, redirect, flash, request, url_for
-from ..forms import UserForm, ActionForm, OrganizationForm
-from ..models import User, Action, Organization, Role, insert_user, get_existing_action
+from ..forms import UserForm, ActionForm, OrganizationForm, CommunityForm
+from ..models import User, Action, Organization, Role, insert_user, get_existing_action, Community, get_existing_community
 from ..auth import auth_required, admin_required
 from flowapp import db
 
@@ -210,3 +210,69 @@ def delete_action(action_id):
     flash(u'Action {} deleted'.format(aname), 'alert-success')
 
     return redirect(url_for('admin.actions'))
+
+
+@admin.route('/communities')
+@auth_required
+@admin_required
+def communities():
+    communities = db.session.query(Community).all()
+    return render_template('pages/communities.j2', communities=communities)
+
+
+@admin.route('/community', methods=['GET', 'POST'])
+@auth_required
+@admin_required
+def community():
+    form = CommunityForm(request.form)
+
+    if request.method == 'POST' and form.validate():
+        # test if Acttion is unique
+        exist = get_existing_community(form.name.data, form.command.data)
+        if not exist:
+            community = Community(name=form.name.data,
+                                  command=form.command.data,
+                                  description=form.description.data,
+                                  role_id=form.role_id.data)
+            db.session.add(community)
+            db.session.commit()
+            flash('Community saved', 'alert-success')
+            return redirect(url_for('admin.communities'))
+        else:
+            flash(u'Community with name {} or command {} already exists'.format(
+                form.name.data, form.command.data), 'alert-danger')
+
+    community_url = url_for('admin.community')
+    return render_template('forms/simple_form.j2', title="Add new community to Flowspec", form=form,
+                           community_url=community_url)
+
+
+@admin.route('/community/edit/<int:community_id>', methods=['GET', 'POST'])
+@auth_required
+@admin_required
+def edit_community(community_id):
+    community = db.session.query(Community).get(community_id)
+    print(community.role_id)
+    form = CommunityForm(request.form, obj=community)
+    if request.method == 'POST' and form.validate():
+        form.populate_obj(community)
+        db.session.commit()
+        flash('Community updated')
+        return redirect(url_for('admin.communities'))
+
+    community_url = url_for('admin.edit_community', community_id=community.id)
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(community.name), form=form,
+                           community_url=community_url)
+
+
+@admin.route('/community/delete/<int:community_id>', methods=['GET'])
+@auth_required
+@admin_required
+def delete_community(community_id):
+    community = db.session.query(Community).get(community_id)
+    aname = community.name
+    db.session.delete(community)
+    db.session.commit()
+    flash(u'Community {} deleted'.format(aname), 'alert-success')
+
+    return redirect(url_for('admin.communities'))

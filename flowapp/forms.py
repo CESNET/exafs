@@ -94,6 +94,28 @@ class ActionForm(FlaskForm):
                           validators=[DataRequired()])
 
 
+class CommunityForm(FlaskForm):
+    """
+    Community form object
+    used in Admin
+    """
+    name = StringField(
+        'Community short name',
+        validators=[Length(max=150)]
+    )
+
+    command = StringField(
+        'ExaBGP community value',
+        validators=[Length(max=150)]
+    )
+
+    description = StringField('Community description')
+
+    role_id = SelectField('Minimal required role',
+                          choices=[('2', 'user'), ('3', 'admin')],
+                          validators=[DataRequired()])
+
+
 class RTBHForm(FlaskForm):
     """
     RoadToBlackHole rule form
@@ -119,7 +141,7 @@ class RTBHForm(FlaskForm):
                                          NumberRange(min=0, max=128, message='invalid IPv6 mask value (0-128)')])
 
     community = SelectField('Community',
-                            choices=[('2852:666', '2852:666'), ('40965:666', '40965:666'), ('xxxxx:666', 'xxxxx:666')],
+                            coerce=int,
                             validators=[DataRequired()])
 
     expires = StringField(

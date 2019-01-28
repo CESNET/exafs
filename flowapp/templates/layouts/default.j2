@@ -44,7 +44,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/">Exafs v 0.2.1</a>
+          <a class="navbar-brand" href="/">Exafs v {{ session['app_version'] }}</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -66,6 +66,8 @@
                 <li><a href="{{ url_for('admin.organization') }}">Add Org.</a></li>
                 <li><a href="{{ url_for('admin.actions') }}">Action</a></li>
                 <li><a href="{{ url_for('admin.action') }}">Add action</a></li>
+                <li><a href="{{ url_for('admin.communities') }}">RTBH Communities</a></li>
+                <li><a href="{{ url_for('admin.community') }}">Add RTBH Comm.</a></li>
               </ul>
             </li>
             {% endif %}

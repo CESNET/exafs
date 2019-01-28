@@ -6,7 +6,8 @@ from operator import ge, lt
 
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RULE_TYPES
 from flowapp.forms import RTBHForm, IPv4Form, IPv6Form
-from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, get_user_actions, get_ipv4_model_if_exists, get_ipv6_model_if_exists
+from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, get_user_actions, \
+    get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, Community
 from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
@@ -173,6 +174,7 @@ def ipv4_rule():
 def ipv6_rule():
     net_ranges = get_user_nets(session['user_id'])
     form = IPv6Form(request.form)
+
     form.action.choices = get_user_actions(session['user_role_ids'])
     form.net_ranges = net_ranges
 
@@ -233,9 +235,14 @@ def ipv6_rule():
 @auth_required
 @user_or_admin_required
 def rtbh_rule():
+    all_com = db.session.query(Community).all()
+    if not all_com:
+        insert_initial_communities()
+
     net_ranges = get_user_nets(session['user_id'])
     form = RTBHForm(request.form)
 
+    form.community.choices = get_user_communities(session['user_role_ids'])
     form.net_ranges = net_ranges
 
     if request.method == 'POST' and form.validate():

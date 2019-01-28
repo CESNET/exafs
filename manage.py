@@ -1,3 +1,12 @@
+"""
+DB Migration script
+Usage:
+python manage.py db migrate - creates migration script
+python manage.py db upgrade - upgrades database with migration script
+
+https://flask-migrate.readthedocs.io/en/latest/
+"""
+
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from os import environ

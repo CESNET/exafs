@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import redirect, request, url_for, session, abort
 
-from flowapp import db, app
+from flowapp import db, app, __version__
 from .models import User
 
 
@@ -81,6 +81,9 @@ def check_auth(uuid):
     This function is every time when someone accessing the endpoint /
     password combination is valid.
     """
+
+    session['app_version'] = __version__
+
     exist = False
     if uuid:
         exist = db.session.query(User).filter_by(uuid=uuid).first()
@@ -94,7 +97,7 @@ def check_auth(uuid):
         session['user_id'] = 1
         session['user_roles'] = ['admin']
         session['user_org'] = ['TU Liberec']
-        session['user_role_ids'] = [2]
+        session['user_role_ids'] = [3]
         session['user_org_ids'] = [1]
         roles = [i > 1 for i in session['user_role_ids']]
         session['can_edit'] = True if all(roles) and roles else []

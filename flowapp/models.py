@@ -134,6 +134,25 @@ class Action(db.Model):
         self.role_id = role_id
 
 
+class Community(db.Model):
+    """
+    Community for RTBH rule
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=True)
+    command = db.Column(db.String(120), unique=True)
+    description = db.Column(db.String(260))
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
+    role = db.relationship('Role', backref='community')
+
+    def __init__(self, name, command, description, role_id=2):
+        self.name = name
+        self.command = command
+        self.description = description
+        self.role_id = role_id
+
+
 class Rstate(db.Model):
     """
     State for Rules
@@ -339,10 +358,10 @@ class Flowspec6(db.Model):
         :param other: other Flowspec4 instance
         :return: boolean
         """
-        return self.source == other.source and self.source_mask == other.source_mask and self.dest == other.dest\
-               and self.dest_mask == other.dest_mask and self.source_port == other.source_port\
-               and self.dest_port == other.dest_port and self.next_header == other.next_header\
-               and self.flags == other.flags and self.packet_len == other.packet_len\
+        return self.source == other.source and self.source_mask == other.source_mask and self.dest == other.dest \
+               and self.dest_mask == other.dest_mask and self.source_port == other.source_port \
+               and self.dest_port == other.dest_port and self.next_header == other.next_header \
+               and self.flags == other.flags and self.packet_len == other.packet_len \
                and self.action_id == other.action_id and self.rstate_id == other.rstate_id
 
     def to_dict(self):
@@ -397,6 +416,14 @@ def insert_initial_actions(*args, **kwargs):
     db.session.add(Action(name='QoS 1Mbps', command='rate-limit 13107200', description='QoS'))
     db.session.add(Action(name='QoS 10Mbps', command='rate-limit 131072000', description='QoS'))
     db.session.add(Action(name='Discard', command='discard', description='Discard'))
+    db.session.commit()
+
+
+@event.listens_for(Community.__table__, 'after_create')
+def insert_initial_communities(*args, **kwargs):
+    db.session.add(Community(name='2852:666', command='2852:666', description=''))
+    db.session.add(Community(name='40965:666', command='40965:666', description=''))
+    db.session.add(Community(name='xxxxx:666', command='xxxxx:666', description=''))
     db.session.commit()
 
 
@@ -541,6 +568,19 @@ def get_user_actions(user_roles):
     return [(g.id, g.name) for g in actions]
 
 
+def get_user_communities(user_roles):
+    """
+    Return list of communities based on current user role
+    """
+    max_role = max(user_roles)
+    if max_role == 3:
+        communities = db.session.query(Community).order_by('id')
+    else:
+        communities = db.session.query(Community).filter_by(role_id=max_role).order_by('id')
+
+    return [(g.id, g.name) for g in communities]
+
+
 def get_existing_action(name=None, command=None):
     """
     return Action with given name or command if the action exists
@@ -551,3 +591,15 @@ def get_existing_action(name=None, command=None):
     """
     action = Action.query.filter((Action.name == name) | (Action.command == command)).first()
     return action.id if hasattr(action, 'id') else None
+
+
+def get_existing_community(name=None, command=None):
+    """
+    return Community with given name or command if the action exists
+    return None if action not exists
+    :param name: string action name
+    :param command: string action command
+    :return: action id
+    """
+    community = Community.query.filter((Community.name == name) | (Community.command == command)).first()
+    return community.id if hasattr(community, 'id') else None
