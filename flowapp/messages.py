@@ -81,7 +81,7 @@ def create_rtbh(rule, message_type=ANNOUNCE):
     return "{action} route {source} next-hop {nexthop} community [{community} no-export]".format(
         action=action,
         source=source,
-        community=rule.community,
+        community=rule.community.command,
         nexthop=nexthop)
 
 
