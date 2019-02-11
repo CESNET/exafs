@@ -10,12 +10,13 @@ import flowapp.validators
 __version__ = '0.2.2'
 
 app = Flask(__name__)
+
+
 db = SQLAlchemy()
 csrf = CSRFProtect(app)
 
 
-# Add a secret key for encrypting session information
-app.secret_key = 'cH\xc5\xd9\xd2\xc4,^\x8c\x9f3S\x94Y\xe5\xc7!\x06>A'
+
 
 # Map SSO attributes from ADFS to session keys under session['user']
 #: Default attribute map
