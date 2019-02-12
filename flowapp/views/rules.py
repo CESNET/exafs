@@ -1,4 +1,6 @@
 # flowapp/views/admin.py
+import jwt
+
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, flash, request, url_for, session
 import requests
@@ -12,7 +14,7 @@ from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, ge
 from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
 from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
 
-from flowapp import db, messages
+from flowapp import db, app, messages, RULES_KEY
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
@@ -87,21 +89,30 @@ def delete_rule(rule_type, rule_id):
     :param rule_type: string - type of rule to be deleted
     :param rule_id: integer - rule id
     """
+    rules_dict = request.cookies.get(RULES_KEY)
+    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+
+    print(rules_dict)
+    rules = rules_dict[str(rule_type)]
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]
 
     model = db.session.query(model_name).get(rule_id)
 
-    # withdraw route
-    route = route_model(model, messages.WITHDRAW)
-    announce_route(route)
+    if model.id in rules:
+        # withdraw route
+        route = route_model(model, messages.WITHDRAW)
+        announce_route(route)
 
-    log_withdraw(session['user_id'], route, rule_type, model.id)
+        log_withdraw(session['user_id'], route, rule_type, model.id)
 
-    # delete from db
-    db.session.delete(model)
-    db.session.commit()
-    flash(u'Rule deleted', 'alert-success')
+        # delete from db
+        db.session.delete(model)
+        db.session.commit()
+        flash(u'Rule deleted', 'alert-success')
+
+    else:
+        flash(u'You can not delete this rule', 'alert-warning')
 
     return redirect(url_for('index'))
 

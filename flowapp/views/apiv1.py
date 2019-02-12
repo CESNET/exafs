@@ -63,7 +63,6 @@ def authorize(user_key):
             },
             'exp': datetime.utcnow() + timedelta(minutes=30)
         }
-        print(payload)
         encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
         return jsonify({'token': encoded})
     else:

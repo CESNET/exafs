@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, redirect, render_template, session
+import jwt
+
+from flask import Flask, redirect, render_template, session, make_response
 from flask_sso import SSO
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
@@ -7,11 +9,11 @@ from flask_wtf.csrf import CSRFProtect
 
 import flowapp.validators
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 app = Flask(__name__)
 
-
+RULES_KEY = 'rules'
 db = SQLAlchemy()
 csrf = CSRFProtect(app)
 
@@ -92,14 +94,24 @@ def index():
     rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
     rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
 
+    jwt_key = app.config.get('JWT_SECRET')
+
     # admin can see and edit any rules
     if 3 in session['user_role_ids']:
         rules = {4: rules4, 6: rules6}
-        return render_template('pages/dashboard_admin.j2',
+
+        payload = {
+            4: [rule.id for rule in rules4],
+            6: [rule.id for rule in rules6],
+            1: [rule.id for rule in rules_rtbh]
+        }
+        encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
+        res = make_response(render_template('pages/dashboard_admin.j2',
                                rules=rules,
                                actions=all_actions,
                                rules_rtbh=rules_rtbh,
-                               today=datetime.now())
+                               today=datetime.now()))
+
     # filter out the rules for normal users
     else:
         rules4 = validators.filter_rules_in_network(net_ranges, rules4)
@@ -114,13 +126,24 @@ def index():
 
         rules_editable = {4: rules4_editable, 6: rules6_editable}
         rules_visible = {4: rules4_visible, 6: rules6_visible}
-        return render_template('pages/dashboard_user.j2',
+        res = make_response(render_template('pages/dashboard_user.j2',
                                rules_editable=rules_editable,
                                rules_visible=rules_visible,
                                actions=all_actions,
                                rules_rtbh=rules_rtbh,
-                               today=datetime.now())
+                               today=datetime.now()))
+        payload = {
+            4: [rule.id for rule in rules4_editable],
+            6: [rule.id for rule in rules6_editable],
+            1: [rule.id for rule in rules_rtbh]
+        }
+        encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
+    if app.config.get('DEVEL'):
+        res.set_cookie(RULES_KEY, encoded, httponly=True, samesite='Lax')
+    else:
+        res.set_cookie(RULES_KEY, encoded, secure=True, httponly=True, samesite='Lax')
 
+    return res
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):

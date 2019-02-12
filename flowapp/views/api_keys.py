@@ -1,11 +1,14 @@
-from flask import Blueprint, render_template, redirect, flash, request, url_for, session
+import jwt
+from flask import Blueprint, render_template, redirect, flash, request, url_for, session, make_response
 from os import urandom
 
 from ..forms import ApiKeyForm
 from ..models import ApiKey
 from ..auth import auth_required
 
-from flowapp import db
+from flowapp import db, app
+
+COOKIE_KEY = 'keylist'
 
 api_keys = Blueprint('api_keys', __name__, template_folder='templates')
 
@@ -17,9 +20,19 @@ def all():
     Show user api keys
     :return: page with keys
     """
+    jwt_key = app.config.get('JWT_SECRET')
     keys = db.session.query(ApiKey).filter_by(user_id=session['user_id']).all()
+    payload = {'keys': [key.id for key in keys]}
+    encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
 
-    return render_template('pages/api_key.j2', keys=keys)
+    resp = make_response(render_template('pages/api_key.j2', keys=keys))
+
+    if app.config.get('DEVEL'):
+        resp.set_cookie(COOKIE_KEY, encoded, httponly=True, samesite='Lax')
+    else:
+        resp.set_cookie(COOKIE_KEY, encoded, secure=True, httponly=True, samesite='Lax')
+
+    return resp
 
 
 @api_keys.route('/add', methods=['GET', 'POST'])
@@ -62,9 +75,13 @@ def delete(key_id):
     Delete api_key and machine
     :param key_id: integer
     """
+    key_list = request.cookies.get(COOKIE_KEY)
+    key_list = jwt.decode(key_list, app.config.get('JWT_SECRET'), algorithms=['HS256'])
 
     model = db.session.query(ApiKey).get(key_id)
-    if model.user_id == session['user_id'] or 3 in session['user_role_ids']:
+    if model.id not in key_list['keys']:
+        flash(u"You can't delete this key!", 'alert-danger')
+    elif model.user_id == session['user_id'] or 3 in session['user_role_ids']:
         # delete from db
         db.session.delete(model)
         db.session.commit()
