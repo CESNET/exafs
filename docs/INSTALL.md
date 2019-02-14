@@ -7,7 +7,7 @@ Includes: shibboleth auth, mariadb, uwsgi, supervisord
 
 ### shibboleth config:
 ```
-<Location /login>
+<Location />
   AuthType shibboleth
   ShibRequestSetting requireSession 1
   require shib-session
@@ -29,7 +29,7 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 ### Flask app
 
 #### Install python runtime and other deps 
-As root. Install dependencies. If you are using Debian or Ubunutu, you must of course use apt and sudo instead yum.
+As root. Install dependencies. If you are using Debian or Ubuntu, you must of course use apt and sudo instead yum.
 ```
 yum install -y python-devel gcc
 yum install mod_proxy_uwsgi   
