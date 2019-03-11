@@ -45,6 +45,9 @@ def reactivate_rule(rule_type, rule_id):
                                for g in db.session.query(Action).order_by('name')]
         form.action.data = model.action_id
 
+    if rule_type == 1:
+        form.community.choices = get_user_communities(session['user_role_ids'])
+
     if rule_type == 4:
         form.protocol.data = model.protocol
 
