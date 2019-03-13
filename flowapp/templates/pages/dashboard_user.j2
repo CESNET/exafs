@@ -3,18 +3,22 @@
 {% block content %}
     <h1>User dashboard</h1>
     <h2>Rules IPv4/v6 that you can modify</h2>
-    <table class="table table-hover">
-    <tr>
-    <th>Source adress</th>
-    <th>Source port(s)</th>
-    <th>Destination adress</th>
-    <th>Dest. port(s)</th>
-    <th>Protocol(s)</th>
-    <th>Expires</th>
-    <th>Action</th>
-    <th>Flags</th>
-    <th>Action</th>
-    </tr>
+    <table class="table table-hover" id="ip-table">
+    <thead>
+        <tr>
+        <th>Source adress</th>
+        <th>Source port(s)</th>
+        <th>Destination adress</th>
+        <th>Dest. port(s)</th>
+        <th>Protocol(s)</th>
+        <th>Expires</th>
+        <th>Action</th>
+        <th>Flags</th>
+        <th>User</th>
+        <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
     {% for key, value in rules_editable.items() %}
         {% for rule in value %}
             <tr {% if rule.expires < today %} class="warning" {% endif %}>
@@ -50,7 +54,10 @@
                 <td>
                     {{ rule.flags}}
                 </td>
-                <td rowspan="2" class="bottom_row">
+                <td>
+                    {{ rule.user.name }}
+                </td>
+                <td>
                 {% if editable_rule(rule) %}
                     <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
                          <span class="glyphicon glyphicon-time"></span>
@@ -58,40 +65,34 @@
                     <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=key, rule_id=rule.id) }}" role="button">
                          <span class="glyphicon glyphicon-remove"></span>
                     </a>
+                    {% if rule.comment %}
+                    <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                        <span class="glyphicon glyphicon-comment"></span>
+                    </button>
+                    {% endif %}
                 {% endif %}
                 </td>
             </tr>
-            <tr {% if rule.expires < today %}
-                    class="warning bottom_row"
-                {% else %}
-                    class="bottom_row"
-                {% endif %} >
-                <th>Comment:</th>
-                <td title="{{ rule.comment }}" colspan="3">
-                    {% if rule.comment %}
-                    {{ rule.comment[:60] }} ...
-                    {% endif %}
-                </td>
-                <th>Created by:</th>
-                <td colspan="3">
-                    {{ rule.user.name }}
-                </td>
-            </tr>
+
 
         {% endfor %}
       
     {% endfor %}
+    </tbody>
     </table>
 
 
     <h2>Rules RTBH</h2>
-    <table class="table table-hover">
-    <tr>
-    <th>IP adress (v4 or v6)</th>
-    <th>Community</th>
-    <th>Expires</th>
-    <th>Action</th>
-    </tr>
+    <table class="table table-hover" id="rtbh-table">
+    <thead>
+        <tr>
+        <th>IP adress (v4 or v6)</th>
+        <th>Community</th>
+        <th>Expires</th>
+        <th>User</th>
+        <th>Action</th>
+        </tr>
+    </thead>
     {% for rule in rules_rtbh %}
         <tr {% if rule.expires < today %} class="warning"  {% endif %}>
         <td>
@@ -110,6 +111,9 @@
             {{ rule.expires }} 
         </td>
         <td>
+            {{ rule.user.name }}
+        </td>
+        <td>
         <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
             <span class="glyphicon glyphicon-time"></span>
 
@@ -117,6 +121,11 @@
          <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
                  <span class="glyphicon glyphicon-remove"></span>
             </a>
+         {% if rule.comment %}
+            <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                <span class="glyphicon glyphicon-comment"></span>
+            </button>
+          {% endif %}
         </td>
         </tr>
     {% endfor %}
@@ -133,6 +142,7 @@
     <th>Expires</th>
     <th>Action</th>
     <th>Flags</th>
+    <th>User</th>
     </tr>
     {% for key, value in rules_visible.items() %}
         {% for rule in value %}
@@ -169,26 +179,17 @@
                 <td>
                     {{ rule.flags}}
                 </td>
-                <td rowspan="2" class="bottom_row">
-                </td>
-            </tr>
-            <tr {% if rule.expires < today %}
-                    class="warning bottom_row"
-                {% else %}
-                    class="bottom_row"
-                {% endif %} >
-                <th>Comment:</th>
-                <td title="{{ rule.comment }}" colspan="3">
-                    {% if rule.comment %}
-                    {{ rule.comment[:60] }} ...
-                    {% endif %}
-                </td>
-                <th>Created by:</th>
-                <td colspan="3">
+                 <td>
                     {{ rule.user.name }}
                 </td>
+                <td>
+                {% if rule.comment %}
+                    <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                        <span class="glyphicon glyphicon-comment"></span>
+                    </button>
+                {% endif %}
+                </td>
             </tr>
-
         {% endfor %}
 
     {% endfor %}
