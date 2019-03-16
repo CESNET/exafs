@@ -233,7 +233,7 @@ class RTBH(db.Model):
             "ipv4_mask": self.ipv4_mask,
             "ipv6": self.ipv6,
             "ipv6_mask": self.ipv6_mask,
-            "community": self.community,
+            "community": self.community.name,
             "comment": self.comment,
             "expires": self.expires,
             "created": self.created,
