@@ -227,6 +227,7 @@ class RTBH(db.Model):
         Serialize to dict
         :return: dictionary
         """
+
         return {
             "id": self.id,
             "ipv4": self.ipv4,

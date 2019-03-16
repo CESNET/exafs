@@ -218,4 +218,3 @@ def test_rtbj_eq(db):
     )
 
     assert model_A == model_B
-
