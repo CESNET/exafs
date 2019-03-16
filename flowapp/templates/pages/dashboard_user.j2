@@ -196,4 +196,31 @@
     </table>
 
 
+<script type="text/javascript">
+    $(function(){
+		$('#rtbh-table').tablesorter({
+			widgets        : ['zebra', 'columns'],
+			usNumberFormat : false,
+			sortReset      : true,
+			sortRestart    : true
+		});
+	});
+
+	 $(function(){
+		$('#ip-table').tablesorter({
+			widgets        : ['zebra', 'columns'],
+			usNumberFormat : false,
+			sortReset      : true,
+			sortRestart    : true
+		});
+	});
+
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+
+</script>
+
+
+
 {% endblock %}

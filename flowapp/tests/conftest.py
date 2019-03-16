@@ -58,7 +58,8 @@ def app(request):
         SQLALCHEMY_DATABASE_URI=TEST_DATABASE_URI,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JWT_SECRET='testing',
-        API_KEY='testkey'
+        API_KEY='testkey',
+        SECRET_KEY='testkeysession'
     )
 
     print('\n----- CREATE FLASK APPLICATION\n')
