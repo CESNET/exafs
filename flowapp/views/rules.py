@@ -352,7 +352,8 @@ def announce_all_routes(action=messages.ANNOUNCE):
         Flowspec4.expires.desc()).all()
     rules6 = db.session.query(Flowspec6).filter(Flowspec6.rstate_id == 1).filter(comp_func(Flowspec6.expires, today)).order_by(
         Flowspec6.expires.desc()).all()
-    rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(ge(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
+#    rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(ge(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
+    rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(comp_func(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
 
     output4 = [messages.create_ipv4(rule, action) for rule in rules4]
     output6 = [messages.create_ipv6(rule, action) for rule in rules6]
