@@ -119,7 +119,27 @@ def test_create_v6rule(client, db, jwt_token):
                       }
                       )
     data = json.loads(req.data)
-    print("V6 DATA", data)
+    assert req.status_code == 201
+    assert data['rule']
+    assert data['rule']['id'] == 1
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+
+
+def test_create_rtbh_rule(client, db, jwt_token):
+    """
+    test that creating with valid data returns 201
+    """
+    req = client.post('/api/v1/rules/rtbh',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "community": 1,
+                          "ipv4": "147.230.17.17",
+                          "ipv4_mask": 32,
+                          "expires": "10/25/2050 14:46"
+                      }
+                      )
+    data = json.loads(req.data)
+    print("RTBH DATA", data)
     assert req.status_code == 201
     assert data['rule']
     assert data['rule']['id'] == 1

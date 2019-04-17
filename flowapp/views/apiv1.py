@@ -6,9 +6,11 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 from flowapp import app, db, validators, flowspec, csrf, messages
-from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, get_user_nets, get_user_actions, get_ipv4_model_if_exists, get_ipv6_model_if_exists
-from flowapp.forms import IPv4Form, IPv6Form
-from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime
+from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, Community, get_user_nets, get_user_actions, \
+    get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, \
+    get_rtbh_model_if_exists
+from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
+from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_ent
 from flowapp.auth import check_access_rights
 from flowapp.output import ROUTE_MODELS, RULE_TYPES, announce_route, log_route, log_withdraw
 
@@ -165,7 +167,7 @@ def create_ipv4(current_user):
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
             expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-            comment=form.comment.data,
+            comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
             rstate_id=1
@@ -222,7 +224,7 @@ def create_ipv6(current_user):
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
             expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-            comment=form.comment.data,
+            comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
             rstate_id=1
@@ -242,8 +244,54 @@ def create_ipv6(current_user):
     return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
 
 
-def create_rtbh(current_user, request):
-    return jsonify({'message': 'not implemented ;-)'}), 401
+@api.route('/rules/rtbh', methods=['POST'])
+@csrf.exempt
+@token_required
+def create_rtbh(current_user):
+
+    all_com = db.session.query(Community).all()
+    if not all_com:
+        insert_initial_communities()
+
+    net_ranges = get_user_nets(current_user['id'])
+    form = RTBHForm(data=request.get_json())
+
+    form.community.choices = get_user_communities(current_user['role_ids'])
+    form.net_ranges = net_ranges
+
+    if not form.validate():
+        form_errors = get_form_errors(form)
+        if form_errors:
+            return jsonify(form_errors), 404
+
+    model = get_rtbh_model_if_exists(form.data, 1)
+
+    if model:
+        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        flash_message = u'Existing RTBH Rule found. Expiration time was updated to new value.'
+    else:
+        model = RTBH(
+            ipv4=form.ipv4.data,
+            ipv4_mask=form.ipv4_mask.data,
+            ipv6=form.ipv6.data,
+            ipv6_mask=form.ipv6_mask.data,
+            community_id=form.community.data,
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+            comment=quote_to_ent(form.comment.data),
+            user_id=current_user['id'],
+            rstate_id=1
+        )
+        db.session.add(model)
+        db.session.commit()
+        flash_message = u'RTBH Rule saved'
+
+    # announce routes
+    route = messages.create_rtbh(model, messages.ANNOUNCE)
+    announce_route(route)
+    # log changes
+    log_route(current_user['id'], model, RULE_TYPES['RTBH'])
+
+    return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
 
 
 @api.route('/rules/ipv4/<int:rule_id>', methods=['GET'])
