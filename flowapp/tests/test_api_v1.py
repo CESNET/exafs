@@ -76,8 +76,52 @@ def test_delete_v4rule(client, db, jwt_token):
     data = json.loads(req.data)
     assert data['rule']['id'] == 2
     req2 = client.delete('/api/v1/rules/ipv4/{}'.format(data['rule']['id']),
-                      headers={'x-access-token': jwt_token}
+                         headers={'x-access-token': jwt_token}
+                         )
+    assert req2.status_code == 201
+
+
+def test_create_rtbh_rule(client, db, jwt_token):
+    """
+    test that creating with valid data returns 201
+    """
+    req = client.post('/api/v1/rules/rtbh',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "community": 1,
+                          "ipv4": "147.230.17.17",
+                          "ipv4_mask": 32,
+                          "expires": "10/25/2050 14:46"
+                      }
                       )
+    data = json.loads(req.data)
+    print("RTBH DATA", data)
+    assert req.status_code == 201
+    assert data['rule']
+    assert data['rule']['id'] == 1
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+
+
+def test_delete_rtbh_rule(client, db, jwt_token):
+    """
+    test that creating with valid data returns 201
+    """
+    req = client.post('/api/v1/rules/rtbh',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "community": 2,
+                          "ipv4": "147.230.17.177",
+                          "ipv4_mask": 32,
+                          "expires": "10/25/2050 14:46"
+                      }
+                      )
+
+    assert req.status_code == 201
+    data = json.loads(req.data)
+    assert data['rule']['id'] == 2
+    req2 = client.delete('/api/v1/rules/rtbh/{}'.format(data['rule']['id']),
+                         headers={'x-access-token': jwt_token}
+                         )
     assert req2.status_code == 201
 
 
@@ -119,27 +163,6 @@ def test_create_v6rule(client, db, jwt_token):
                       }
                       )
     data = json.loads(req.data)
-    assert req.status_code == 201
-    assert data['rule']
-    assert data['rule']['id'] == 1
-    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
-
-
-def test_create_rtbh_rule(client, db, jwt_token):
-    """
-    test that creating with valid data returns 201
-    """
-    req = client.post('/api/v1/rules/rtbh',
-                      headers={'x-access-token': jwt_token},
-                      json={
-                          "community": 1,
-                          "ipv4": "147.230.17.17",
-                          "ipv4_mask": 32,
-                          "expires": "10/25/2050 14:46"
-                      }
-                      )
-    data = json.loads(req.data)
-    print("RTBH DATA", data)
     assert req.status_code == 201
     assert data['rule']
     assert data['rule']['id'] == 1

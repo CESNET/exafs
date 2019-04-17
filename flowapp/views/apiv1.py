@@ -14,7 +14,6 @@ from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_
 from flowapp.auth import check_access_rights
 from flowapp.output import ROUTE_MODELS, RULE_TYPES, announce_route, log_route, log_withdraw
 
-
 api = Blueprint('apiv1', __name__, template_folder='templates')
 
 
@@ -248,7 +247,6 @@ def create_ipv6(current_user):
 @csrf.exempt
 @token_required
 def create_rtbh(current_user):
-
     all_com = db.session.query(Community).all()
     if not all_com:
         insert_initial_communities()
@@ -320,6 +318,19 @@ def ipv6_rule_get(current_user, rule_id):
     return get_rule(model, rule_id)
 
 
+@api.route('/rules/rtbh/<int:rule_id>', methods=['GET'])
+@token_required
+def rtbh_rule_get(current_user, rule_id):
+    """
+    Return RTBH rule
+    :param current_user:
+    :param rule_id:
+    :return:
+    """
+    model = db.session.query(RTBH).get(rule_id)
+    return get_rule(model, rule_id)
+
+
 def get_rule(model, rule_id):
     """
     Common rule getter - return ipv4 or ipv6 model data
@@ -356,6 +367,18 @@ def delete_v6_rule(current_user, rule_id):
     """
     model_name = Flowspec6
     route_model = messages.create_ipv6
+    return delete_rule(current_user, rule_id, model_name, route_model)
+
+
+@api.route('/rules/rtbh/<int:rule_id>', methods=['DELETE'])
+@token_required
+def delete_rtbh_rule(current_user, rule_id):
+    """
+    Delete rule with given id and type
+    :param rule_id: integer - rule id
+    """
+    model_name = RTBH
+    route_model = messages.create_rtbh
     return delete_rule(current_user, rule_id, model_name, route_model)
 
 

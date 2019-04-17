@@ -129,14 +129,14 @@ class RTBHForm(FlaskForm):
                        validators=[Optional(), IPv4Address(message='provide valid IPv4 adress')]
                        )
 
-    ipv4_mask = IntegerField('Source IPv4  mask (bytes)',
+    ipv4_mask = IntegerField('Source IPv4  mask (bits)',
                              validators=[Optional(),
                                          NumberRange(min=0, max=32, message='invalid IPv4 mask value (0-32)')])
 
     ipv6 = StringField('Source IPv6 address',
                        validators=[Optional(), IPv6Address(message='provide valid IPv6 adress')]
                        )
-    ipv6_mask = IntegerField('Source mask (bytes)',
+    ipv6_mask = IntegerField('Source mask (bits)',
                              validators=[Optional(),
                                          NumberRange(min=0, max=128, message='invalid IPv6 mask value (0-128)')])
 
@@ -308,14 +308,14 @@ class IPv4Form(IPForm):
                          validators=[Optional(), IPv4Address(message='provide valid IPv4 adress')]
                          )
 
-    source_mask = IntegerField('Source mask (bytes)',
+    source_mask = IntegerField('Source mask (bits)',
                                validators=[Optional(), NumberRange(min=0, max=32, message='invalid mask value (0-32)')])
 
     dest = StringField('Destination address',
                        validators=[Optional(), IPv4Address(message='provide valid IPv4 adress')]
                        )
 
-    dest_mask = IntegerField('Destination mask (bytes)',
+    dest_mask = IntegerField('Destination mask (bits)',
                              validators=[Optional(), NumberRange(min=0, max=32, message='invalid mask value (0-32)')])
 
     protocol = SelectField('Protocol',
@@ -348,7 +348,7 @@ class IPv6Form(IPForm):
                          validators=[Optional(), IPv6Address(message='provide valid IPv6 adress')]
                          )
 
-    source_mask = IntegerField('Source prefix length (bytes)',
+    source_mask = IntegerField('Source prefix length (bits)',
                                validators=[Optional(),
                                            NumberRange(min=0, max=128, message='invalid prefix value (0-128)')])
 
@@ -356,7 +356,7 @@ class IPv6Form(IPForm):
                        validators=[Optional(), IPv6Address(message='provide valid IPv6 adress')]
                        )
 
-    dest_mask = IntegerField('Destination prefix length (bytes)',
+    dest_mask = IntegerField('Destination prefix length (bits)',
                              validators=[Optional(),
                                          NumberRange(min=0, max=128, message='invalid prefix value (0-128)')])
 
