@@ -1,6 +1,15 @@
 import datetime
 from flask import flash
 
+def quote_to_ent(comment):
+    """
+    Convert all " to &quot;
+    Used for comment sanitize / because of tooltip in dashboard break when quotes are unescaped
+    :param comment: string to be sanitized
+    :return: string
+    """
+    return comment.replace('"', '&quot;')
+
 
 def webpicker_to_datetime(webtime):
     """

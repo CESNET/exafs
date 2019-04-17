@@ -12,7 +12,7 @@ from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, ge
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, Community, \
     get_rtbh_model_if_exists
 from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
-from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes
+from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes, quote_to_ent
 
 from flowapp import db, app, messages, RULES_KEY
 
@@ -151,7 +151,7 @@ def ipv4_rule():
                 flags=";".join(form.flags.data),
                 packet_len=form.packet_len.data,
                 expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-                comment=form.comment.data,
+                comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session['user_id'],
                 rstate_id=1
@@ -213,7 +213,7 @@ def ipv6_rule():
                 flags=";".join(form.flags.data),
                 packet_len=form.packet_len.data,
                 expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-                comment=form.comment.data,
+                comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session['user_id'],
                 rstate_id=1
@@ -276,7 +276,7 @@ def rtbh_rule():
                 ipv6_mask=form.ipv6_mask.data,
                 community_id=form.community.data,
                 expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
-                comment=form.comment.data,
+                comment=quote_to_ent(form.comment.data),
                 user_id=session['user_id'],
                 rstate_id=1
             )
@@ -352,7 +352,6 @@ def announce_all_routes(action=messages.ANNOUNCE):
         Flowspec4.expires.desc()).all()
     rules6 = db.session.query(Flowspec6).filter(Flowspec6.rstate_id == 1).filter(comp_func(Flowspec6.expires, today)).order_by(
         Flowspec6.expires.desc()).all()
-#    rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(ge(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
     rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(comp_func(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
 
     output4 = [messages.create_ipv4(rule, action) for rule in rules4]
