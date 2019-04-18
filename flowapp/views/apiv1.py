@@ -127,6 +127,22 @@ def all_actions(current_user):
         return jsonify({'message': 'no actions for this user?'}), 404
 
 
+@api.route('/communities')
+@token_required
+def all_communities(current_user):
+    """
+    Returns RTHB communites allowed for current user
+    :param current_user:
+    :return: json response
+    """
+
+    coms = get_user_communities(current_user['role_ids'])
+    if coms:
+        return jsonify(coms)
+    else:
+        return jsonify({'message': 'no actions for this user?'}), 404
+
+
 @api.route('/rules/ipv4', methods=['POST'])
 @csrf.exempt
 @token_required
@@ -302,7 +318,7 @@ def ipv4_rule_get(current_user, rule_id):
     :return:
     """
     model = db.session.query(Flowspec4).get(rule_id)
-    return get_rule(model, rule_id)
+    return get_rule(current_user, model, rule_id)
 
 
 @api.route('/rules/ipv6/<int:rule_id>', methods=['GET'])
@@ -315,7 +331,7 @@ def ipv6_rule_get(current_user, rule_id):
     :return:
     """
     model = db.session.query(Flowspec6).get(rule_id)
-    return get_rule(model, rule_id)
+    return get_rule(current_user, model, rule_id)
 
 
 @api.route('/rules/rtbh/<int:rule_id>', methods=['GET'])
@@ -328,10 +344,10 @@ def rtbh_rule_get(current_user, rule_id):
     :return:
     """
     model = db.session.query(RTBH).get(rule_id)
-    return get_rule(model, rule_id)
+    return get_rule(current_user, model, rule_id)
 
 
-def get_rule(model, rule_id):
+def get_rule(current_user, model, rule_id):
     """
     Common rule getter - return ipv4 or ipv6 model data
     :param model: rule model

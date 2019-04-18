@@ -33,6 +33,20 @@ def test_list_actions(client, db, jwt_token):
     assert len(data) == 4
 
 
+
+def test_list_communities(client, db, jwt_token):
+    """
+    test that endpoint returns all action in db
+    """
+    req = client.get('/api/v1/communities',
+                     headers={'x-access-token': jwt_token}
+                     )
+
+    assert req.status_code == 200
+    data = json.loads(req.data)
+    assert len(data) == 3
+
+
 def test_create_v4rule(client, db, jwt_token):
     """
     test that creating with valid data returns 201
