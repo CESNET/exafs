@@ -12,8 +12,6 @@ except KeyError as e:
 if env == 'devel':
     app.config.from_object(config.DevelopmentConfig)
     app.config.update(
-        SESSION_COOKIE_SECURE=True,
-        SESSION_COOKIE_SAMESITE='Lax',
         DEVEL=True
     )
 else:

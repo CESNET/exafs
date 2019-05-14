@@ -125,18 +125,18 @@ class RTBHForm(FlaskForm):
         super(RTBHForm, self).__init__(*args, **kwargs)
         self.net_ranges = None
 
-    ipv4 = StringField('Source IPv4 address',
+    ipv4 = StringField('IPv4 address',
                        validators=[Optional(), IPv4Address(message='provide valid IPv4 adress')]
                        )
 
-    ipv4_mask = IntegerField('Source IPv4  mask (bits)',
+    ipv4_mask = IntegerField('IPv4  mask (bits)',
                              validators=[Optional(),
                                          NumberRange(min=0, max=32, message='invalid IPv4 mask value (0-32)')])
 
-    ipv6 = StringField('Source IPv6 address',
+    ipv6 = StringField('IPv6 address',
                        validators=[Optional(), IPv6Address(message='provide valid IPv6 adress')]
                        )
-    ipv6_mask = IntegerField('Source mask (bits)',
+    ipv6_mask = IntegerField('IPv6 mask (bits)',
                              validators=[Optional(),
                                          NumberRange(min=0, max=128, message='invalid IPv6 mask value (0-128)')])
 
