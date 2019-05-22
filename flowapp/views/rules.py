@@ -60,13 +60,14 @@ def reactivate_rule(rule_type, rule_id):
         # set new expiration date
         model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
         # set again the active state
-        model.rstate_id = 1
+        model.rstate_id = get_state_by_time(webpicker_to_datetime(form.expires.data))
         db.session.commit()
-        flash(u'Rule reactivated', 'alert-success')
+        flash(u'Rule Expiration date changed', 'alert-success')
         # announce route
-        route_model = ROUTE_MODELS[rule_type]
-        route = route_model(model, messages.ANNOUNCE)
-        announce_route(route)
+        if model.rstate_id == 1:
+            route_model = ROUTE_MODELS[rule_type]
+            route = route_model(model, messages.ANNOUNCE)
+            announce_route(route)
         # log changes
         log_route(session['user_id'], model, rule_type)
 
