@@ -144,9 +144,7 @@ class RTBHForm(FlaskForm):
                             coerce=int,
                             validators=[DataRequired()])
 
-    expires = StringField(
-        'Expires'
-    )
+    expires = StringField('Expires')
 
     comment = arange = TextAreaField('Comments'
                                      )
@@ -218,7 +216,7 @@ class IPForm(FlaskForm):
                          coerce=int,
                          validators=[DataRequired()])
 
-    expires = StringField('Expires', validators=[DateNotExpired()])
+    expires = StringField('Expires')
 
     comment = arange = TextAreaField('Comments')
 

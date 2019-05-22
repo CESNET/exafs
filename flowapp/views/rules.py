@@ -12,7 +12,8 @@ from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, ge
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, Community, \
     get_rtbh_model_if_exists
 from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
-from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes, quote_to_ent
+from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes, quote_to_ent, \
+    get_state_by_time
 
 from flowapp import db, app, messages, RULES_KEY
 
@@ -154,7 +155,7 @@ def ipv4_rule():
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session['user_id'],
-                rstate_id=1
+                rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
             )
             flash_message = u'IPv4 Rule saved'
             db.session.add(model)
@@ -162,9 +163,13 @@ def ipv4_rule():
         db.session.commit()
         flash(flash_message, 'alert-success')
 
-        # announce route
-        route = messages.create_ipv4(model, messages.ANNOUNCE)
-        announce_route(route)
+        print("MODEL STATE", model.rstate_id)
+
+        # announce route if model is in active state
+        if model.rstate_id == 1:
+            route = messages.create_ipv4(model, messages.ANNOUNCE)
+            announce_route(route)
+
         # log changes
         log_route(session['user_id'], model, RULE_TYPES['IPv4'])
 
@@ -216,7 +221,7 @@ def ipv6_rule():
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session['user_id'],
-                rstate_id=1
+                rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
             )
             flash_message = u'IPv6 Rule saved'
             db.session.add(model)
@@ -225,8 +230,9 @@ def ipv6_rule():
         flash(flash_message, 'alert-success')
 
         # announce routes
-        route = messages.create_ipv6(model, messages.ANNOUNCE)
-        announce_route(route)
+        if model.rstate_id == 1:
+            route = messages.create_ipv6(model, messages.ANNOUNCE)
+            announce_route(route)
 
         # log changes
         log_route(session['user_id'], model, RULE_TYPES['IPv6'])
@@ -285,7 +291,7 @@ def rtbh_rule():
                 expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
                 comment=quote_to_ent(form.comment.data),
                 user_id=session['user_id'],
-                rstate_id=1
+                rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
             )
             db.session.add(model)
             db.session.commit()
@@ -293,8 +299,9 @@ def rtbh_rule():
 
         flash(flash_message, 'alert-success')
         # announce routes
-        route = messages.create_rtbh(model, messages.ANNOUNCE)
-        announce_route(route)
+        if model.rstate_id == 1:
+            route = messages.create_rtbh(model, messages.ANNOUNCE)
+            announce_route(route)
         # log changes
         log_route(session['user_id'], model, RULE_TYPES['RTBH'])
 

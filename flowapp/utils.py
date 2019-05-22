@@ -1,5 +1,6 @@
-import datetime
+from datetime import datetime, timedelta
 from flask import flash
+
 
 def quote_to_ent(comment):
     """
@@ -15,14 +16,30 @@ def webpicker_to_datetime(webtime):
     """
     convert 'MM/DD/YYYY HH:mm' to datetime
     """
-    return datetime.datetime.strptime(webtime, '%m/%d/%Y %H:%M')
+    return datetime.strptime(webtime, '%m/%d/%Y %H:%M')
 
 
 def datetime_to_webpicker(python_time):
     """
     convert 'MM/DD/YYYY HH:mm' to datetime
     """
-    return datetime.datetime.strftime(python_time, '%m/%d/%Y %H:%M')
+    return datetime.strftime(python_time, '%m/%d/%Y %H:%M')
+
+
+def get_state_by_time(python_time):
+    """
+    returns state for rule based on given time
+    if given time is in the past returns 2 (withdrawed rule)
+    else returns 1
+    :param python_time:
+    :return: integer rstate
+    """
+    present = datetime.now()
+
+    if python_time <= present:
+        return 2
+    else:
+        return 1
 
 
 def round_to_ten_minutes(python_time):
@@ -31,10 +48,10 @@ def round_to_ten_minutes(python_time):
     :param python_time: datetime
     :return: datetime
     """
-    python_time += datetime.timedelta(minutes=5)
-    python_time -= datetime.timedelta(minutes=python_time.minute % 10,
-                             seconds=python_time.second,
-                             microseconds=python_time.microsecond)
+    python_time += timedelta(minutes=5)
+    python_time -= timedelta(minutes=python_time.minute % 10,
+                                      seconds=python_time.second,
+                                      microseconds=python_time.microsecond)
 
     return python_time
 

@@ -73,6 +73,8 @@ def test_create_v4rule(client, db, jwt_token):
 def test_delete_v4rule(client, db, jwt_token):
     """
     test that creating with valid data returns 201
+    that time in the past creates expired rule (state 2)
+    and that the rule deletion works as expected
     """
     req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
@@ -82,13 +84,15 @@ def test_delete_v4rule(client, db, jwt_token):
                           "source": "147.230.17.12",
                           "source_mask": 32,
                           "source_port": "",
-                          "expires": "10/15/2050 14:46"
+                          "expires": "10/15/2015 14:46"
                       }
                       )
 
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data['rule']['id'] == 2
+    assert data['rule']['rstate'] == 'withdrawed rule'
+
     req2 = client.delete('/api/v1/rules/ipv4/{}'.format(data['rule']['id']),
                          headers={'x-access-token': jwt_token}
                          )
@@ -139,28 +143,6 @@ def test_delete_rtbh_rule(client, db, jwt_token):
     assert req2.status_code == 201
 
 
-def test_can_not_create_expired_v4rule(client, db, jwt_token):
-    """
-    test that creating with valid data returns 201
-    """
-    req = client.post('/api/v1/rules/ipv4',
-                      headers={'x-access-token': jwt_token},
-                      json={
-                          "action": 2,
-                          "protocol": "tcp",
-                          "source": "147.230.17.17",
-                          "source_mask": 32,
-                          "source_port": "",
-                          "expires": "10/15/2018 14:46"
-                      }
-                      )
-
-    assert req.status_code == 404
-    data = json.loads(req.data)
-    assert len(data['validation_errors']) > 0
-    assert data['validation_errors']['expires'][0].startswith('You can not insert expired rule.')
-
-
 def test_create_v6rule(client, db, jwt_token):
     """
     test that creating with valid data returns 201
@@ -185,7 +167,7 @@ def test_create_v6rule(client, db, jwt_token):
 
 def test_validation_v4rule(client, db, jwt_token):
     """
-    test that creating with invalid data returns 404 and errors
+    test that creating with invalid data returns 400 and errors
     """
     req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
@@ -201,7 +183,7 @@ def test_validation_v4rule(client, db, jwt_token):
                       }
                       )
 
-    assert req.status_code == 404
+    assert req.status_code == 400
     data = json.loads(req.data)
     assert len(data['validation_errors']) > 0
     assert data['validation_errors'].keys() == ['dest', 'source']
@@ -214,7 +196,7 @@ def test_validation_v4rule(client, db, jwt_token):
 
 def test_all_validation_errors(client, db, jwt_token):
     """
-    test that creating with invalid data returns 404 and errors
+    test that creating with invalid data returns 400 and errors
     """
     req = client.post('/api/v1/rules/ipv4',
                       headers={'x-access-token': jwt_token},
@@ -224,12 +206,12 @@ def test_all_validation_errors(client, db, jwt_token):
                       )
     data = json.loads(req.data)
     print("DATA", data)
-    assert req.status_code == 404
+    assert req.status_code == 400
 
 
 def test_validate_v6rule(client, db, jwt_token):
     """
-    test that creating with invalid data returns 404 and errors
+    test that creating with invalid data returns 400 and errors
     """
     req = client.post('/api/v1/rules/ipv6',
                       headers={'x-access-token': jwt_token},
@@ -244,7 +226,7 @@ def test_validate_v6rule(client, db, jwt_token):
                       )
     data = json.loads(req.data)
     print("V6 DATA", data)
-    assert req.status_code == 404
+    assert req.status_code == 400
     assert len(data['validation_errors']) > 0
     assert sorted(data['validation_errors'].keys()) == sorted(['action', 'next_header', 'dest', 'source'])
     # assert data['validation_errors'][0].startswith('Error in the Action')

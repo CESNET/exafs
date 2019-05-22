@@ -10,7 +10,7 @@ from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, Community, get_us
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, \
     get_rtbh_model_if_exists
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
-from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_ent
+from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_ent, get_state_by_time
 from flowapp.auth import check_access_rights
 from flowapp.output import ROUTE_MODELS, RULE_TYPES, announce_route, log_route, log_withdraw
 
@@ -163,7 +163,8 @@ def create_ipv4(current_user):
     if not form.validate():
         form_errors = get_form_errors(form)
         if form_errors:
-            return jsonify(form_errors), 404
+            print("ERRORS", form_errors)
+            return jsonify(form_errors), 400
 
     model = get_ipv4_model_if_exists(form.data, 1)
 
@@ -185,16 +186,18 @@ def create_ipv4(current_user):
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
-            rstate_id=1
+            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
         )
         flash_message = u'IPv4 Rule saved'
         db.session.add(model)
 
     db.session.commit()
 
-    # announce route
-    route = messages.create_ipv4(model, messages.ANNOUNCE)
-    announce_route(route)
+    # announce route if model is in active state
+    if model.rstate_id == 1:
+        route = messages.create_ipv4(model, messages.ANNOUNCE)
+        announce_route(route)
+
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['IPv4'])
 
@@ -219,7 +222,7 @@ def create_ipv6(current_user):
     if not form.validate():
         form_errors = get_form_errors(form)
         if form_errors:
-            return jsonify(form_errors), 404
+            return jsonify(form_errors), 400
 
     model = get_ipv6_model_if_exists(form.data, 1)
 
@@ -242,7 +245,7 @@ def create_ipv6(current_user):
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
-            rstate_id=1
+            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
         )
         flash_message = u'IPv6 Rule saved'
         db.session.add(model)
@@ -250,8 +253,9 @@ def create_ipv6(current_user):
     db.session.commit()
 
     # announce routes
-    route = messages.create_ipv6(model, messages.ANNOUNCE)
-    announce_route(route)
+    if model.rstate_id == 1:
+        route = messages.create_ipv6(model, messages.ANNOUNCE)
+        announce_route(route)
 
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['IPv6'])
@@ -283,7 +287,7 @@ def create_rtbh(current_user):
     if not form.validate():
         form_errors = get_form_errors(form)
         if form_errors:
-            return jsonify(form_errors), 404
+            return jsonify(form_errors), 400
 
     model = get_rtbh_model_if_exists(form.data, 1)
 
@@ -300,15 +304,16 @@ def create_rtbh(current_user):
             expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
             comment=quote_to_ent(form.comment.data),
             user_id=current_user['id'],
-            rstate_id=1
+            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
         )
         db.session.add(model)
         db.session.commit()
         flash_message = u'RTBH Rule saved'
 
     # announce routes
-    route = messages.create_rtbh(model, messages.ANNOUNCE)
-    announce_route(route)
+    if model.rstate_id == 1:
+        route = messages.create_rtbh(model, messages.ANNOUNCE)
+        announce_route(route)
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['RTBH'])
 

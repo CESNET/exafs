@@ -9,16 +9,13 @@ from flask_wtf.csrf import CSRFProtect
 
 import flowapp.validators
 
-__version__ = '0.2.5'
+__version__ = '0.2.6'
 
 app = Flask(__name__)
 
 RULES_KEY = 'rules'
 db = SQLAlchemy()
 csrf = CSRFProtect(app)
-
-
-
 
 # Map SSO attributes from ADFS to session keys under session['user']
 #: Default attribute map
@@ -44,14 +41,13 @@ from .views.apiv1 import api
 from .views.api_keys import api_keys
 from .auth import auth_required
 
-#no need for csrf on api because we use JWT
+# no need for csrf on api because we use JWT
 csrf.exempt(api)
 
 app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(rules, url_prefix='/rules')
 app.register_blueprint(api_keys, url_prefix='/api_keys')
 app.register_blueprint(api, url_prefix='/api/v1')
-
 
 
 @ext.login_handler
@@ -107,10 +103,10 @@ def index():
         }
         encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
         res = make_response(render_template('pages/dashboard_admin.j2',
-                               rules=rules,
-                               actions=all_actions,
-                               rules_rtbh=rules_rtbh,
-                               today=datetime.now()))
+                                            rules=rules,
+                                            actions=all_actions,
+                                            rules_rtbh=rules_rtbh,
+                                            today=datetime.now()))
 
     # filter out the rules for normal users
     else:
@@ -127,11 +123,11 @@ def index():
         rules_editable = {4: rules4_editable, 6: rules6_editable}
         rules_visible = {4: rules4_visible, 6: rules6_visible}
         res = make_response(render_template('pages/dashboard_user.j2',
-                               rules_editable=rules_editable,
-                               rules_visible=rules_visible,
-                               actions=all_actions,
-                               rules_rtbh=rules_rtbh,
-                               today=datetime.now()))
+                                            rules_editable=rules_editable,
+                                            rules_visible=rules_visible,
+                                            actions=all_actions,
+                                            rules_rtbh=rules_rtbh,
+                                            today=datetime.now()))
         payload = {
             4: [rule.id for rule in rules4_editable],
             6: [rule.id for rule in rules6_editable],
@@ -144,6 +140,7 @@ def index():
         res.set_cookie(RULES_KEY, encoded, secure=True, httponly=True, samesite='Lax')
 
     return res
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):

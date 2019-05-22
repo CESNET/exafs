@@ -42,7 +42,6 @@ def address_in_range(address, net_ranges):
         try:
             result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
         except ValueError:
-            print("VALUE ERROR for", address, adr_range)
             return False
 
     return result
@@ -61,9 +60,8 @@ def network_in_range(address, mask, net_ranges):
         try:
             result = result or ipaddress.ip_network(network).subnet_of(ipaddress.ip_network(adr_range))
         except TypeError:  # V4 can't be a subnet of V6 and vice versa
-            print("TypeError during validation network in range", address, adr_range)
+            pass
         except ValueError:
-            print("ValueError during validation network in range", address, adr_range)
             return False
 
     return result
@@ -81,10 +79,7 @@ def range_in_network(address, mask, net_ranges):
     for adr_range in net_ranges:
         try:
             result = result or ipaddress.ip_network(network).supernet_of(ipaddress.ip_network(adr_range))
-        except TypeError:  # V4 can't be a subnet of V6 and vice versa
-            print("TypeError during validation range in network", address, adr_range)
         except ValueError:
-            print("ValueError during validation range in network", address, adr_range)
             return False
 
     return result
@@ -101,10 +96,8 @@ def whole_world_range(net_ranges, address=u"0.0.0.0"):
 
     try:
         for adr_range in net_ranges:
-            print(adr_range)
             result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
     except ValueError:
-        print("ValueError")
         return False
 
     return result
