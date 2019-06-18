@@ -1,9 +1,8 @@
-#Guarda service for ExaBGP
+#ExaAPI web app 
 
-## As root
+This is a very simple web application, which needs to be hooked on ExaBGP daemon. Every time this app
+gets a new command, it replicates the command to the daemon through the stdout. The registered
+daemon is watching the stdout of the ExaAPI service.
 
-pip install requests
-chmod +x guarda.py
-cp guarda.service /usr/lib/systemd/system/guarda.service
-systemctl start guarda.service
-systemctl enable guarda.service
+It can run on the development Flask server, however there is no security layer in this app. 
+You should limit the access only from the localhost. 
