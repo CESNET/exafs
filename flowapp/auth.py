@@ -78,27 +78,29 @@ def get_user():
 
 def check_auth(uuid):
     """
-    This function is every time when someone accessing the endpoint /
-    password combination is valid.
+    This function is every time when someone accessing the endpoint
+
+    Default behaviour is that uuid from SSO AUTH is used. If SSO AUTH is not used
+    default local user and roles are taken from database. In that case there is no user auth check
+    and it needs to be done outside the app - for example in Apache.
     """
 
     session['app_version'] = __version__
 
-    exist = False
-    if uuid:
-        exist = db.session.query(User).filter_by(uuid=uuid).first()
-
     if app.config.get('SSO_AUTH'):
+        # SSO AUTH
+        exist = False
+        if uuid:
+            exist = db.session.query(User).filter_by(uuid=uuid).first()
         return exist
     else:
-        # no login
-        print('LOCALHOST login')
-        session['user_uuid'] = 'jiri.vrany@tul.cz'
-        session['user_id'] = 1
-        session['user_roles'] = ['admin']
-        session['user_org'] = ['TU Liberec']
-        session['user_role_ids'] = [2]
-        session['user_org_ids'] = [1]
+        # Localhost login / no check
+        session['user_uuid'] = app.config['LOCAL_USER_UUID']
+        session['user_id'] = app.config['LOCAL_USER_ID']
+        session['user_roles'] = app.config['LOCAL_USER_ROLES']
+        session['user_org'] = app.config['LOCAL_USER_ORGS'][0]['name']
+        session['user_role_ids'] = app.config['LOCAL_USER_ROLE_IDS']
+        session['user_org_ids'] = app.config['LOCAL_USER_ORG_IDS']
         roles = [i > 1 for i in session['user_role_ids']]
         session['can_edit'] = True if all(roles) and roles else []
         return True

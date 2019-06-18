@@ -434,6 +434,8 @@ class Log(db.Model):
 
 
 # DDL
+# default values for tables inserted after create
+
 @event.listens_for(Action.__table__, 'after_create')
 def insert_initial_actions(*args, **kwargs):
     db.session.add(Action(name='QoS 100 kbps', command='rate-limit 12800', description='QoS'))
@@ -461,8 +463,8 @@ def insert_initial_roles(*args, **kwargs):
 
 @event.listens_for(Organization.__table__, 'after_create')
 def insert_initial_organizations(*args, **kwargs):
-    db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16\n2001:718:1c01::/48'))
-    db.session.add(Organization(name='Cesnet', arange='147.230.0.0/16\n2001:718:1c01::/48'))
+    for org in app.config['LOCAL_USER_ORG']:
+        db.session.add(Organization(name=org['name'], arange='arange'))
 
     db.session.commit()
 
