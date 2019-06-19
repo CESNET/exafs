@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import jwt
 
+from operator import ge, lt
+
 from flask import Flask, redirect, render_template, session, make_response
 from flask_sso import SSO
 from datetime import datetime
@@ -80,15 +82,40 @@ def logout():
 
 
 @app.route('/')
+@app.route('/show/<path:rstate>/')
 @auth_required
-def index():
+def index(rstate='active'):
     all_actions = db.session.query(models.Action).all()
     all_actions = {act.id: act for act in all_actions}
     net_ranges = models.get_user_nets(session['user_id'])
 
-    rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
-    rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
-    rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
+    today = datetime.now()
+
+    comp_funcs = {
+        'active': ge,
+        'expired': lt,
+        'all': None
+    }
+
+
+
+    try:
+        comp_func = comp_funcs[rstate]
+    except IndexError:
+        comp_func = None
+
+    if comp_func:
+
+        rules4 = db.session.query(models.Flowspec4).filter(models.Flowspec4.rstate_id == 1).filter(
+            comp_func(models.Flowspec4.expires, today)).order_by(models.Flowspec4.expires.desc()).all()
+        rules6 = db.session.query(models.Flowspec6).filter(models.Flowspec6.rstate_id == 1).filter(
+            comp_func(models.Flowspec6.expires, today)).order_by(models.Flowspec6.expires.desc()).all()
+        rules_rtbh = db.session.query(models.RTBH).filter(models.RTBH.rstate_id == 1).filter(comp_func(models.RTBH.expires, today)).order_by(models.RTBH.expires.desc()).all()
+
+    else:
+        rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
+        rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
+        rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
 
     jwt_key = app.config.get('JWT_SECRET')
 
@@ -106,6 +133,7 @@ def index():
                                             rules=rules,
                                             actions=all_actions,
                                             rules_rtbh=rules_rtbh,
+                                            rstate=rstate,
                                             today=datetime.now()))
 
     # filter out the rules for normal users
@@ -126,6 +154,7 @@ def index():
                                             rules_editable=rules_editable,
                                             rules_visible=rules_visible,
                                             actions=all_actions,
+                                            rstate=rstate,
                                             rules_rtbh=rules_rtbh,
                                             today=datetime.now()))
         payload = {

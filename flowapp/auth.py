@@ -95,10 +95,10 @@ def check_auth(uuid):
         return exist
     else:
         # Localhost login / no check
-        session['user_uuid'] = app.config['LOCAL_USER_UUID']
+        session['user_email'] = app.config['LOCAL_USER_UUID']
         session['user_id'] = app.config['LOCAL_USER_ID']
         session['user_roles'] = app.config['LOCAL_USER_ROLES']
-        session['user_org'] = app.config['LOCAL_USER_ORGS'][0]['name']
+        session['user_orgs'] = ", ".join(org['name'] for org in app.config['LOCAL_USER_ORGS'])
         session['user_role_ids'] = app.config['LOCAL_USER_ROLE_IDS']
         session['user_org_ids'] = app.config['LOCAL_USER_ORG_IDS']
         roles = [i > 1 for i in session['user_role_ids']]

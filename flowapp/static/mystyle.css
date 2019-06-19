@@ -43,3 +43,21 @@ td.bottom_row {
     background-color:#adadad;
     cursor: pointer;
 }
+
+#dashboard-nav .nav>li>a {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-top: 10px;
+    font-size: 130%;
+}
+
+#dashboard-nav a.active {
+    background-color: #1b67ad;
+    color: white;
+}
+
+#dashboard-nav h1 {
+    font-size: 130%;
+    font-weight: bold;
+    margin-top: 10px;
+}

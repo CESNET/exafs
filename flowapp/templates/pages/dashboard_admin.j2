@@ -1,8 +1,32 @@
 {% extends 'layouts/default.j2' %}
 {% block title %}Flowspec{% endblock %}
 {% block content %}
-    <h1>Default dashboard</h1>
-    <h2>Rules IPv4/v6</h2>
+
+
+
+
+<div class="container" id="dashboard-nav">
+    <div class="col-md-8">
+            <h1>Default dashboard</h1>
+    </div>
+    <div class="col-md-4">
+            <ul class="nav nav-pills pull-right">
+              <li class="nav-item">
+                <a class="{{ 'active' if rstate =='active' }} nav-link" href="/show/active/">Active</a>
+              </li>
+              <li class="nav-item">
+                <a class="{{ 'active' if rstate =='expired' }} nav-link" href="/show/expired/">Expired</a>
+              </li>
+              <li class="nav-item">
+                <a class="{{ 'active' if rstate =='all' }} nav-link" href="/show/all/">All</a>
+              </li>
+            </ul>
+    </div>
+</div>
+
+
+<div class="container">
+    <h2>{{ rstate|capitalize }} IPv4/v6 rules</h2>
     <table class="table table-hover" id="ip-table">
     <thead>
     <tr>
@@ -79,7 +103,7 @@
     </table>
 
 
-    <h2>Rules RTBH</h2>
+    <h2>{{ rstate|capitalize }} RTBH rules</h2>
     <table class="table table-hover" id="rtbh-table">
     <thead>
     <tr>
@@ -129,6 +153,8 @@
     {% endfor %}
     </tbody>
     </table>
+</div>
+
 
 <script type="text/javascript">
     $(function(){
