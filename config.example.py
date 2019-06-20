@@ -21,12 +21,14 @@ class Config(object):
     # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
     LOCAL_USER_ROLES = ['admin']
     # Defined in Organization model
-    # Defined in Organization model
-    LOCAL_USER_ORG = [
+    # List of organizations for the local user. There can be many of them.
+    # Define the name and the adress range. The range is then used for first data insert
+    # after the tables are created with db-init.py script.
+    LOCAL_USER_ORGS = [
         {
             'name': 'Example Org.',
             'arange': '192.168.0.0/16\n2121:414:1a0b::/48'
-        }
+        },
     ]
     # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
     LOCAL_USER_ROLE_IDS = [3]
