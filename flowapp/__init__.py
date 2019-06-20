@@ -106,11 +106,11 @@ def index(rstate='active'):
 
     if comp_func:
 
-        rules4 = db.session.query(models.Flowspec4).filter(models.Flowspec4.rstate_id == 1).filter(
+        rules4 = db.session.query(models.Flowspec4).filter(
             comp_func(models.Flowspec4.expires, today)).order_by(models.Flowspec4.expires.desc()).all()
-        rules6 = db.session.query(models.Flowspec6).filter(models.Flowspec6.rstate_id == 1).filter(
+        rules6 = db.session.query(models.Flowspec6).filter(
             comp_func(models.Flowspec6.expires, today)).order_by(models.Flowspec6.expires.desc()).all()
-        rules_rtbh = db.session.query(models.RTBH).filter(models.RTBH.rstate_id == 1).filter(comp_func(models.RTBH.expires, today)).order_by(models.RTBH.expires.desc()).all()
+        rules_rtbh = db.session.query(models.RTBH).filter(comp_func(models.RTBH.expires, today)).order_by(models.RTBH.expires.desc()).all()
 
     else:
         rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
