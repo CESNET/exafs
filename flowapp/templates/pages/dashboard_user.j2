@@ -1,8 +1,12 @@
 {% extends 'layouts/default.j2' %}
 {% block title %}Flowspec{% endblock %}
 {% block content %}
-    <h1>User dashboard</h1>
-    <h2>Rules IPv4/v6 that you can modify</h2>
+
+    {% include 'pages/submenu_dashboard.j2' %}
+
+
+
+    <h2>{{ rstate|capitalize }} IPv4/v6 rules that you can modify</h2>
     <table class="table table-hover" id="ip-table">
     <thead>
         <tr>
@@ -82,7 +86,7 @@
     </table>
 
 
-    <h2>Rules RTBH</h2>
+    <h2>{{ rstate|capitalize }} RTBH rules that you can modify</h2>
     <table class="table table-hover" id="rtbh-table">
     <thead>
         <tr>
@@ -131,7 +135,8 @@
     {% endfor %}
     </table>
 
-    <h2>Rules IPv4/v6 that are read-only for you</h2>
+    <h2>{{ rstate|capitalize }} IPv4/v6 rules that are read-only for you</h2>
+    <p>Those rules somehow including your network ranges. However, they have privileged / admin only action. Therefore you can not modify their expiration time.</p>
     <table class="table table-hover">
     <tr>
     <th>Source adress</th>

@@ -104,8 +104,6 @@ def delete_rule(rule_type, rule_id):
     """
     rules_dict = request.cookies.get(RULES_KEY)
     rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
-
-    print(rules_dict)
     rules = rules_dict[str(rule_type)]
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]

@@ -84,7 +84,7 @@ def logout():
 @app.route('/')
 @app.route('/show/<path:rstate>/')
 @auth_required
-def index(rstate='active'):
+def index(rstate=None):
     all_actions = db.session.query(models.Action).all()
     all_actions = {act.id: act for act in all_actions}
     net_ranges = models.get_user_nets(session['user_id'])
@@ -97,7 +97,13 @@ def index(rstate='active'):
         'all': None
     }
 
-
+    if not rstate:
+        try:
+            rstate = session['rstate']
+        except KeyError:
+            rstate = 'active'
+    else:
+        session['rstate'] = rstate
 
     try:
         comp_func = comp_funcs[rstate]
@@ -123,6 +129,8 @@ def index(rstate='active'):
     if 3 in session['user_role_ids']:
         rules = {4: rules4, 6: rules6}
 
+        rules_serialized = [rule.to_dict() for rule in rules4]
+
         payload = {
             4: [rule.id for rule in rules4],
             6: [rule.id for rule in rules6],
@@ -133,6 +141,7 @@ def index(rstate='active'):
                                             rules=rules,
                                             actions=all_actions,
                                             rules_rtbh=rules_rtbh,
+                                            rules_serialized=rules_serialized,
                                             rstate=rstate,
                                             today=datetime.now()))
 

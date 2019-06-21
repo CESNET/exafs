@@ -3,27 +3,7 @@
 {% block content %}
 
 
-
-
-<div class="container" id="dashboard-nav">
-    <div class="col-md-8">
-            <h1>Default dashboard</h1>
-    </div>
-    <div class="col-md-4">
-            <ul class="nav nav-pills pull-right">
-              <li class="nav-item">
-                <a class="{{ 'active' if rstate =='active' }} nav-link" href="/show/active/">Active</a>
-              </li>
-              <li class="nav-item">
-                <a class="{{ 'active' if rstate =='expired' }} nav-link" href="/show/expired/">Expired</a>
-              </li>
-              <li class="nav-item">
-                <a class="{{ 'active' if rstate =='all' }} nav-link" href="/show/all/">All</a>
-              </li>
-            </ul>
-    </div>
-</div>
-
+{% include 'pages/submenu_dashboard.j2' %}
 
 <div class="container">
     <h2>{{ rstate|capitalize }} IPv4/v6 rules</h2>
@@ -154,6 +134,8 @@
     </tbody>
     </table>
 </div>
+
+
 
 
 <script type="text/javascript">
