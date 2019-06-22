@@ -3,11 +3,13 @@ import jwt
 
 from operator import ge, lt
 
-from flask import Flask, redirect, render_template, session, make_response
+from flask import Flask, redirect, render_template, session, make_response, url_for
 from flask_sso import SSO
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+
+from utils import datetime_to_webpicker
 
 import flowapp.validators
 
@@ -83,8 +85,9 @@ def logout():
 
 @app.route('/')
 @app.route('/show/<path:rstate>/')
+@app.route('/show/<path:rstate>/<path:sort_key>/<path:filter_text>')
 @auth_required
-def index(rstate=None):
+def index(rstate='', filter_text='', sort_key=''):
     all_actions = db.session.query(models.Action).all()
     all_actions = {act.id: act for act in all_actions}
     net_ranges = models.get_user_nets(session['user_id'])
@@ -109,6 +112,8 @@ def index(rstate=None):
         comp_func = comp_funcs[rstate]
     except IndexError:
         comp_func = None
+    except KeyError:
+        comp_func = None
 
     if comp_func:
 
@@ -129,7 +134,27 @@ def index(rstate=None):
     if 3 in session['user_role_ids']:
         rules = {4: rules4, 6: rules6}
 
-        rules_serialized = [rule.to_dict() for rule in rules4]
+        rules_serialized_4 = [rule.to_table_source() for rule in rules4]
+        rules_serialized_6 = [rule.to_table_source() for rule in rules6]
+
+        rtbh_serialized = [rule.to_table_source() for rule in rules_rtbh]
+
+        disp = {
+            1: rtbh_serialized,
+            4: rules_serialized_4,
+            6: rules_serialized_6
+        }
+
+        for rtype, container in disp.items():
+            for rule in container:
+                rule['fulltext'] = u" ".join(c for c in rule.values())
+                rule['time_link'] = url_for('rules.reactivate_rule', rule_type=rtype, rule_id=rule['id'])
+                rule['delete_link'] = url_for('rules.delete_rule', rule_type=rtype, rule_id=rule['id'])
+
+        rules_serialized = rules_serialized_4 + rules_serialized_6
+
+        rules_serialized = rules_serialized if rules_serialized else []
+        rtbh_serialized = rtbh_serialized if rtbh_serialized else []
 
         payload = {
             4: [rule.id for rule in rules4],
@@ -139,9 +164,12 @@ def index(rstate=None):
         encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
         res = make_response(render_template('pages/dashboard_admin.j2',
                                             rules=rules,
+                                            filter_text=filter_text,
+                                            sort_key=sort_key,
                                             actions=all_actions,
                                             rules_rtbh=rules_rtbh,
                                             rules_serialized=rules_serialized,
+                                            rtbh_serialized=rtbh_serialized,
                                             rstate=rstate,
                                             today=datetime.now()))
 
