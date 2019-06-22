@@ -94,11 +94,15 @@ def reactivate_rule(rule_type, rule_id):
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
+@rules.route('/delete/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>/<path:filter_text>', methods=['GET'])
 @auth_required
 @user_or_admin_required
-def delete_rule(rule_type, rule_id):
+def delete_rule(rule_type, rule_id, rstate='', filter_text='', sort_key=''):
     """
     Delete rule with given id and type
+    :param sort_key:
+    :param filter_text:
+    :param rstate:
     :param rule_type: string - type of rule to be deleted
     :param rule_id: integer - rule id
     """
@@ -125,7 +129,7 @@ def delete_rule(rule_type, rule_id):
     else:
         flash(u'You can not delete this rule', 'alert-warning')
 
-    return redirect(url_for('index'))
+    return redirect(url_for('index', rstate=rstate, filter_text=filter_text, sort_key=sort_key))
 
 
 @rules.route('/add_ipv4_rule', methods=['GET', 'POST'])

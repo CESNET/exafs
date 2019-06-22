@@ -59,7 +59,20 @@ def app(request):
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JWT_SECRET='testing',
         API_KEY='testkey',
-        SECRET_KEY='testkeysession'
+        SECRET_KEY='testkeysession',
+        LOCAL_USER_UUID='jiri.vrany@tul.cz',
+        LOCAL_USER_ID=1,
+        LOCAL_USER_ROLES=['admin'],
+        LOCAL_USER_ORGS=[
+            {
+                'name': 'TU Liberec',
+                'arange': '147.230.0.0/16\n2001:718:1c01::/48'
+            }
+        ],
+        # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
+        LOCAL_USER_ROLE_IDS=[3],
+        # Defined in Organization model
+        LOCAL_USER_ORG_IDS=[1]
     )
 
     print('\n----- CREATE FLASK APPLICATION\n')

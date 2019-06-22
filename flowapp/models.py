@@ -243,6 +243,34 @@ class RTBH(db.Model):
         }
 
 
+
+    def to_table_source(self):
+        """
+        Serialize to dict / user for rendering in React table
+        :return: dictionary
+        """
+
+        s_source = self.ipv4
+        s_slash = '/' if self.ipv4_mask >= 0 else ''
+        s_mask = self.ipv4_mask if self.ipv4_mask >= 0 else ''
+
+        d_source = self.ipv6
+        d_slash = '/' if self.ipv6_mask >= 0 else ''
+        d_mask = self.ipv6_mask if self.ipv6_mask >= 0 else ''
+
+        return {
+            "id": str(self.id),
+            "ipv4": "{}{}{}".format(s_source, s_slash, s_mask),
+            "ipv6": "{}{}{}".format(d_source, d_slash, d_mask),
+            "community": self.community.name,
+            "comment": self.comment,
+            "expires": utils.datetime_to_webpicker(self.expires),
+            "created": utils.datetime_to_webpicker(self.created),
+            "user": str(self.user.uuid),
+            "rstate": self.rstate.description
+        }
+
+
 class Flowspec4(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     source = db.Column(db.String(255))
@@ -334,6 +362,38 @@ class Flowspec4(db.Model):
             "rstate": self.rstate.description
         }
 
+    def to_table_source(self):
+        """
+        Serialize to dict
+        :return: dictionary
+
+        """
+
+        s_source = self.source
+        s_slash = '/' if self.source_mask >= 0 else ''
+        s_mask = self.source_mask if self.source_mask >= 0 else ''
+
+        d_source = self.dest
+        d_slash = '/' if self.dest_mask >= 0 else ''
+        d_mask = self.dest_mask if self.source_mask >= 0 else ''
+
+        return {
+            "id": str(self.id),
+            "source": "{}{}{}".format(s_source, s_slash, s_mask),
+            "source_port": self.source_port,
+            "dest": "{}{}{}".format(d_source, d_slash, d_mask),
+            "dest_port": self.dest_port,
+            "protocol": self.protocol,
+            "flags": self.flags,
+            "packet_len": self.packet_len,
+            "comment": self.comment,
+            "expires": utils.datetime_to_webpicker(self.expires),
+            "created": utils.datetime_to_webpicker(self.created),
+            "action": self.action.name,
+            "user": str(self.user.uuid),
+            "rstate": self.rstate.description
+        }
+
 
 class Flowspec6(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -394,7 +454,7 @@ class Flowspec6(db.Model):
         :return: dictionary
         """
         return {
-            "id": self.id,
+            "id": str(self.id),
             "source": self.source,
             "source_mask": self.source_mask,
             "source_port": self.source_port,
@@ -407,6 +467,38 @@ class Flowspec6(db.Model):
             "comment": self.comment,
             "expires": self.expires,
             "created": self.created,
+            "action": self.action.name,
+            "user": self.user.uuid,
+            "rstate": self.rstate.description
+        }
+
+    def to_table_source(self):
+        """
+        Serialize to dict
+        :return: dictionary
+
+        """
+
+        s_source = self.source
+        s_slash = '/' if self.source_mask >= 0 else ''
+        s_mask = self.source_mask if self.source_mask >= 0 else ''
+
+        d_source = self.dest
+        d_slash = '/' if self.dest_mask >= 0 else ''
+        d_mask = self.dest_mask if self.source_mask >= 0 else ''
+
+        return {
+            "id": self.id,
+            "source": "{}{}{}".format(s_source, s_slash, s_mask),
+            "source_port": self.source_port,
+            "dest": "{}{}{}".format(d_source, d_slash, d_mask),
+            "dest_port": self.dest_port,
+            "protocol": self.next_header,
+            "flags": self.flags,
+            "packet_len": self.packet_len,
+            "comment": self.comment,
+            "expires": utils.datetime_to_webpicker(self.expires),
+            "created": utils.datetime_to_webpicker(self.created),
             "action": self.action.name,
             "user": self.user.uuid,
             "rstate": self.rstate.description
@@ -463,8 +555,8 @@ def insert_initial_roles(*args, **kwargs):
 
 @event.listens_for(Organization.__table__, 'after_create')
 def insert_initial_organizations(*args, **kwargs):
-    for org in app.config['LOCAL_USER_ORG']:
-        db.session.add(Organization(name=org['name'], arange='arange'))
+    db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16\n2001:718:1c01::/48'))
+    db.session.add(Organization(name='Cesnet', arange='147.230.0.0/16\n2001:718:1c01::/48'))
 
     db.session.commit()
 
