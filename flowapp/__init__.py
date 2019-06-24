@@ -66,7 +66,7 @@ def login(user_info):
         session['user_uuid'] = user.uuid
         session['user_id'] = user.id
         session['user_roles'] = [role.name for role in user.role.all()]
-        session['user_orgs'] = [org.name for org in user.organization.all()]
+        session['user_orgs'] = ", ".join(org.name for org in user.organization.all())
         session['user_role_ids'] = [role.id for role in user.role.all()]
         session['user_org_ids'] = [org.id for org in user.organization.all()]
         roles = [i > 1 for i in session['user_role_ids']]
