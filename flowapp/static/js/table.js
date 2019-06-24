@@ -22,6 +22,51 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
+function sortIp(a, b) {
+  a = a.split('/');
+  b = b.split('/');
+  var num1 = Number(a[0].split(".").map(function (num) {
+    return "000".concat(num).slice(-3);
+  }).join(""));
+  var num2 = Number(b[0].split(".").map(function (num) {
+    return "000".concat(num).slice(-3);
+  }).join(""));
+  return num1 - num2;
+}
+
+function sortString(a, b) {
+  var nameA = a.toLowerCase(); // ignore upper and lowercase
+
+  var nameB = b.toLowerCase(); // ignore upper and lowercase
+
+  if (nameA < nameB) {
+    return -1;
+  }
+
+  if (nameA > nameB) {
+    return 1;
+  } //  must be equal
+
+
+  return 0;
+}
+
+function sortExpires(a, b) {
+  var dateA = Date.parse(a);
+  var dateB = Date.parse(b);
+
+  if (dateA < dateB) {
+    return -1;
+  }
+
+  if (dateA > dateB) {
+    return 1;
+  } //  must be equal
+
+
+  return 0;
+}
+
 var Button =
 /*#__PURE__*/
 function (_React$Component) {
@@ -340,38 +385,24 @@ function (_React$Component6) {
       var sortedRules = this.props.rules.filter(function (rule) {
         return rule.fulltext.indexOf(filterText) > -1;
       }).sort(function (a, b) {
-        var nameA = a[column].toLowerCase(); // ignore upper and lowercase
-
-        var nameB = b[column].toLowerCase(); // ignore upper and lowercase
-
-        if (nameA < nameB) {
-          return -1;
+        if (column === 'source' || column === 'dest') {
+          return sortIp(a[column], b[column]);
+        } else if (column === 'expires') {
+          return sortExpires(a[column], b[column]);
+        } else {
+          return sortString(a[column], b[column]);
         }
-
-        if (nameA > nameB) {
-          return 1;
-        } // names must be equal
-
-
-        return 0;
       });
       var sortedRtbh = this.props.rtbh.filter(function (rule) {
         return rule.fulltext.indexOf(filterText) > -1;
       }).sort(function (a, b) {
-        var nameA = a[columnRtbh].toLowerCase(); // ignore upper and lowercase
-
-        var nameB = b[columnRtbh].toLowerCase(); // ignore upper and lowercase
-
-        if (nameA < nameB) {
-          return -1;
+        if (columnRtbh === 'ipv4') {
+          return sortIp(a[columnRtbh], b[columnRtbh]);
+        } else if (columnRtbh === 'expires') {
+          return sortExpires(a[columnRtbh], b[columnRtbh]);
+        } else {
+          return sortString(a[(columnRtbh, b[columnRtbh])]);
         }
-
-        if (nameA > nameB) {
-          return 1;
-        } // names must be equal
-
-
-        return 0;
       });
 
       if (this.state.sortDirection === 'desc') {

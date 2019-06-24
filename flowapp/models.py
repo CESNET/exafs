@@ -375,7 +375,7 @@ class Flowspec4(db.Model):
 
         d_source = self.dest
         d_slash = '/' if self.dest_mask >= 0 else ''
-        d_mask = self.dest_mask if self.source_mask >= 0 else ''
+        d_mask = self.dest_mask if self.dest_mask >= 0 else ''
 
         return {
             "id": str(self.id),

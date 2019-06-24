@@ -13,7 +13,7 @@ from utils import datetime_to_webpicker
 
 import flowapp.validators
 
-__version__ = '0.2.7'
+__version__ = '0.2.8'
 
 app = Flask(__name__)
 
@@ -66,7 +66,7 @@ def login(user_info):
         session['user_uuid'] = user.uuid
         session['user_id'] = user.id
         session['user_roles'] = [role.name for role in user.role.all()]
-        session['user_org'] = [org.name for org in user.organization.all()]
+        session['user_orgs'] = [org.name for org in user.organization.all()]
         session['user_role_ids'] = [role.id for role in user.role.all()]
         session['user_org_ids'] = [org.id for org in user.organization.all()]
         roles = [i > 1 for i in session['user_role_ids']]
@@ -87,7 +87,7 @@ def logout():
 @app.route('/show/<path:rstate>/')
 @app.route('/show/<path:rstate>/<path:sort_key>/<path:filter_text>')
 @auth_required
-def index(rstate='', filter_text='', sort_key=''):
+def index(rstate='active', filter_text='', sort_key='source'):
     all_actions = db.session.query(models.Action).all()
     all_actions = {act.id: act for act in all_actions}
     net_ranges = models.get_user_nets(session['user_id'])
@@ -100,13 +100,6 @@ def index(rstate='', filter_text='', sort_key=''):
         'all': None
     }
 
-    if not rstate:
-        try:
-            rstate = session['rstate']
-        except KeyError:
-            rstate = 'active'
-    else:
-        session['rstate'] = rstate
 
     try:
         comp_func = comp_funcs[rstate]

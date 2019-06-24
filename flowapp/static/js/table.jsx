@@ -1,5 +1,46 @@
 'use strict';
 
+
+function sortIp(a, b) {
+    a = a.split('/');
+    b = b.split('/');
+    const num1 = Number(a[0].split(".").map((num) => (`000${num}`).slice(-3) ).join(""));
+    const num2 = Number(b[0].split(".").map((num) => (`000${num}`).slice(-3) ).join(""));
+    return num1-num2;
+}
+
+function sortString(a, b) {
+    const nameA = a.toLowerCase(); // ignore upper and lowercase
+    const nameB = b.toLowerCase(); // ignore upper and lowercase
+
+    if (nameA < nameB) {
+        return -1;
+    }
+    if (nameA > nameB) {
+        return 1;
+    }
+
+    //  must be equal
+    return 0;
+}
+
+function sortExpires(a, b) {
+    const dateA = Date.parse(a);
+    const dateB = Date.parse(b);
+
+    if (dateA < dateB) {
+        return -1;
+    }
+    if (dateA > dateB) {
+        return 1;
+    }
+
+    //  must be equal
+    return 0;
+
+}
+
+
 class Button extends React.Component {
 
     render() {
@@ -276,35 +317,27 @@ class TablesContainer extends React.Component {
         // this.props.rtbh.filter((rule) => rule.fulltext.indexOf(filterText) > -1)
 
         let sortedRules = this.props.rules.filter((rule) => rule.fulltext.indexOf(filterText) > -1).sort((a, b) => {
-            const nameA = a[column].toLowerCase(); // ignore upper and lowercase
-            const nameB = b[column].toLowerCase(); // ignore upper and lowercase
-
-            if (nameA < nameB) {
-                return -1;
+            if (column === 'source' || column === 'dest') {
+                return sortIp(a[column], b[column]);
             }
-            if (nameA > nameB) {
-                return 1;
+            else if (column === 'expires') {
+                return sortExpires(a[column], b[column]);
             }
-
-            // names must be equal
-            return 0;
-
+            else {
+                return sortString(a[column], b[column])
+            }
         });
 
         let sortedRtbh = this.props.rtbh.filter((rule) => rule.fulltext.indexOf(filterText) > -1).sort((a, b) => {
-            const nameA = a[columnRtbh].toLowerCase(); // ignore upper and lowercase
-            const nameB = b[columnRtbh].toLowerCase(); // ignore upper and lowercase
-
-            if (nameA < nameB) {
-                return -1;
+            if (columnRtbh === 'ipv4') {
+                return sortIp(a[columnRtbh], b[columnRtbh]);
             }
-            if (nameA > nameB) {
-                return 1;
+            else if (columnRtbh === 'expires') {
+                return sortExpires(a[columnRtbh], b[columnRtbh]);
             }
-
-            // names must be equal
-            return 0;
-
+            else {
+                return sortString(a[columnRtbh, b[columnRtbh]]);
+            }
         });
 
         if (this.state.sortDirection === 'desc') {
