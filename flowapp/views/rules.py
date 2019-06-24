@@ -23,12 +23,14 @@ DATA_MODELS = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
 DATA_FORMS = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
 DATA_TEMPLATES = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
 DATA_TABLES = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
-
+DEFAULT_SORT = {1: 'ivp4', 4: 'source', 6: 'source'}
 
 @rules.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
+@rules.route('/reactivate/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>', methods=['GET', 'POST'])
+@rules.route('/reactivate/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>/<path:filter_text>', methods=['GET', 'POST'])
 @auth_required
 @user_or_admin_required
-def reactivate_rule(rule_type, rule_id):
+def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_key=None):
     """
     Set new time for the rule of given type identified by id
     :param rule_type: string - type of rule
@@ -40,6 +42,9 @@ def reactivate_rule(rule_type, rule_id):
     model = db.session.query(model_name).get(rule_id)
     form = form_name(request.form, obj=model)
     form.net_ranges = get_user_nets(session['user_id'])
+
+    if not sort_key:
+        sort_key = DEFAULT_SORT[rule_type]
 
     if rule_type > 2:
         form.action.choices = [(g.id, g.name)
@@ -79,7 +84,7 @@ def reactivate_rule(rule_type, rule_id):
             # log changes
             log_withdraw(session['user_id'], route, rule_type, model.id)
 
-        return redirect(url_for('index'))
+        return redirect(url_for('index', rstate=rstate, filter_text=filter_text, sort_key=sort_key))
     else:
         flash_errors(form)
 
@@ -94,10 +99,11 @@ def reactivate_rule(rule_type, rule_id):
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
+@rules.route('/delete/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>', methods=['GET'])
 @rules.route('/delete/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>/<path:filter_text>', methods=['GET'])
 @auth_required
 @user_or_admin_required
-def delete_rule(rule_type, rule_id, rstate='', filter_text='', sort_key=''):
+def delete_rule(rule_type, rule_id, rstate='active', filter_text='', sort_key=None):
     """
     Delete rule with given id and type
     :param sort_key:
@@ -111,6 +117,9 @@ def delete_rule(rule_type, rule_id, rstate='', filter_text='', sort_key=''):
     rules = rules_dict[str(rule_type)]
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]
+
+    if not sort_key:
+        sort_key = DEFAULT_SORT[rule_type]
 
     model = db.session.query(model_name).get(rule_id)
 

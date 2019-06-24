@@ -37,8 +37,23 @@ class RulesRow extends React.Component {
 
     render() {
         const rule = this.props.rule;
-        const delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
-        const time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+
+        let delete_link = rule.delete_link + '/active/source';
+        let time_link = rule.time_link + '/active/source';
+
+        if (this.props.rstate && this.props.sortKey && this.props.filterText) {
+            delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+            time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+        }
+        else if (this.props.rstate && this.props.sortKey) {
+            delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+            time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+        }
+        else if (this.props.rstate) {
+            delete_link = rule.delete_link + '/' + this.props.rstate + '/source';
+            time_link = rule.time_link + '/' + this.props.rstate + '/source';
+        }
+
 
         let combutton = '';
 
@@ -46,8 +61,10 @@ class RulesRow extends React.Component {
             combutton = <TooltipButton text={rule.comment} />;
         }
 
+        const trClass = Date.parse(rule.expires) < Date.now() ? 'warning' : '';
+
         return (
-            <tr>
+            <tr className={trClass}>
             <td>{rule.source}</td>
             <td>{rule.source_port}</td>
             <td>{rule.dest}</td>
@@ -77,17 +94,33 @@ class RtbhRow extends React.Component {
 
 
         const rule = this.props.rule;
-        const delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
-        const time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+        const trClass = Date.parse(rule.expires) < Date.now() ? 'warning' : '';
+
+        let delete_link = rule.delete_link + '/active/source';
+        let time_link = rule.time_link + '/active/source';
+
+        if (this.props.rstate && this.props.sortKey && this.props.filterText) {
+            delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+            time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+        }
+        else if (this.props.rstate && this.props.sortKey) {
+            delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+            time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+        }
+        else if (this.props.rstate) {
+            delete_link = rule.delete_link + '/' + this.props.rstate + '/source';
+            time_link = rule.time_link + '/' + this.props.rstate + '/source';
+        }
+
+
+
         let combutton = '';
-
-
         if (rule.comment) {
             combutton = <TooltipButton text={rule.comment} />;
         }
 
         return (
-            <tr>
+            <tr className={trClass}>
             <td>{rule.ipv4} {rule.ipv6}</td>
             <td>{rule.community}</td>
             <td>{rule.expires}</td>

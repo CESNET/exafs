@@ -97,8 +97,20 @@ function (_React$Component3) {
     key: "render",
     value: function render() {
       var rule = this.props.rule;
-      var delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
-      var time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+      var delete_link = rule.delete_link + '/active/source';
+      var time_link = rule.time_link + '/active/source';
+
+      if (this.props.rstate && this.props.sortKey && this.props.filterText) {
+        delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+        time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+      } else if (this.props.rstate && this.props.sortKey) {
+        delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+        time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+      } else if (this.props.rstate) {
+        delete_link = rule.delete_link + '/' + this.props.rstate + '/source';
+        time_link = rule.time_link + '/' + this.props.rstate + '/source';
+      }
+
       var combutton = '';
 
       if (rule.comment) {
@@ -107,7 +119,10 @@ function (_React$Component3) {
         });
       }
 
-      return React.createElement("tr", null, React.createElement("td", null, rule.source), React.createElement("td", null, rule.source_port), React.createElement("td", null, rule.dest), React.createElement("td", null, rule.dest_port), React.createElement("td", null, rule.protocol), React.createElement("td", null, rule.expires), React.createElement("td", null, rule.action), React.createElement("td", null, rule.flags), React.createElement("td", null, rule.user), React.createElement("td", null, React.createElement(Button, {
+      var trClass = Date.parse(rule.expires) < Date.now() ? 'warning' : '';
+      return React.createElement("tr", {
+        className: trClass
+      }, React.createElement("td", null, rule.source), React.createElement("td", null, rule.source_port), React.createElement("td", null, rule.dest), React.createElement("td", null, rule.dest_port), React.createElement("td", null, rule.protocol), React.createElement("td", null, rule.expires), React.createElement("td", null, rule.action), React.createElement("td", null, rule.flags), React.createElement("td", null, rule.user), React.createElement("td", null, React.createElement(Button, {
         link: time_link,
         css: "primary",
         icon: "time"
@@ -137,8 +152,21 @@ function (_React$Component4) {
     key: "render",
     value: function render() {
       var rule = this.props.rule;
-      var delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
-      var time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+      var trClass = Date.parse(rule.expires) < Date.now() ? 'warning' : '';
+      var delete_link = rule.delete_link + '/active/source';
+      var time_link = rule.time_link + '/active/source';
+
+      if (this.props.rstate && this.props.sortKey && this.props.filterText) {
+        delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+        time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey + '/' + this.props.filterText;
+      } else if (this.props.rstate && this.props.sortKey) {
+        delete_link = rule.delete_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+        time_link = rule.time_link + '/' + this.props.rstate + '/' + this.props.sortKey;
+      } else if (this.props.rstate) {
+        delete_link = rule.delete_link + '/' + this.props.rstate + '/source';
+        time_link = rule.time_link + '/' + this.props.rstate + '/source';
+      }
+
       var combutton = '';
 
       if (rule.comment) {
@@ -147,7 +175,9 @@ function (_React$Component4) {
         });
       }
 
-      return React.createElement("tr", null, React.createElement("td", null, rule.ipv4, " ", rule.ipv6), React.createElement("td", null, rule.community), React.createElement("td", null, rule.expires), React.createElement("td", null, rule.user), React.createElement("td", null, React.createElement(Button, {
+      return React.createElement("tr", {
+        className: trClass
+      }, React.createElement("td", null, rule.ipv4, " ", rule.ipv6), React.createElement("td", null, rule.community), React.createElement("td", null, rule.expires), React.createElement("td", null, rule.user), React.createElement("td", null, React.createElement(Button, {
         link: time_link,
         css: "primary",
         icon: "time"

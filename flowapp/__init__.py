@@ -171,7 +171,7 @@ def index(rstate='', filter_text='', sort_key=''):
                                             rules_serialized=rules_serialized,
                                             rtbh_serialized=rtbh_serialized,
                                             rstate=rstate,
-                                            today=datetime.now()))
+                                            today=datetime_to_webpicker(datetime.now())))
 
     # filter out the rules for normal users
     else:
