@@ -13,6 +13,10 @@ class Config(object):
     # SQL Alchemy config
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Secret keys for Flask Session and JWT (API and CSRF protection)
+    JWT_SECRET = 'GenerateSomeLongRandomSequence'
+    SECRET_KEY = 'GenerateSomeLongRandomSequence'
+
     # LOCAL user parameters - when the app is used without SSO_AUTH
     # Defined in User model
     LOCAL_USER_UUID = 'admin@example.com'
