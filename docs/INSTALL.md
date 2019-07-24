@@ -79,7 +79,7 @@ pip install -r requirements.txt
 
 #### make selinux happy - As root
 ```
-setsebool httpd_can_network_connect 1
+setsebool -P httpd_can_network_connect 1
 ``` 
 
 #### As root
