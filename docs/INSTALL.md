@@ -1,8 +1,13 @@
 # ExaFS tool
 ## Production install and config notes
 
-Example of full instalation and deployment in production enviroment. 
+Example of ExaFS instalation and deployment in production enviroment. 
 Includes: shibboleth auth, mariadb, uwsgi, supervisord
+
+## Prerequisites
+
+ExaFS is using shibboleth auth and therefore we suggest to use Apache web server. 
+Install the Apache httpd as usual and then continue with this guide.  
 
 
 ### shibboleth config:
@@ -31,8 +36,8 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 #### Install python runtime and other deps 
 As root. Install dependencies. If you are using Debian or Ubuntu, you must of course use apt and sudo instead yum.
 ```
-yum install -y python-devel gcc
-yum install mod_proxy_uwsgi   
+yum install python-devel gcc
+yum install mod_proxy_uwsgi uwsgi-plugin-python2 
 yum install mariadb mariadb-server mariadb-devel
 ```
 Start db and secure instalation
@@ -41,14 +46,14 @@ systemctl start mariadb
 mysql_secure_installation
 systemctl enable mariadb
 ```
-Install python dependencies
+Install VirtualEnv for Python
 ```
-pip install virtualenv honcho uwsgi
+pip install virtualenv
 ```
 
 #### Prepare the db
 
-Now prepare the database. Start mysql client with
+Now prepare user for the database. Start mysql client with
 ```
 mysql -u root -p 
 ```
@@ -77,6 +82,13 @@ pip install -r requirements.txt
 setsebool httpd_can_network_connect 1
 ``` 
 
+#### As root
+Prepare the log dir, start httpd if not already running.
+```
+mkdir /var/log/flowspec/
+systemctl start httpd
+```
+
 #### Supervisord - install as root
 1. install:
    `pip install supervisor`
@@ -88,7 +100,8 @@ setsebool httpd_can_network_connect 1
    
    
 3. setup as service:
-   `wget supervisord.service -O /usr/lib/systemd/system/supervisord.service`
+    1. download supervisord.service file from [this gist](https://gist.github.com/mozillazg/6cbdcccbf46fe96a4edd)
+    2. `wget supervisord.service -O /usr/lib/systemd/system/supervisord.service`
 4. start service
    `systemctl start supervisord`
 5. view service status:
@@ -99,19 +112,28 @@ setsebool httpd_can_network_connect 1
   `cp exafs.supervisord.conf /etc/supervisord/conf.d/`
 
 #### Final steps - as deploy user
+
+Copy config.example.py to config.py and fill out the DB credetials. 
+
 Create and populate database tables.
 ```
 cd ~/www
 source venv/bin/activate
 python db-init.py
 ```
+DB-init script inserts default roles, actions, rule states and two organizations (TUL and Cesnet). But no users.
 
-#### As root
-Prepare the log dir, start services.
+So before start, use your favorite mysql admin tool and insert some users into database. 
+The uuid of user should be set the eppn value provided by Shibboleth. 
+
+You can use following MYSQL commands to insert the user, give him role 'admin' and add him to the the organization 'Cesnet'.
+
 ```
-mkdir /var/log/flowspec/
-systemctl start httpd
-systemctl start supervisord
-```
+insert into user (uuid,email,name) values ('example@cesnet.cz', 'example@cesnet.cz', 'Mr. Example Admin');
+insert into user_role (user_id,role_id) values (1, 3);
+insert into user_role (user_id,organization_id) values (1, 2);
+``` 
+You can also modify the models.py for your own default values for db-init.
+
 
 You are ready to go ;-)

@@ -63,14 +63,17 @@ def login(user_info):
         return redirect('/')
     else:
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
-        session['user_uuid'] = user.uuid
-        session['user_id'] = user.id
-        session['user_roles'] = [role.name for role in user.role.all()]
-        session['user_orgs'] = ", ".join(org.name for org in user.organization.all())
-        session['user_role_ids'] = [role.id for role in user.role.all()]
-        session['user_org_ids'] = [org.id for org in user.organization.all()]
-        roles = [i > 1 for i in session['user_role_ids']]
-        session['can_edit'] = True if all(roles) and roles else []
+        try:
+            session['user_uuid'] = user.uuid
+            session['user_id'] = user.id
+            session['user_roles'] = [role.name for role in user.role.all()]
+            session['user_orgs'] = ", ".join(org.name for org in user.organization.all())
+            session['user_role_ids'] = [role.id for role in user.role.all()]
+            session['user_org_ids'] = [org.id for org in user.organization.all()]
+            roles = [i > 1 for i in session['user_role_ids']]
+            session['can_edit'] = True if all(roles) and roles else []
+        except AttributeError:
+            return redirect('/')
 
         return redirect('/')
 
