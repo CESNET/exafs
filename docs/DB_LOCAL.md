@@ -1,6 +1,14 @@
 # FlowSpec tool
 ## MariaDB local dev instalation notes
 
+### Show database and tables encoding and collation
+
+```mysql
+SELECT default_character_set_name, default_collation_name FROM information_schema.schemata WHERE schema_name = 'exafs';
+
+SHOW table status like '%';
+```
+
 ### MariaDB character encoding
 set utf-8 if needed
 ```

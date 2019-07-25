@@ -57,11 +57,14 @@ Now prepare user for the database. Start mysql client with
 ```
 mysql -u root -p 
 ```
-Now create the db and user
+Now create the db and user with password
 ```
-create database exafs;
-CREATE USER 'exafs'@'localhost' IDENTIFIED BY 'password'; insert some real password
-use exafs;
+CREATE DATABASE exafs;
+ALTER DATABASE exafs CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE USER 'exafs'@'localhost' IDENTIFIED BY 'verysecurepassword'; 
+
+USE exafs;
 GRANT ALL PRIVILEGES ON exafs.* TO 'exafs'@'localhost';
 FLUSH PRIVILEGES;
 exit;
