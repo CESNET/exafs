@@ -183,8 +183,6 @@ def ipv4_rule():
         db.session.commit()
         flash(flash_message, 'alert-success')
 
-        print("MODEL STATE", model.rstate_id)
-
         # announce route if model is in active state
         if model.rstate_id == 1:
             route = messages.create_ipv4(model, messages.ANNOUNCE)

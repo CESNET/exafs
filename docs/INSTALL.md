@@ -34,7 +34,11 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 ### Flask app
 
 #### Install python runtime and other deps 
-As root. Install dependencies. If you are using Debian or Ubuntu, you must of course use apt and sudo instead yum.
+Install dependencies as root. 
+
+If you are using Debian or Ubuntu, you must of course use apt and sudo instead yum. 
+
+Be sure to enable mod_proxy_uwsgi module in your Apache config. 
 ```
 yum install python-devel gcc
 yum install mod_proxy_uwsgi uwsgi-plugin-python2 
