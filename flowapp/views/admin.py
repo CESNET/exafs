@@ -227,11 +227,13 @@ def community():
     form = CommunityForm(request.form)
 
     if request.method == 'POST' and form.validate():
-        # test if Acttion is unique
-        exist = get_existing_community(form.name.data, form.command.data)
+        # test if Coomunity name is unique
+        exist = get_existing_community(form.name.data)
         if not exist:
             community = Community(name=form.name.data,
-                                  command=form.command.data,
+                                  comm=form.comm.data,
+                                  larcomm=form.larcomm.data,
+                                  extcomm=form.extcomm.data,
                                   description=form.description.data,
                                   role_id=form.role_id.data)
             db.session.add(community)
@@ -239,7 +241,7 @@ def community():
             flash('Community saved', 'alert-success')
             return redirect(url_for('admin.communities'))
         else:
-            flash(u'Community with name {} or command {} already exists'.format(
+            flash(u'Community with name {} already exists'.format(
                 form.name.data, form.command.data), 'alert-danger')
 
     community_url = url_for('admin.community')

@@ -5,16 +5,20 @@
     <tr>
     <th>Id</th>
     <th>Display Name</th>
-    <th>EXA Command</th>
+    <th>Community</th>
+    <th>Large comm.</th>
+    <th>Extended comm.</th>
     <th>Description</th>
     <th>Minimum level</th>
-    <th>Community</th>
+    <th>Edit</th>
     </tr>
     {% for community in communities %}
         <tr>
         <td>{{ community.id }}</td>
         <td>{{ community.name }}</td>
-        <td>{{ community.command }}</td>
+        <td>{{ community.comm }}</td>
+        <td>{{ community.larcomm }}</td>
+        <td>{{ community.extcomm }}</td>
         <td>
             {{ community.description }}
         </td>

@@ -101,12 +101,22 @@ class CommunityForm(FlaskForm):
     """
     name = StringField(
         'Community short name',
-        validators=[Length(max=150)]
+        validators=[Length(max=150), DataRequired()]
     )
 
-    command = StringField(
-        'ExaBGP community value',
-        validators=[Length(max=150)]
+    comm = StringField(
+        'Community value',
+        validators=[Length(max=250)]
+    )
+
+    larcomm = StringField(
+        'Large community value',
+        validators=[Length(max=250)]
+    )
+
+    extcomm = StringField(
+        'Extended community value',
+        validators=[Length(max=250)]
     )
 
     description = StringField('Community description')
@@ -114,6 +124,26 @@ class CommunityForm(FlaskForm):
     role_id = SelectField('Minimal required role',
                           choices=[('2', 'user'), ('3', 'admin')],
                           validators=[DataRequired()])
+
+    def validate(self):
+        """
+        custom validation method
+        :return: boolean
+        """
+        result = True
+
+        if not FlaskForm.validate(self):
+            result = False
+
+        if not self.comm.data and not self.extcomm.data and not self.larcomm.data:
+            err_message = "At last one of those values could not be empty"
+            self.comm.errors.append(err_message)
+            self.larcomm.errors.append(err_message)
+            self.extcomm.errors.append(err_message)
+            result = False
+
+        return result
+
 
 
 class RTBHForm(FlaskForm):

@@ -141,14 +141,18 @@ class Community(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True)
-    command = db.Column(db.String(120), unique=True)
+    comm = db.Column(db.String(250))
+    larcomm = db.Column(db.String(250))
+    extcomm = db.Column(db.String(250))
     description = db.Column(db.String(260))
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
     role = db.relationship('Role', backref='community')
 
-    def __init__(self, name, command, description, role_id=2):
+    def __init__(self, name, comm, larcomm, extcomm, description, role_id=2):
         self.name = name
-        self.command = command
+        self.comm = comm
+        self.larcomm = larcomm
+        self.extcomm = extcomm
         self.description = description
         self.role_id = role_id
 
@@ -730,7 +734,7 @@ def get_existing_action(name=None, command=None):
     return action.id if hasattr(action, 'id') else None
 
 
-def get_existing_community(name=None, command=None):
+def get_existing_community(name=None):
     """
     return Community with given name or command if the action exists
     return None if action not exists
@@ -738,5 +742,5 @@ def get_existing_community(name=None, command=None):
     :param command: string action command
     :return: action id
     """
-    community = Community.query.filter((Community.name == name) | (Community.command == command)).first()
+    community = Community.query.filter(Community.name == name).first()
     return community.id if hasattr(community, 'id') else None

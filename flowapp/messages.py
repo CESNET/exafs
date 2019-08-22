@@ -78,10 +78,16 @@ def create_rtbh(rule, message_type=ANNOUNCE):
         source += '/{}'.format(my_mask) if rule.ipv6 else ''
         nexthop = '100::1'
 
-    return "{action} route {source} next-hop {nexthop} community [{community} no-export]".format(
+    community_string = "community [{}]".format(rule.community.comm) if rule.community.comm else ""
+    large_community_string = "large-community [{}]".format(rule.community.larcomm) if rule.community.larcomm else ""
+    extended_community_string = "extended-community [{}]".format(rule.community.extcomm) if rule.community.extcomm else ""
+
+    return "{action} route {source} next-hop {nexthop} {community} {large_community} {extended_community}".format(
         action=action,
         source=source,
-        community=rule.community.command,
+        community=community_string,
+        large_community=large_community_string,
+        extended_community=extended_community_string,
         nexthop=nexthop)
 
 

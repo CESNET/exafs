@@ -53,6 +53,7 @@ def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_ke
 
     if rule_type == 1:
         form.community.choices = get_user_communities(session['user_role_ids'])
+        form.community.data = model.community_id
 
     if rule_type == 4:
         form.protocol.data = model.protocol
@@ -95,7 +96,7 @@ def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_ke
 
     action_url = url_for('rules.reactivate_rule', rule_type=rule_type, rule_id=rule_id)
 
-    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url)
+    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True)
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
