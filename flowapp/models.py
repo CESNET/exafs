@@ -85,7 +85,7 @@ class ApiKey(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     machine = db.Column(db.String(255))
     key = db.Column(db.String(255))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='apikey')
 
 
@@ -124,7 +124,7 @@ class Action(db.Model):
     name = db.Column(db.String(120), unique=True)
     command = db.Column(db.String(120), unique=True)
     description = db.Column(db.String(260))
-    role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
     role = db.relationship('Role', backref='action')
 
     def __init__(self, name, command, description, role_id=2):
@@ -145,7 +145,7 @@ class Community(db.Model):
     larcomm = db.Column(db.String(250))
     extcomm = db.Column(db.String(250))
     description = db.Column(db.String(260))
-    role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
     role = db.relationship('Role', backref='community')
 
     def __init__(self, name, comm, larcomm, extcomm, description, role_id=2):
@@ -175,14 +175,14 @@ class RTBH(db.Model):
     ipv4_mask = db.Column(db.Integer)
     ipv6 = db.Column(db.String(255))
     ipv6_mask = db.Column(db.Integer)
-    community_id = db.Column(db.Integer, db.ForeignKey('community.id'))
+    community_id = db.Column(db.Integer, db.ForeignKey('community.id'), nullable=False)
     community = db.relationship('Community', backref='rtbh')
     comment = db.Column(db.Text)
     expires = db.Column(db.DateTime)
     created = db.Column(db.DateTime)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='rtbh')
-    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
+    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'), nullable=False)
     rstate = db.relationship('Rstate', backref='RTBH')
 
     def __init__(self, ipv4, ipv4_mask, ipv6, ipv6_mask, community_id, expires, user_id, comment=None, created=None,
@@ -289,11 +289,11 @@ class Flowspec4(db.Model):
     comment = db.Column(db.Text)
     expires = db.Column(db.DateTime)
     created = db.Column(db.DateTime)
-    action_id = db.Column(db.Integer, db.ForeignKey('action.id'))
+    action_id = db.Column(db.Integer, db.ForeignKey('action.id'), nullable=False)
     action = db.relationship('Action', backref='flowspec4')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='flowspec4')
-    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
+    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'), nullable=False)
     rstate = db.relationship('Rstate', backref='flowspec4')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol,
@@ -413,11 +413,11 @@ class Flowspec6(db.Model):
     comment = db.Column(db.Text)
     expires = db.Column(db.DateTime)
     created = db.Column(db.DateTime)
-    action_id = db.Column(db.Integer, db.ForeignKey('action.id'))
+    action_id = db.Column(db.Integer, db.ForeignKey('action.id'), nullable=False)
     action = db.relationship('Action', backref='flowspec6')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='flowspec6')
-    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'))
+    rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'), nullable=False)
     rstate = db.relationship('Rstate', backref='flowspec6')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header,
@@ -515,7 +515,7 @@ class Log(db.Model):
     task = db.Column(db.String(1000))
     rule_type = db.Column(db.Integer)
     rule_id = db.Column(db.Integer)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='log')
 
     def __init__(self, time, task, user_id, rule_type, rule_id):

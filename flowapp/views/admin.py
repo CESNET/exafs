@@ -1,5 +1,7 @@
 # flowapp/views/admin.py
 from flask import Blueprint, render_template, redirect, flash, request, url_for
+from sqlalchemy.exc import IntegrityError
+
 from ..forms import UserForm, ActionForm, OrganizationForm, CommunityForm
 from ..models import User, Action, Organization, Role, insert_user, get_existing_action, Community, get_existing_community
 from ..auth import auth_required, admin_required
@@ -274,7 +276,13 @@ def delete_community(community_id):
     community = db.session.query(Community).get(community_id)
     aname = community.name
     db.session.delete(community)
-    db.session.commit()
-    flash(u'Community {} deleted'.format(aname), 'alert-success')
+    message = u'Community {} deleted'.format(aname)
+    alert_type = 'alert-success'
+    try:
+        db.session.commit()
+    except IntegrityError:
+        message = u'Community {} is in use in some rules, can not be deleted!'.format(aname)
+        alert_type = 'alert-danger'
 
+    flash(message, alert_type)
     return redirect(url_for('admin.communities'))
