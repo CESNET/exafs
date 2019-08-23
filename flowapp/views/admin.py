@@ -72,9 +72,16 @@ def delete_user(user_id):
     user = db.session.query(User).get(user_id)
     username = user.email
     db.session.delete(user)
-    db.session.commit()
-    flash(u'User {} deleted'.format(username), 'alert-success')
 
+    message = u'User {} deleted'.format(username)
+    alert_type = 'alert-success'
+    try:
+        db.session.commit()
+    except IntegrityError:
+        message = u'User {} owns some rules, can not be deleted!'.format(username)
+        alert_type = 'alert-danger'
+
+    flash(message, alert_type)
     return redirect(url_for('admin.users'))
 
 
@@ -143,8 +150,16 @@ def delete_organization(org_id):
     org = db.session.query(Organization).get(org_id)
     aname = org.name
     db.session.delete(org)
+    message = u'Organization {} deleted'.format(aname)
+    alert_type = 'alert-success'
+    try:
+        db.session.commit()
+    except IntegrityError:
+        message = u'Organization {} has some users, can not be deleted!'.format(aname)
+        alert_type = 'alert-danger'
+
+    flash(message, alert_type)
     db.session.commit()
-    flash(u'Organization {} deleted'.format(aname), 'alert-success')
 
     return redirect(url_for('admin.organizations'))
 
@@ -208,9 +223,16 @@ def delete_action(action_id):
     action = db.session.query(Action).get(action_id)
     aname = action.name
     db.session.delete(action)
-    db.session.commit()
-    flash(u'Action {} deleted'.format(aname), 'alert-success')
 
+    message = u'Action {} deleted'.format(aname)
+    alert_type = 'alert-success'
+    try:
+        db.session.commit()
+    except IntegrityError:
+        message = u'Action {} is in use in some rules, can not be deleted!'.format(aname)
+        alert_type = 'alert-danger'
+
+    flash(message, alert_type)
     return redirect(url_for('admin.actions'))
 
 
