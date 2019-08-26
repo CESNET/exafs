@@ -101,25 +101,25 @@ class CommunityForm(FlaskForm):
     """
     name = StringField(
         'Community short name',
-        validators=[Length(max=150), DataRequired()]
+        validators=[Length(max=120), DataRequired()]
     )
 
     comm = StringField(
         'Community value',
-        validators=[Length(max=250)]
+        validators=[Length(max=2046)]
     )
 
     larcomm = StringField(
         'Large community value',
-        validators=[Length(max=250)]
+        validators=[Length(max=2046)]
     )
 
     extcomm = StringField(
         'Extended community value',
-        validators=[Length(max=250)]
+        validators=[Length(max=2046)]
     )
 
-    description = StringField('Community description')
+    description = StringField('Community description', validators=[Length(max=255)])
 
     role_id = SelectField('Minimal required role',
                           choices=[('2', 'user'), ('3', 'admin')],

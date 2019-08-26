@@ -141,10 +141,10 @@ class Community(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True)
-    comm = db.Column(db.String(250))
-    larcomm = db.Column(db.String(250))
-    extcomm = db.Column(db.String(250))
-    description = db.Column(db.String(260))
+    comm = db.Column(db.String(2047))
+    larcomm = db.Column(db.String(2047))
+    extcomm = db.Column(db.String(2047))
+    description = db.Column(db.String(255))
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
     role = db.relationship('Role', backref='community')
 

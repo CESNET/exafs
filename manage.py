@@ -28,7 +28,7 @@ else:
     print("PRODUCTION")
     app.config.from_object(config.ProductionConfig)
 
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, compare_type=True)
 
 manager = Manager(app)
 
