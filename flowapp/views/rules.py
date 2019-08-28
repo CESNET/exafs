@@ -12,10 +12,11 @@ from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, ge
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, Community, \
     get_rtbh_model_if_exists
 from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
-from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes, quote_to_ent, \
+from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes, \
+    quote_to_ent, \
     get_state_by_time
 
-from flowapp import db, app, messages, RULES_KEY
+from flowapp import db, app, messages, RULES_KEY, constants
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
@@ -25,9 +26,11 @@ DATA_TEMPLATES = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ip
 DATA_TABLES = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
 DEFAULT_SORT = {1: 'ivp4', 4: 'source', 6: 'source'}
 
+
 @rules.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
 @rules.route('/reactivate/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>', methods=['GET', 'POST'])
-@rules.route('/reactivate/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>/<path:filter_text>', methods=['GET', 'POST'])
+@rules.route('/reactivate/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>/<path:filter_text>',
+             methods=['GET', 'POST'])
 @auth_required
 @user_or_admin_required
 def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_key=None):
@@ -100,11 +103,9 @@ def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_ke
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
-@rules.route('/delete/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>', methods=['GET'])
-@rules.route('/delete/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>/<path:filter_text>', methods=['GET'])
 @auth_required
 @user_or_admin_required
-def delete_rule(rule_type, rule_id, rstate='active', filter_text='', sort_key=None):
+def delete_rule(rule_type, rule_id):
     """
     Delete rule with given id and type
     :param sort_key:
@@ -118,9 +119,6 @@ def delete_rule(rule_type, rule_id, rstate='active', filter_text='', sort_key=No
     rules = rules_dict[str(rule_type)]
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]
-
-    if not sort_key:
-        sort_key = DEFAULT_SORT[rule_type]
 
     model = db.session.query(model_name).get(rule_id)
 
@@ -139,7 +137,10 @@ def delete_rule(rule_type, rule_id, rstate='active', filter_text='', sort_key=No
     else:
         flash(u'You can not delete this rule', 'alert-warning')
 
-    return redirect(url_for('index', rstate=rstate, filter_text=filter_text, sort_key=sort_key))
+    return redirect(url_for('index',
+                            rstate=session[constants.RULE_ARG],
+                            sort=session[constants.SORT_ARG],
+                            order=session[constants.ORDER_ARG]))
 
 
 @rules.route('/add_ipv4_rule', methods=['GET', 'POST'])
@@ -354,7 +355,8 @@ def export():
 
     announce_all_routes()
 
-    return render_template('pages/dashboard_admin.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh, today=datetime.now())
+    return render_template('pages/dashboard_admin.j2', rules=rules, actions=actions, rules_rtbh=rules_rtbh,
+                           today=datetime.now())
 
 
 @rules.route('/announce_all', methods=['GET'])
@@ -381,11 +383,14 @@ def announce_all_routes(action=messages.ANNOUNCE):
     today = datetime.now()
     comp_func = ge if action == messages.ANNOUNCE else lt
 
-    rules4 = db.session.query(Flowspec4).filter(Flowspec4.rstate_id == 1).filter(comp_func(Flowspec4.expires, today)).order_by(
+    rules4 = db.session.query(Flowspec4).filter(Flowspec4.rstate_id == 1).filter(
+        comp_func(Flowspec4.expires, today)).order_by(
         Flowspec4.expires.desc()).all()
-    rules6 = db.session.query(Flowspec6).filter(Flowspec6.rstate_id == 1).filter(comp_func(Flowspec6.expires, today)).order_by(
+    rules6 = db.session.query(Flowspec6).filter(Flowspec6.rstate_id == 1).filter(
+        comp_func(Flowspec6.expires, today)).order_by(
         Flowspec6.expires.desc()).all()
-    rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(comp_func(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
+    rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(comp_func(RTBH.expires, today)).order_by(
+        RTBH.expires.desc()).all()
 
     output4 = [messages.create_ipv4(rule, action) for rule in rules4]
     output6 = [messages.create_ipv6(rule, action) for rule in rules6]
@@ -413,5 +418,3 @@ def set_withdraw_state(rule):
     """
     rule.rstate_id = 2
     db.session.commit()
-
-

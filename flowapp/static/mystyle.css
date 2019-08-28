@@ -78,3 +78,11 @@ td.bottom_row {
 .desc {
     border-top: 5px solid black;
 }
+
+.table-sorter a {
+    color: #0a0a0a;
+}
+
+.table-sorter a:visited {
+    color: #0a0a0a;
+}

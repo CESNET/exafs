@@ -1,38 +1,157 @@
 {% extends 'layouts/default.j2' %}
 {% block title %}Flowspec{% endblock %}
 {% block content %}
+    <h1>Default dashboard</h1>
+
+      <div class="row">
+             <div class="container" id="dashboard-nav">
+                 <div class="col-md-6">
+                     <h1>Default dashboard</h1>
+                 </div>
+                 <div class="col-md-6">
+                     <ul class="nav nav-pills pull-right">
+                         <li>
+
+                         </li>
+                         <li>
+                             <a class="nav-link {{ css_classes['active'] }}" href="{{ url_for('index', rstate='active') }}" >Active</a>
+                         </li>
+                         <li>
+                             <a class="nav-link {{ css_classes['expired'] }}" href="{{ url_for('index', rstate='expired') }}" >Expired</a>
+                         </li>
+                         <li class={cssAll}>
+                             <a class="nav-link {{ css_classes['all'] }}" href="{{ url_for('index', rstate='all') }}" >All</a>
+                         </li>
+                     </ul>
+                 </div>
+    </div>
+
+    <h2>Rules IPv4/v6</h2>
+    <table class="table table-hover" id="ip-table">
+    <thead>
+    <tr class="table-sorter">
+    {% for sort_key, col_name in rules_columns %}
+        <th>
+            <a href="{{ url_for('index', rstate=rstate, sort=sort_key, order=sort_order) }}" >
+            {{ col_name }}
+            </a>
+            <span class="sort-direction {{ sort_order }}"></span>
+        </th>
+    {% endfor %}
+        <th>Edit</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for key, value in rules.items() %}
+        {% for rule in value %}
+            <tr {% if rule.expires < today %} class="warning" {% endif %}>
+                <td>
+                    {{ rule.source }}
+                    {{ '/' if rule.source_mask >= 0 else '' }}
+                    {{ rule.source_mask if rule.source_mask >= 0 else '' }}
+                </td>
+                <td>
+                    {{ rule.source_port }}
+                </td>
+                <td>
+                    {{ rule.dest }}
+                    {{ '/' if rule.dest_mask >= 0 else '' }}
+                    {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
+                </td>
+                <td>
+                    {{ rule.dest_port }}
+                </td>
+                <td>
+                    {% if key == 4 %}
+                        {{ rule.protocol }}
+                    {% elif key == 6 %}
+                        {{ rule.next_header }}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ rule.expires }}
+                </td>
+                <td>
+                    {{ actions[rule.action_id].name }}
+                </td>
+                <td>
+                    {{ rule.flags}}
+                </td>
+                <td>
+                    {{ rule.user.name }}
+                </td>
+                <td>
+                <a class="btn btn-primary btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
+                     <span class="glyphicon glyphicon-time"></span>
+                </a>
+                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=key, rule_id=rule.id) }}" role="button">
+                     <span class="glyphicon glyphicon-remove"></span>
+                </a>
+                {% if rule.comment %}
+                <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                    <span class="glyphicon glyphicon-comment"></span>
+                </button>
+                {% endif %}
+            </td>
+            </tr>
+
+        {% endfor %}
+
+    {% endfor %}
+    </tbody>
+    </table>
 
 
-<div class="row">
+    <h2>Rules RTBH</h2>
+    <table class="table table-hover" id="rtbh-table">
+    <thead>
+    <tr>
+    <th>IP adress (v4 or v6)</th>
+    <th>Community</th>
+    <th>Expires</th>
+    <th>User</th>
+    <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for rule in rules_rtbh %}
+        <tr {% if rule.expires < today %} class="warning"  {% endif %}>
+        <td>
+        {% if rule.ipv4 %}
+            {{ rule.ipv4 }} {{ '/' if rule.ipv4_mask else '' }} {{rule.ipv4_mask|default("", True)}}
+        {% endif %}
+        {% if rule.ipv6 %}
+            {{ rule.ipv6 }} {{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
+        {% endif %}
+        </td>
+         <td>
+            {{ rule.community.name }}
+        </td>
 
-    <div id="rules_table_container"></div>
+         <td>
+            {{ rule.expires }}
+        </td>
+        <td>
+            {{ rule.user.name }}
+        </td>
+        <td>
+            <a class="btn btn-primary btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+                <span class="glyphicon glyphicon-time"></span>
 
-    <script src="/static/react/react.production.min.js"></script>
-    <script src="/static/react/react-dom.production.min.js"></script>
+            </a>
+            <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+                     <span class="glyphicon glyphicon-remove"></span>
+            </a>
+            {% if rule.comment %}
+               <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                        <span class="glyphicon glyphicon-comment"></span>
+               </button>
+             {% endif %}
+        </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
 
-    <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
-    <!--
-    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-    -->
-
-
-    <script type="text/javascript">
-        const TITLE = '{{ rstate | capitalize }}';
-        const FILTER_START = '{{ filter_text }}';
-        const RSTATE = '{{ rstate }}';
-        const SORT_KEY = '{{ sort_key }}';
-
-        const RULES = {{ rules_serialized | tojson }};
-        const RTBH = {{ rtbh_serialized | tojson }};
-
-    </script>
-
-    <script type="text/javascript" src="/static/js/table.js" charset="utf-8"></script>
-
-
-</div>
 
 {% endblock %}

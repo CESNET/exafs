@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 import jwt
 
-from operator import ge, lt
-
-from flask import Flask, redirect, render_template, session, make_response, url_for
+from flask import Flask, redirect, render_template, session, make_response, url_for, request
 from flask_sso import SSO
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
-from utils import datetime_to_webpicker
+from utils import datetime_to_webpicker, active_css_rstate
 
 import flowapp.validators
 
@@ -39,6 +37,7 @@ import messages
 import forms
 import models
 import flowspec
+import constants
 from .views.admin import admin
 from .views.rules import rules
 from .views.apiv1 import api
@@ -87,42 +86,29 @@ def logout():
 
 
 @app.route('/')
-@app.route('/show/<path:rstate>/')
-@app.route('/show/<path:rstate>/<path:sort_key>/<path:filter_text>')
+@app.route('/dashboard/<path:rstate>/')
 @auth_required
-def index(rstate='active', filter_text='', sort_key='source'):
+def index(rstate='active'):
     all_actions = db.session.query(models.Action).all()
     all_actions = {act.id: act for act in all_actions}
     net_ranges = models.get_user_nets(session['user_id'])
 
-    today = datetime.now()
-
-    comp_funcs = {
-        'active': ge,
-        'expired': lt,
-        'all': None
-    }
-
+    get_sort_key = request.args.get(constants.SORT_ARG) if request.args.get(constants.SORT_ARG) else constants.DEFAULT_SORT
+    get_sort_order = request.args.get(constants.ORDER_ARG) if request.args.get(constants.ORDER_ARG) else constants.DEFAULT_ORDER
 
     try:
-        comp_func = comp_funcs[rstate]
-    except IndexError:
-        comp_func = None
+        if session[constants.SORT_ARG] == get_sort_key:
+            print("before", get_sort_order)
+            get_sort_order = 'desc' if get_sort_order == 'asc' else 'asc'
+            print("after", get_sort_order)
     except KeyError:
-        comp_func = None
+        get_sort_order = constants.DEFAULT_ORDER
 
-    if comp_func:
+    session[constants.SORT_ARG] = get_sort_key
+    session[constants.ORDER_ARG] = get_sort_order
+    session[constants.RULE_ARG] = rstate
 
-        rules4 = db.session.query(models.Flowspec4).filter(
-            comp_func(models.Flowspec4.expires, today)).order_by(models.Flowspec4.expires.desc()).all()
-        rules6 = db.session.query(models.Flowspec6).filter(
-            comp_func(models.Flowspec6.expires, today)).order_by(models.Flowspec6.expires.desc()).all()
-        rules_rtbh = db.session.query(models.RTBH).filter(comp_func(models.RTBH.expires, today)).order_by(models.RTBH.expires.desc()).all()
-
-    else:
-        rules4 = db.session.query(models.Flowspec4).order_by(models.Flowspec4.expires.desc()).all()
-        rules6 = db.session.query(models.Flowspec6).order_by(models.Flowspec6.expires.desc()).all()
-        rules_rtbh = db.session.query(models.RTBH).order_by(models.RTBH.expires.desc()).all()
+    rules4, rules6, rules_rtbh = models.get_ip_rules(rstate, get_sort_key, get_sort_order)
 
     jwt_key = app.config.get('JWT_SECRET')
 
@@ -157,17 +143,20 @@ def index(rstate='active', filter_text='', sort_key='source'):
             6: [rule.id for rule in rules6],
             1: [rule.id for rule in rules_rtbh]
         }
+
+        print(constants.RULES_COLUMNS)
+
         encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
         res = make_response(render_template('pages/dashboard_admin.j2',
                                             rules=rules,
-                                            filter_text=filter_text,
-                                            sort_key=sort_key,
                                             actions=all_actions,
                                             rules_rtbh=rules_rtbh,
-                                            rules_serialized=rules_serialized,
+                                            css_classes=active_css_rstate(rstate),
+                                            sort_order=get_sort_order,
+                                            rules_columns=constants.RULES_COLUMNS,
                                             rtbh_serialized=rtbh_serialized,
                                             rstate=rstate,
-                                            today=datetime_to_webpicker(datetime.now())))
+                                            today=datetime.now()))
 
     # filter out the rules for normal users
     else:
@@ -186,6 +175,7 @@ def index(rstate='active', filter_text='', sort_key='source'):
         res = make_response(render_template('pages/dashboard_user.j2',
                                             rules_editable=rules_editable,
                                             rules_visible=rules_visible,
+                                            css_classes=active_css_rstate(rstate),
                                             actions=all_actions,
                                             rstate=rstate,
                                             rules_rtbh=rules_rtbh,

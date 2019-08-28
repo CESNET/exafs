@@ -1,3 +1,4 @@
+from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
 
@@ -68,3 +69,32 @@ def flash_errors(form):
                 getattr(form, field).label.text,
                 error
             ))
+
+
+def active_css_rstate(rstate):
+    """
+    returns dict with rstates as keys and css class value
+    :param rstate: string
+    :return: dict
+    """
+
+    return {'active': '', 'expired': '', 'all': '', rstate: 'active'}
+
+
+def get_comp_func(rstate='active'):
+
+    comp_funcs = {
+        'active': ge,
+        'expired': lt,
+        'all': None
+    }
+
+
+    try:
+        comp_func = comp_funcs[rstate]
+    except IndexError:
+        comp_func = None
+    except KeyError:
+        comp_func = None
+
+    return comp_func

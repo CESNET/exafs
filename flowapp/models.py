@@ -1,6 +1,6 @@
 from sqlalchemy import event
 from datetime import datetime
-from flowapp import db
+from flowapp import db, constants
 from flowapp import utils as utils
 
 # models and tables
@@ -744,3 +744,36 @@ def get_existing_community(name=None):
     """
     community = Community.query.filter(Community.name == name).first()
     return community.id if hasattr(community, 'id') else None
+
+
+def get_ip_rules(rule_state, sort='expires', order='desc'):
+    """
+    Returns list of rules sorted by sort column ordered asc or desc
+    :param sort: sorting column
+    :param order: asc or desc
+    :return: list
+    """
+
+    today = datetime.now()
+    comp_func = utils.get_comp_func(rule_state)
+
+    sorter_ip4 = getattr(Flowspec4, sort)
+    sorting_ip4 = getattr(sorter_ip4, order)
+
+    sorter_ip6 = getattr(Flowspec6, sort)
+    sorting_ip6 = getattr(sorter_ip6, order)
+
+    if comp_func:
+
+        rules4 = db.session.query(Flowspec4).filter(
+            comp_func(Flowspec4.expires, today)).order_by(sorting_ip4()).all()
+        rules6 = db.session.query(Flowspec6).filter(
+            comp_func(Flowspec6.expires, today)).order_by(sorting_ip6()).all()
+        rules_rtbh = db.session.query(RTBH).filter(comp_func(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
+
+    else:
+        rules4 = db.session.query(Flowspec4).order_by(sorting_ip4()).all()
+        rules6 = db.session.query(Flowspec6).order_by(sorting_ip6()).all()
+        rules_rtbh = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
+
+    return rules4, rules6, rules_rtbh
