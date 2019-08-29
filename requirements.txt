@@ -10,3 +10,4 @@ PyJWT>=1.6.4
 PyMySQL>=0.7.10
 pytest>=3.4.0
 requests>=2.20.0
+babel>=2.7.0

@@ -1,46 +1,20 @@
 {% extends 'layouts/default.j2' %}
+{% from 'macros.j2' import build_ip_tbody, build_rtbh_tbody, build_rules_thead %}
+
 {% block title %}Flowspec{% endblock %}
 {% block content %}
-    <h1>{{ rstate|capitalize }} {{ table_title }}</h1>
+
+    {% include 'pages/submenu_dashboard.j2' %}
 
     <div class="row">
-             <div class="container" id="dashboard-nav">
-                 <div class="col-md-6">
-                     <ul class="nav nav-pills">
-                         <li>
-
-                         </li>
-                         <li>
-                             <a class="nav-link {{ css_classes['ipv4'] }}" href="{{ url_for('dashboard.index', rtype='ipv4', rstate=rstate) }}" >IPv4</a>
-                         </li>
-                         <li>
-                             <a class="nav-link {{ css_classes['ipv6'] }}" href="{{ url_for('dashboard.index', rtype='ipv6', rstate=rstate) }}" >IPv6</a>
-                         </li>
-                         <li class={cssAll}>
-                             <a class="nav-link {{ css_classes['rtbh'] }}" href="{{ url_for('dashboard.index', rtype='rtbh', rstate=rstate) }}" >RTBH</a>
-                         </li>
-                     </ul>
-                 </div>
-                 <div class="col-md-6">
-                     <ul class="nav nav-pills pull-right">
-                         <li>
-
-                         </li>
-                         <li>
-                             <a class="nav-link {{ css_classes['active'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='active') }}" >Active</a>
-                         </li>
-                         <li>
-                             <a class="nav-link {{ css_classes['expired'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='expired') }}" >Expired</a>
-                         </li>
-                         <li class={cssAll}>
-                             <a class="nav-link {{ css_classes['all'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='all') }}" >All</a>
-                         </li>
-                     </ul>
-                 </div>
-    </div>
-    <hr />
-    <div class="row">
-        {% include rule_table_template %}
+        <table class="table table-hover ip-table">
+            {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
+            {% if rtype_int == 1 %}
+                {{ build_rtbh_tbody(rules, today, rtype_int) }}
+            {% else %}
+                {{ build_ip_tbody(rules, today, rtype_int) }}
+            {% endif %}
+        </table>
     </div>
 
 {% endblock %}

@@ -81,4 +81,5 @@ def filter_rules_action(user_actions, rules):
             editable.append(rule)
         else:
             viewonly.append(rule)
+
     return editable, viewonly

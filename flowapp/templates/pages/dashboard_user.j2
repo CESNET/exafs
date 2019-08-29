@@ -1,4 +1,7 @@
 {% extends 'layouts/default.j2' %}
+{% from 'macros.j2' import build_ip_tbody, build_rtbh_tbody, build_rules_thead %}
+
+
 {% block title %}Flowspec{% endblock %}
 {% block content %}
 
@@ -6,226 +9,32 @@
 
 
 
-    <h2>{{ rstate|capitalize }} IPv4/v6 rules that you can modify</h2>
-    <table class="table table-hover" id="ip-table">
-    <thead>
-        <tr>
-        <th>Source adress</th>
-        <th>Source port(s)</th>
-        <th>Destination adress</th>
-        <th>Dest. port(s)</th>
-        <th>Protocol(s)</th>
-        <th>Expires</th>
-        <th>Action</th>
-        <th>Flags</th>
-        <th>User</th>
-        <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for key, value in rules_editable.items() %}
-        {% for rule in value %}
-            <tr {% if rule.expires < today %} class="warning" {% endif %}>
-                <td>
-                    {{ rule.source }}
-                    {{ '/' if rule.source_mask >= 0 else '' }}
-                    {{ rule.source_mask if rule.source_mask >= 0 else '' }}
-                </td>
-                <td>
-                    {{ rule.source_port }}
-                </td>
-                <td>
-                    {{ rule.dest }}
-                    {{ '/' if rule.dest_mask >= 0 else '' }}
-                    {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
-                </td>
-                <td>
-                    {{ rule.dest_port }}
-                </td>
-                <td>
-                    {% if key == 4 %}
-                        {{ rule.protocol }}
-                    {% elif key == 6 %}
-                        {{ rule.next_header }}
-                    {% endif %}
-                </td>
-                <td>
-                    {{ rule.expires }}
-                </td>
-                <td>
-                    {{ actions[rule.action_id].name }}
-                </td>
-                <td>
-                    {{ rule.flags}}
-                </td>
-                <td>
-                    {{ rule.user.name }}
-                </td>
-                <td>
-                {% if editable_rule(rule) %}
-                    <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=key, rule_id=rule.id) }}" role="button">
-                         <span class="glyphicon glyphicon-time"></span>
-                    </a>
-                    <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=key, rule_id=rule.id) }}" role="button">
-                         <span class="glyphicon glyphicon-remove"></span>
-                    </a>
-                    {% if rule.comment %}
-                    <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
-                        <span class="glyphicon glyphicon-comment"></span>
-                    </button>
-                    {% endif %}
-                {% endif %}
-                </td>
-            </tr>
-
-
-        {% endfor %}
-      
-    {% endfor %}
-    </tbody>
+    <h2>{{ rstate|capitalize }} {{ table_title }} that you can modify</h2>
+    <table class="table table-hover ip-table">
+    {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
+    {% if rtype_int == 1 %}
+        {{ build_rtbh_tbody(rules_editable, today, rtype_int) }}
+    {% else %}
+        {{ build_ip_tbody(rules_editable, today, rtype_int) }}
+    {% endif %}
     </table>
 
 
-    <h2>{{ rstate|capitalize }} RTBH rules that you can modify</h2>
-    <table class="table table-hover" id="rtbh-table">
-    <thead>
-        <tr>
-        <th>IP adress (v4 or v6)</th>
-        <th>Community</th>
-        <th>Expires</th>
-        <th>User</th>
-        <th>Action</th>
-        </tr>
-    </thead>
-    {% for rule in rules_rtbh %}
-        <tr {% if rule.expires < today %} class="warning"  {% endif %}>
-        <td>
-        {% if rule.ipv4 %}
-            {{ rule.ipv4 }} {{ '/' if rule.ipv4_mask else '' }} {{rule.ipv4_mask|default("", True)}}
+    <h2>{{ rstate|capitalize }}  {{ table_title }} that are read-only for you</h2>
+    {% if rules_visible %}
+
+        <p>Those rules somehow including your network ranges. However, they have privileged / admin only action. Therefore you can not modify their expiration time.</p>
+        <table class="table table-hover ip-table">
+        {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
+        {% if rtype_int == 1 %}
+            {{ build_rtbh_tbody(rules_editable, today, rtype_int, False) }}
+        {% else %}
+            {{ build_ip_tbody(rules_visible, today, rtype_int, False) }}
         {% endif %}
-        {% if rule.ipv6 %}    
-            {{ rule.ipv6 }} {{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
-        {% endif %}    
-        </td>
-         <td>
-            {{ rule.community.name }}
-        </td>
-        
-         <td>
-            {{ rule.expires }} 
-        </td>
-        <td>
-            {{ rule.user.name }}
-        </td>
-        <td>
-        <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
-            <span class="glyphicon glyphicon-time"></span>
-
-        </a>
-         <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
-                 <span class="glyphicon glyphicon-remove"></span>
-            </a>
-         {% if rule.comment %}
-            <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
-                <span class="glyphicon glyphicon-comment"></span>
-            </button>
-          {% endif %}
-        </td>
-        </tr>
-    {% endfor %}
-    </table>
-
-    <h2>{{ rstate|capitalize }} IPv4/v6 rules that are read-only for you</h2>
-    <p>Those rules somehow including your network ranges. However, they have privileged / admin only action. Therefore you can not modify their expiration time.</p>
-    <table class="table table-hover">
-    <tr>
-    <th>Source adress</th>
-    <th>Source port(s)</th>
-    <th>Destination adress</th>
-    <th>Dest. port(s)</th>
-    <th>Protocol(s)</th>
-    <th>Expires</th>
-    <th>Action</th>
-    <th>Flags</th>
-    <th>User</th>
-    </tr>
-    {% for key, value in rules_visible.items() %}
-        {% for rule in value %}
-            <tr {% if rule.expires < today %} class="warning" {% endif %}>
-                <td>
-                    {{ rule.source }}
-                    {{ '/' if rule.source_mask >= 0 else '' }}
-                    {{ rule.source_mask if rule.source_mask >= 0 else '' }}
-                </td>
-                <td>
-                    {{ rule.source_port }}
-                </td>
-                <td>
-                    {{ rule.dest }}
-                    {{ '/' if rule.dest_mask >= 0 else '' }}
-                    {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
-                </td>
-                <td>
-                    {{ rule.dest_port }}
-                </td>
-                <td>
-                    {% if key == 4 %}
-                        {{ rule.protocol }}
-                    {% elif key == 6 %}
-                        {{ rule.next_header }}
-                    {% endif %}
-                </td>
-                <td>
-                    {{ rule.expires }}
-                </td>
-                <td>
-                    {{ actions[rule.action_id].name }}
-                </td>
-                <td>
-                    {{ rule.flags}}
-                </td>
-                 <td>
-                    {{ rule.user.name }}
-                </td>
-                <td>
-                {% if rule.comment %}
-                    <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
-                        <span class="glyphicon glyphicon-comment"></span>
-                    </button>
-                {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-
-    {% endfor %}
-    </table>
-
-
-<script type="text/javascript">
-    $(function(){
-		$('#rtbh-table').tablesorter({
-			widgets        : ['zebra', 'columns'],
-			usNumberFormat : false,
-			sortReset      : true,
-			sortRestart    : true
-		});
-	});
-
-	 $(function(){
-		$('#ip-table').tablesorter({
-			widgets        : ['zebra', 'columns'],
-			usNumberFormat : false,
-			sortReset      : true,
-			sortRestart    : true
-		});
-	});
-
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip()
-    })
-
-</script>
-
+        </table>
+    {% else %}
+        <p>There are no ReadOnly rules that including your network ranges.</p
+    {% endif %}
 
 
 {% endblock %}

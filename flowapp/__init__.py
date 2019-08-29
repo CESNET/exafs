@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-import jwt
+import babel
 
 from flask import Flask, redirect, render_template, session, make_response, url_for, request
 from flask_sso import SSO
-from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
@@ -142,3 +141,12 @@ def utility_processor():
         return False
 
     return dict(editable_rule=editable_rule)
+
+
+@app.template_filter('strftime')
+def format_datetime(value, format='medium'):
+    if format == 'full':
+        format = "EEEE, d. MMMM y 'at' HH:mm"
+    elif format == 'medium':
+        format = "EE dd.MM.y HH:mm"
+    return babel.dates.format_datetime(value, format)

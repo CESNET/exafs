@@ -40,7 +40,7 @@ RULE_TYPES = {
 
 RTBH_COLUMNS = (
     ('ipv4', 'IP adress (v4 or v6)'),
-    ('community', 'Community'),
+    ('community_id', 'Community'),
     ('expires', 'Expires'),
-    ('user', 'User')
+    ('user_id', 'User')
 )

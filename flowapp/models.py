@@ -246,8 +246,6 @@ class RTBH(db.Model):
             "rstate": self.rstate.description
         }
 
-
-
     def to_table_source(self):
         """
         Serialize to dict / user for rendering in React table
@@ -757,13 +755,10 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
     today = datetime.now()
     comp_func = utils.get_comp_func(rule_state)
 
-    sorter_ip4 = getattr(Flowspec4, sort)
-    sorting_ip4 = getattr(sorter_ip4, order)
-
-    sorter_ip6 = getattr(Flowspec6, sort)
-    sorting_ip6 = getattr(sorter_ip6, order)
-
     if rule_type == 'ipv4':
+
+        sorter_ip4 = getattr(Flowspec4, sort)
+        sorting_ip4 = getattr(sorter_ip4, order)
         if comp_func:
             rules4 = db.session.query(Flowspec4).filter(
                 comp_func(Flowspec4.expires, today)).order_by(sorting_ip4()).all()
@@ -773,6 +768,9 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
         return rules4
 
     if rule_type == 'ipv6':
+
+        sorter_ip6 = getattr(Flowspec6, sort)
+        sorting_ip6 = getattr(sorter_ip6, order)
         if comp_func:
             rules6 = db.session.query(Flowspec6).filter(
                 comp_func(Flowspec6.expires, today)).order_by(sorting_ip6()).all()
@@ -782,12 +780,15 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
         return rules6
 
     if rule_type == 'rtbh':
+
+        sorter_rtbh = getattr(RTBH, sort)
+        sorting_rtbh = getattr(sorter_rtbh, order)
+
         if comp_func:
             rules_rtbh = db.session.query(RTBH).filter(comp_func(RTBH.expires, today)).order_by(
-                RTBH.expires.desc()).all()
+                sorting_rtbh()).all()
 
         else:
-            rules_rtbh = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
+            rules_rtbh = db.session.query(RTBH).order_by(sorting_rtbh()).all()
 
         return rules_rtbh
-

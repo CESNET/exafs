@@ -34,12 +34,8 @@ td.bottom_row {
     padding-bottom: 1em;
 }
 
-#rtbh-table thead {
-    background-color: #adadad;
-    cursor: pointer;
-}
 
-#ip-table thead {
+.ip-table thead {
     background-color: #adadad;
     cursor: pointer;
 }
