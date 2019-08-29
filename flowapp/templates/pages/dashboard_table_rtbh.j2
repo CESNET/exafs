@@ -1,0 +1,49 @@
+<table class="table table-hover" id="rtbh-table">
+<thead>
+<tr>
+<th>IP adress (v4 or v6)</th>
+<th>Community</th>
+<th>Expires</th>
+<th>User</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+{% for rule in rules %}
+    <tr {% if rule.expires < today %} class="warning"  {% endif %}>
+    <td>
+    {% if rule.ipv4 %}
+        {{ rule.ipv4 }} {{ '/' if rule.ipv4_mask else '' }} {{rule.ipv4_mask|default("", True)}}
+    {% endif %}
+    {% if rule.ipv6 %}
+        {{ rule.ipv6 }} {{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
+    {% endif %}
+    </td>
+     <td>
+        {{ rule.community.name }}
+    </td>
+
+     <td>
+        {{ rule.expires }}
+    </td>
+    <td>
+        {{ rule.user.name }}
+    </td>
+    <td>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+            <span class="glyphicon glyphicon-time"></span>
+
+        </a>
+        <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+                 <span class="glyphicon glyphicon-remove"></span>
+        </a>
+        {% if rule.comment %}
+           <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                    <span class="glyphicon glyphicon-comment"></span>
+           </button>
+         {% endif %}
+    </td>
+    </tr>
+{% endfor %}
+</tbody>
+</table>

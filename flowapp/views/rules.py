@@ -16,7 +16,7 @@ from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpi
     quote_to_ent, \
     get_state_by_time
 
-from flowapp import db, app, messages, RULES_KEY, constants
+from flowapp import db, app, messages, constants
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
@@ -114,7 +114,7 @@ def delete_rule(rule_type, rule_id):
     :param rule_type: string - type of rule to be deleted
     :param rule_id: integer - rule id
     """
-    rules_dict = request.cookies.get(RULES_KEY)
+    rules_dict = request.cookies.get(constants.RULES_KEY)
     rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
     rules = rules_dict[str(rule_type)]
     model_name = DATA_MODELS[rule_type]
@@ -137,7 +137,7 @@ def delete_rule(rule_type, rule_id):
     else:
         flash(u'You can not delete this rule', 'alert-warning')
 
-    return redirect(url_for('index',
+    return redirect(url_for('dashboard.index',
                             rstate=session[constants.RULE_ARG],
                             sort=session[constants.SORT_ARG],
                             order=session[constants.ORDER_ARG]))

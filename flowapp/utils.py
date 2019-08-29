@@ -51,8 +51,8 @@ def round_to_ten_minutes(python_time):
     """
     python_time += timedelta(minutes=5)
     python_time -= timedelta(minutes=python_time.minute % 10,
-                                      seconds=python_time.second,
-                                      microseconds=python_time.microsecond)
+                             seconds=python_time.second,
+                             microseconds=python_time.microsecond)
 
     return python_time
 
@@ -71,24 +71,23 @@ def flash_errors(form):
             ))
 
 
-def active_css_rstate(rstate):
+def active_css_rstate(rtype, rstate):
     """
     returns dict with rstates as keys and css class value
     :param rstate: string
     :return: dict
     """
 
-    return {'active': '', 'expired': '', 'all': '', rstate: 'active'}
+    return {'active': '', 'expired': '', 'all': '', 'ipv4': '', 'ipv6': '', 'rtbh': '', rtype: 'active',
+            rstate: 'active'}
 
 
 def get_comp_func(rstate='active'):
-
     comp_funcs = {
         'active': ge,
         'expired': lt,
         'all': None
     }
-
 
     try:
         comp_func = comp_funcs[rstate]

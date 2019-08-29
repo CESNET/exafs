@@ -746,7 +746,7 @@ def get_existing_community(name=None):
     return community.id if hasattr(community, 'id') else None
 
 
-def get_ip_rules(rule_state, sort='expires', order='desc'):
+def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
     """
     Returns list of rules sorted by sort column ordered asc or desc
     :param sort: sorting column
@@ -763,17 +763,31 @@ def get_ip_rules(rule_state, sort='expires', order='desc'):
     sorter_ip6 = getattr(Flowspec6, sort)
     sorting_ip6 = getattr(sorter_ip6, order)
 
-    if comp_func:
+    if rule_type == 'ipv4':
+        if comp_func:
+            rules4 = db.session.query(Flowspec4).filter(
+                comp_func(Flowspec4.expires, today)).order_by(sorting_ip4()).all()
+        else:
+            rules4 = db.session.query(Flowspec4).order_by(sorting_ip4()).all()
 
-        rules4 = db.session.query(Flowspec4).filter(
-            comp_func(Flowspec4.expires, today)).order_by(sorting_ip4()).all()
-        rules6 = db.session.query(Flowspec6).filter(
-            comp_func(Flowspec6.expires, today)).order_by(sorting_ip6()).all()
-        rules_rtbh = db.session.query(RTBH).filter(comp_func(RTBH.expires, today)).order_by(RTBH.expires.desc()).all()
+        return rules4
 
-    else:
-        rules4 = db.session.query(Flowspec4).order_by(sorting_ip4()).all()
-        rules6 = db.session.query(Flowspec6).order_by(sorting_ip6()).all()
-        rules_rtbh = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
+    if rule_type == 'ipv6':
+        if comp_func:
+            rules6 = db.session.query(Flowspec6).filter(
+                comp_func(Flowspec6.expires, today)).order_by(sorting_ip6()).all()
+        else:
+            rules6 = db.session.query(Flowspec6).order_by(sorting_ip6()).all()
 
-    return rules4, rules6, rules_rtbh
+        return rules6
+
+    if rule_type == 'rtbh':
+        if comp_func:
+            rules_rtbh = db.session.query(RTBH).filter(comp_func(RTBH.expires, today)).order_by(
+                RTBH.expires.desc()).all()
+
+        else:
+            rules_rtbh = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
+
+        return rules_rtbh
+
