@@ -17,9 +17,6 @@ def index(rtype='ipv4', rstate='active'):
     get_sort_order = request.args.get(constants.ORDER_ARG) if request.args.get(
         constants.ORDER_ARG) else constants.DEFAULT_ORDER
 
-    print("SORT ORDER FROM URL", get_sort_order)
-    print("SORT ORDER FROM SESSION", session[constants.ORDER_ARG])
-
     # store current state for redirects
     session[constants.ORDER_ARG] = get_sort_order
     session[constants.SORT_ARG] = get_sort_key
@@ -31,8 +28,6 @@ def index(rtype='ipv4', rstate='active'):
             get_sort_order = 'desc' if get_sort_order == 'asc' else 'asc'
     except KeyError:
         get_sort_order = constants.DEFAULT_ORDER
-
-    print("SORT ORDER STORED TO SESSION", session[constants.ORDER_ARG])
 
     rules = models.get_ip_rules(rtype, rstate, get_sort_key, get_sort_order)
 

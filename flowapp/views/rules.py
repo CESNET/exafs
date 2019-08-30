@@ -64,8 +64,9 @@ def reactivate_rule(rule_type, rule_id):
         model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
         # set again the active state
         model.rstate_id = get_state_by_time(webpicker_to_datetime(form.expires.data))
+        model.comment = form.comment.data
         db.session.commit()
-        flash(u'Rule Expiration date changed', 'alert-success')
+        flash(u'Rule successfully updated', 'alert-success')
 
         route_model = ROUTE_MODELS[rule_type]
 
@@ -92,7 +93,7 @@ def reactivate_rule(rule_type, rule_id):
 
     form.expires.data = datetime_to_webpicker(model.expires)
     for field in form:
-        if field.name not in ['expires', 'csrf_token']:
+        if field.name not in ['expires', 'csrf_token', 'comment']:
             field.render_kw = {'disabled': 'disabled'}
 
     action_url = url_for('rules.reactivate_rule', rule_type=rule_type, rule_id=rule_id)
