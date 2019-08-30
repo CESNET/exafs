@@ -28,12 +28,9 @@ DEFAULT_SORT = {1: 'ivp4', 4: 'source', 6: 'source'}
 
 
 @rules.route('/reactivate/<int:rule_type>/<int:rule_id>', methods=['GET', 'POST'])
-@rules.route('/reactivate/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>', methods=['GET', 'POST'])
-@rules.route('/reactivate/<int:rule_type>/<int:rule_id>/<path:rstate>/<path:sort_key>/<path:filter_text>',
-             methods=['GET', 'POST'])
 @auth_required
 @user_or_admin_required
-def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_key=None):
+def reactivate_rule(rule_type, rule_id):
     """
     Set new time for the rule of given type identified by id
     :param rule_type: string - type of rule
@@ -45,9 +42,6 @@ def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_ke
     model = db.session.query(model_name).get(rule_id)
     form = form_name(request.form, obj=model)
     form.net_ranges = get_user_nets(session['user_id'])
-
-    if not sort_key:
-        sort_key = DEFAULT_SORT[rule_type]
 
     if rule_type > 2:
         form.action.choices = [(g.id, g.name)
@@ -88,7 +82,11 @@ def reactivate_rule(rule_type, rule_id, rstate='active', filter_text='', sort_ke
             # log changes
             log_withdraw(session['user_id'], route, rule_type, model.id)
 
-        return redirect(url_for('index', rstate=rstate, filter_text=filter_text, sort_key=sort_key))
+        return redirect(url_for('dashboard.index',
+                                rtype=session[constants.TYPE_ARG],
+                                rstate=session[constants.RULE_ARG],
+                                sort=session[constants.SORT_ARG],
+                                order=session[constants.ORDER_ARG]))
     else:
         flash_errors(form)
 
@@ -138,6 +136,7 @@ def delete_rule(rule_type, rule_id):
         flash(u'You can not delete this rule', 'alert-warning')
 
     return redirect(url_for('dashboard.index',
+                            rtype=session[constants.TYPE_ARG],
                             rstate=session[constants.RULE_ARG],
                             sort=session[constants.SORT_ARG],
                             order=session[constants.ORDER_ARG]))

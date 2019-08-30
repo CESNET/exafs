@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import babel
 
-from flask import Flask, redirect, render_template, session, make_response, url_for, request
+from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -10,7 +10,7 @@ from utils import datetime_to_webpicker, active_css_rstate
 
 import flowapp.validators
 
-__version__ = '0.2.8'
+__version__ = '0.3.0'
 
 app = Flask(__name__)
 
