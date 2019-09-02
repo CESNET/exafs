@@ -1,13 +1,12 @@
 import re
 
+from flowapp.constants import MAX_PORT
+
 NUMBER = re.compile(r'^\d+$', re.IGNORECASE)
 RANGE = re.compile(r'^(\d+)-(\d+)$', re.IGNORECASE)
 NOTRAN = re.compile(r'^>=(\d+)&<=(\d+)$', re.IGNORECASE)
 GREATER = re.compile(r'>[=]?(\d+)$', re.IGNORECASE)
 LOWER = re.compile(r'<[=]?(\d+)$', re.IGNORECASE)
-
-MAX_PORT = 65535
-MAX_PACKET = 9216
 
 
 def translate_sequence(sequence, max_val=MAX_PORT):

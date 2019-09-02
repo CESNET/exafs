@@ -1,10 +1,6 @@
+from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MAX_PACKET, IPV4_PROTOCOL, \
+    IPV6_NEXT_HEADER
 from flowspec import translate_sequence as trps
-from flowspec import MAX_PORT, MAX_PACKET
-
-ANNOUNCE = 1
-WITHDRAW = 2
-IPV4_DEFMASK = 32
-IPV6_DEFMASK = 128
 
 
 def create_ipv4(rule, message_type=ANNOUNCE):
@@ -13,7 +9,7 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     @param rule models.Flowspec4
     @return string message
     """
-    protocol = 'protocol ={};'.format(rule.protocol) if rule.protocol else ''
+    protocol = 'protocol ={};'.format(IPV4_PROTOCOL[rule.protocol]) if rule.protocol else ''
     flagstring = rule.flags.replace(";", " ")
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
@@ -35,7 +31,7 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     :param message_type:
     """
     protocol = 'next-header ={};'.format(
-        rule.next_header) if rule.next_header else ''
+        IPV6_NEXT_HEADER[rule.next_header]) if rule.next_header else ''
     flagstring = rule.flags.replace(";", " ")
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.next_header == 'tcp' else ''
@@ -149,7 +145,7 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     return message_body
 
 
-def sanitize_mask(rule_mask, default_mask = IPV4_DEFMASK):
+def sanitize_mask(rule_mask, default_mask =IPV4_DEFMASK):
     """
     Sanitize mask / prefix of rule
     :param default_mask: default mask to return if mask is not in the rule

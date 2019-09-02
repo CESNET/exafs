@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, redirect, flash, request, url_for,
 import requests
 from operator import ge, lt
 
+import flowapp.constants
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RULE_TYPES
 from flowapp.forms import RTBHForm, IPv4Form, IPv6Form
 from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, get_user_actions, \
@@ -72,13 +73,13 @@ def reactivate_rule(rule_type, rule_id):
 
         if model.rstate_id == 1:
             # announce route
-            route = route_model(model, messages.ANNOUNCE)
+            route = route_model(model, flowapp.constants.ANNOUNCE)
             announce_route(route)
             # log changes
             log_route(session['user_id'], model, rule_type)
         else:
             # withdraw route
-            route = route_model(model, messages.WITHDRAW)
+            route = route_model(model, flowapp.constants.WITHDRAW)
             announce_route(route)
             # log changes
             log_withdraw(session['user_id'], route, rule_type, model.id)
@@ -123,7 +124,7 @@ def delete_rule(rule_type, rule_id):
 
     if model.id in rules:
         # withdraw route
-        route = route_model(model, messages.WITHDRAW)
+        route = route_model(model, flowapp.constants.WITHDRAW)
         announce_route(route)
 
         log_withdraw(session['user_id'], route, rule_type, model.id)
@@ -187,7 +188,7 @@ def ipv4_rule():
 
         # announce route if model is in active state
         if model.rstate_id == 1:
-            route = messages.create_ipv4(model, messages.ANNOUNCE)
+            route = messages.create_ipv4(model, flowapp.constants.ANNOUNCE)
             announce_route(route)
 
         # log changes
@@ -251,7 +252,7 @@ def ipv6_rule():
 
         # announce routes
         if model.rstate_id == 1:
-            route = messages.create_ipv6(model, messages.ANNOUNCE)
+            route = messages.create_ipv6(model, flowapp.constants.ANNOUNCE)
             announce_route(route)
 
         # log changes
@@ -320,7 +321,7 @@ def rtbh_rule():
         flash(flash_message, 'alert-success')
         # announce routes
         if model.rstate_id == 1:
-            route = messages.create_rtbh(model, messages.ANNOUNCE)
+            route = messages.create_rtbh(model, flowapp.constants.ANNOUNCE)
             announce_route(route)
         # log changes
         log_route(session['user_id'], model, RULE_TYPES['RTBH'])
@@ -362,18 +363,18 @@ def export():
 @rules.route('/announce_all', methods=['GET'])
 @localhost_only
 def announce_all():
-    announce_all_routes(messages.ANNOUNCE)
+    announce_all_routes(flowapp.constants.ANNOUNCE)
     return ' '
 
 
 @rules.route('/withdraw_expired', methods=['GET'])
 @localhost_only
 def withdraw_expired():
-    announce_all_routes(messages.WITHDRAW)
+    announce_all_routes(flowapp.constants.WITHDRAW)
     return ' '
 
 
-def announce_all_routes(action=messages.ANNOUNCE):
+def announce_all_routes(action=flowapp.constants.ANNOUNCE):
     """
     get routes from db and send it to ExaBGB api
 
@@ -381,7 +382,7 @@ def announce_all_routes(action=messages.ANNOUNCE):
     :param action: action with routes - announce valid routes or withdraw expired routes
     """
     today = datetime.now()
-    comp_func = ge if action == messages.ANNOUNCE else lt
+    comp_func = ge if action == flowapp.constants.ANNOUNCE else lt
 
     rules4 = db.session.query(Flowspec4).filter(Flowspec4.rstate_id == 1).filter(
         comp_func(Flowspec4.expires, today)).order_by(
@@ -404,7 +405,7 @@ def announce_all_routes(action=messages.ANNOUNCE):
     for message in output:
         requests.post('http://localhost:5000/', data={'command': message})
 
-    if action == messages.WITHDRAW:
+    if action == flowapp.constants.WITHDRAW:
         map(set_withdraw_state, rules4)
         map(set_withdraw_state, rules6)
         map(set_withdraw_state, rules_rtbh)

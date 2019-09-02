@@ -1,3 +1,7 @@
+"""
+This module contains constant values used in application
+"""
+
 RULES_COLUMNS_V4 = (
     ('source', 'Source address'),
     ('source_port', 'Source port'),
@@ -44,3 +48,22 @@ RTBH_COLUMNS = (
     ('expires', 'Expires'),
     ('user_id', 'User')
 )
+ANNOUNCE = 1
+WITHDRAW = 2
+IPV4_DEFMASK = 32
+IPV6_DEFMASK = 128
+MAX_PORT = 65535
+MAX_PACKET = 9216
+
+IPV6_NEXT_HEADER = {
+    'tcp': 'tcp',
+    'udp': 'udp',
+    'icmp': '58'
+}
+
+IPV4_PROTOCOL = {
+    'tcp': 'tcp',
+    'udp': 'udp',
+    'icmp': 'icmp'
+}
+

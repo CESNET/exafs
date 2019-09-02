@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify
 from functools import wraps
 from datetime import datetime, timedelta
 
+import flowapp.constants
 from flowapp import app, db, validators, flowspec, csrf, messages
 from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, Community, get_user_nets, get_user_actions, \
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, \
@@ -195,7 +196,7 @@ def create_ipv4(current_user):
 
     # announce route if model is in active state
     if model.rstate_id == 1:
-        route = messages.create_ipv4(model, messages.ANNOUNCE)
+        route = messages.create_ipv4(model, flowapp.constants.ANNOUNCE)
         announce_route(route)
 
     # log changes
@@ -254,7 +255,7 @@ def create_ipv6(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_ipv6(model, messages.ANNOUNCE)
+        route = messages.create_ipv6(model, flowapp.constants.ANNOUNCE)
         announce_route(route)
 
     # log changes
@@ -312,7 +313,7 @@ def create_rtbh(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_rtbh(model, messages.ANNOUNCE)
+        route = messages.create_rtbh(model, flowapp.constants.ANNOUNCE)
         announce_route(route)
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['RTBH'])
@@ -423,7 +424,7 @@ def delete_rule(current_user, rule_id, model_name, route_model):
     if model:
         if check_access_rights(current_user, model.user_id):
             # withdraw route
-            route = route_model(model, messages.WITHDRAW)
+            route = route_model(model, flowapp.constants.WITHDRAW)
             announce_route(route)
 
             # log_withdraw(route, rule_type, model.id)

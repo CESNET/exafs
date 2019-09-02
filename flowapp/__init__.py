@@ -10,7 +10,7 @@ from utils import datetime_to_webpicker, active_css_rstate
 
 import flowapp.validators
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 app = Flask(__name__)
 
