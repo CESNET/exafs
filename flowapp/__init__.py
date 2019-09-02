@@ -144,9 +144,8 @@ def utility_processor():
 
 
 @app.template_filter('strftime')
-def format_datetime(value, format='medium'):
-    if format == 'full':
-        format = "EEEE, d. MMMM y 'at' HH:mm"
-    elif format == 'medium':
-        format = "EE dd.MM.y HH:mm"
+def format_datetime(value):
+
+    format = "y/MM/dd HH:mm"
+
     return babel.dates.format_datetime(value, format)

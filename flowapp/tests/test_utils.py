@@ -13,7 +13,6 @@ def test_get_rule_state_by_time():
     assert flowapp.utils.get_state_by_time(past) == 2
 
 
-
 def test_round_to_ten():
     """
     Test if the time is rounded correctly

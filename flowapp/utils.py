@@ -15,16 +15,16 @@ def quote_to_ent(comment):
 
 def webpicker_to_datetime(webtime):
     """
-    convert 'MM/DD/YYYY HH:mm' to datetime
+    convert 'YYYY/MM/DD HH:mm' to datetime
     """
-    return datetime.strptime(webtime, '%m/%d/%Y %H:%M')
+    return datetime.strptime(webtime, '%Y/%m/%d %H:%M')
 
 
 def datetime_to_webpicker(python_time):
     """
-    convert 'MM/DD/YYYY HH:mm' to datetime
+    convert datetime to 'YYYY/MM/DD HH:mm' string
     """
-    return datetime.strftime(python_time, '%m/%d/%Y %H:%M')
+    return datetime.strftime(python_time, '%Y/%m/%d %H:%M')
 
 
 def get_state_by_time(python_time):
