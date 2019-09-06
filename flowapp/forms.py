@@ -2,8 +2,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
 
-from validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
-    whole_world_range, network_in_range, IPAddress, DateNotExpired
+from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
+    whole_world_range, network_in_range, IPAddress
 
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
              ('ECE', 'ECE'), ('CWR', 'CWR'), ('NS', 'NS')]

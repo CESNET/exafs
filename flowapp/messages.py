@@ -1,6 +1,6 @@
 from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MAX_PACKET, IPV4_PROTOCOL, \
     IPV6_NEXT_HEADER
-from flowspec import translate_sequence as trps
+from flowapp.flowspec import translate_sequence as trps
 
 
 def create_ipv4(rule, message_type=ANNOUNCE):
@@ -152,6 +152,9 @@ def sanitize_mask(rule_mask, default_mask =IPV4_DEFMASK):
     :param rule: flowspec rule
     :return: int mask
     """
+    if not rule_mask:
+        return default_mask
+    
     if 0 <= rule_mask <= default_mask:
         return rule_mask
     else:

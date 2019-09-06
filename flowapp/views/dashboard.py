@@ -1,9 +1,9 @@
 from datetime import datetime
 
 import jwt
-from flask import Blueprint, render_template, redirect, flash, request, url_for, session, make_response
-
-from flowapp import auth_required, constants, models, app, active_css_rstate, validators, db, flowspec
+from flask import Blueprint, render_template, request, session, make_response
+from flowapp import auth_required, constants, models, app, validators, flowspec
+from flowapp.utils import active_css_rstate
 
 dashboard = Blueprint('dashboard', __name__, template_folder='templates')
 

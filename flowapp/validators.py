@@ -2,9 +2,7 @@ import ipaddress
 from datetime import datetime
 from wtforms.validators import ValidationError
 
-import flowapp.constants
-import flowapp.flowspec as flowspec
-import utils
+from flowapp import constants, flowspec, utils
 
 
 def filter_rules_in_network(net_ranges, rules):
@@ -149,7 +147,7 @@ class PortString(object):
     def __call__(self, form, field):
         try:
             for port_string in field.data.split(";"):
-                flowspec.to_exabgp_string(port_string, flowapp.constants.MAX_PORT)
+                flowspec.to_exabgp_string(port_string, constants.MAX_PORT)
         except ValueError as e:
             raise ValidationError(self.message + str(e.args[0]))
 
@@ -167,7 +165,7 @@ class PacketString(object):
     def __call__(self, form, field):
         try:
             for port_string in field.data.split(";"):
-                flowspec.to_exabgp_string(port_string, flowapp.constants.MAX_PACKET)
+                flowspec.to_exabgp_string(port_string, constants.MAX_PACKET)
         except ValueError as e:
             raise ValidationError(self.message + str(e.args[0]))
 

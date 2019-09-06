@@ -1,7 +1,6 @@
 from sqlalchemy import event
 from datetime import datetime
-from flowapp import db, constants
-from flowapp import utils as utils
+from flowapp import db, utils
 
 # models and tables
 

@@ -5,16 +5,20 @@
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
             <td>
                 {{ rule.source }}
-                {{ '/' if rule.source_mask >= 0 else '' }}
-                {{ rule.source_mask if rule.source_mask >= 0 else '' }}
+                {% if rule.source_mask %}
+                    {{ '/' if rule.source_mask >= 0 else '' }}
+                    {{ rule.source_mask if rule.source_mask >= 0 else '' }}
+                {% endif %}
             </td>
             <td>
                 {{ rule.source_port }}
             </td>
             <td>
                 {{ rule.dest }}
-                {{ '/' if rule.dest_mask >= 0 else '' }}
-                {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
+                {% if rule.dest_mask %}
+                    {{ '/' if rule.dest_mask >= 0 else '' }}
+                    {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
+                {% endif %}
             </td>
             <td>
                 {{ rule.dest_port }}

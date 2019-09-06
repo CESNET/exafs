@@ -6,10 +6,6 @@ from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
-from utils import datetime_to_webpicker, active_css_rstate
-
-import flowapp.validators
-
 __version__ = '0.3.1'
 
 app = Flask(__name__)
@@ -31,11 +27,7 @@ app.config.setdefault('SSO_LOGIN_URL', '/login')
 # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
 ext = SSO(app=app)
 
-import messages
-import forms
-import models
-import flowspec
-import constants
+from flowapp import models, constants, validators
 from .views.admin import admin
 from .views.rules import rules
 from .views.apiv1 import api
@@ -136,7 +128,7 @@ def internal_error(exception):
 def utility_processor():
     def editable_rule(rule):
         if rule:
-            flowapp.validators.editable_range(rule, models.get_user_nets(session['user_id']))
+            validators.editable_range(rule, models.get_user_nets(session['user_id']))
             return True
         return False
 
