@@ -2,7 +2,6 @@ import pytest
 import flowapp.validators
 
 
-
 @pytest.mark.parametrize("address, mask, expected", [
     ("147.230.23.25", "24", False),
     ("147.230.23.0", "24", True),
@@ -46,9 +45,9 @@ def test_ip6address_passes(field, address):
 
 
 @pytest.mark.parametrize("expired", [
-    u"10/25/2018 14:46",
-    u"12/20/2018 9:46",
-    u"05/22/2019 12:33"
+    u"2018/10/25 14:46",
+    u"2018/12/20 9:46",
+    u"2019/05/22 12:33"
 ])
 def test_expired_date_raises(field, expired):
     adr = flowapp.validators.DateNotExpired()

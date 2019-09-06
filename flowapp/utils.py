@@ -13,11 +13,16 @@ def quote_to_ent(comment):
     return comment.replace('"', '&quot;')
 
 
-def webpicker_to_datetime(webtime):
+def webpicker_to_datetime(webtime, format='yearfirst'):
     """
     convert 'YYYY/MM/DD HH:mm' to datetime
     """
-    return datetime.strptime(webtime, '%Y/%m/%d %H:%M')
+    if format=='yearfirst':
+        formating_string = '%Y/%m/%d %H:%M'
+    else:
+        formating_string = '%m/%d/%Y %H:%M'
+
+    return datetime.strptime(webtime, formating_string)
 
 
 def datetime_to_webpicker(python_time):

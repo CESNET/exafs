@@ -540,9 +540,9 @@ def insert_initial_actions(*args, **kwargs):
 
 @event.listens_for(Community.__table__, 'after_create')
 def insert_initial_communities(*args, **kwargs):
-    db.session.add(Community(name='2852:666', command='2852:666', description=''))
-    db.session.add(Community(name='40965:666', command='40965:666', description=''))
-    db.session.add(Community(name='xxxxx:666', command='xxxxx:666', description=''))
+    db.session.add(Community(name='2852:666', comm='2852:666', larcomm='', extcomm='', description=''))
+    db.session.add(Community(name='40965:666', comm='40965:666', larcomm='', extcomm='', description=''))
+    db.session.add(Community(name='xxxxx:666', comm='xxxxx:666', larcomm='', extcomm='', description=''))
     db.session.commit()
 
 

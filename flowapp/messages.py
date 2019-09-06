@@ -154,7 +154,7 @@ def sanitize_mask(rule_mask, default_mask =IPV4_DEFMASK):
     """
     if not rule_mask:
         return default_mask
-    
+
     if 0 <= rule_mask <= default_mask:
         return rule_mask
     else:
