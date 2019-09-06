@@ -24,7 +24,18 @@
                  <div class="col-md-6">
                      <ul class="nav nav-pills pull-right">
                          <li>
-
+                             <form class="navbar-form pull-right" role="search" action="#">
+                                <div class="input-group">
+                                    <input
+                                        class="form-control"
+                                        type="text"
+                                        placeholder="Search..."
+                                    />
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default"><i class="glyphicon glyphicon-search"></i></button>
+                                    </div>
+                                </div>
+                            </form>
                          </li>
                          <li>
                              <a class="nav-link {{ css_classes['active'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='active') }}" >Active</a>
