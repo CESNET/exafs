@@ -57,7 +57,7 @@ def network_in_range(address, mask, net_ranges):
     network = u"{}/{}".format(address, mask)
     for adr_range in net_ranges:
         try:
-            result = result or ipaddress.ip_network(network).subnet_of(ipaddress.ip_network(adr_range))
+            result = result or subnet_of(ipaddress.ip_network(network), ipaddress.ip_network(adr_range))
         except TypeError:  # V4 can't be a subnet of V6 and vice versa
             pass
         except ValueError:
@@ -77,7 +77,7 @@ def range_in_network(address, mask, net_ranges):
     network = u"{}/{}".format(address, mask)
     for adr_range in net_ranges:
         try:
-            result = result or ipaddress.ip_network(network).supernet_of(ipaddress.ip_network(adr_range))
+            result = result or supernet_of(ipaddress.ip_network(network), ipaddress.ip_network(adr_range))
         except ValueError:
             return False
 
@@ -225,8 +225,6 @@ class IPAddress(object):
             raise ValidationError(self.message + str(field.data))
 
 
-
-
 class IPv6Address(object):
     """
     Validator for IPv6 address - the original from WTForms is not working for ipv6 correctly
@@ -289,3 +287,25 @@ def editable_range(rule, net_ranges):
                 result = True
 
     return result
+
+
+def _is_subnet_of(a, b):
+    try:
+        # Always false if one is v4 and the other is v6.
+        if a._version != b._version:
+            raise TypeError("%s and %s are not of the same version"(a, b))
+        return (b.network_address <= a.network_address and
+                b.broadcast_address >= a.broadcast_address)
+    except AttributeError:
+        raise TypeError("Unable to test subnet containment "
+                        "between %s and %s" % (a, b))
+
+
+def subnet_of(net_a, net_b):
+    """Return True if this network is a subnet of other."""
+    return _is_subnet_of(net_a, net_b)
+
+
+def supernet_of(net_a, net_b):
+    """Return True if this network is a supernet of other."""
+    return _is_subnet_of(net_b, net_a)
