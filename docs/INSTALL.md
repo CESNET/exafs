@@ -1,12 +1,15 @@
 # ExaFS tool
 ## Production install and config notes
 
-Example of ExaFS instalation and deployment in production enviroment. 
+Example of ExaFS installation od RHEL/Centos 7 and deployment in production enviroment. 
 Includes: shibboleth auth, mariadb, uwsgi, supervisord
+
+The default Python for RHEL7 is Python 2, however the ExaFS is running on Python36 from version 0.4.0. 
+Virtualenv with Python36 is used by uWSGI server.
 
 ## Prerequisites
 
-ExaFS is using shibboleth auth and therefore we suggest to use Apache web server. 
+ExaFS is using Shibboleth auth and therefore we suggest to use Apache web server. 
 Install the Apache httpd as usual and then continue with this guide.  
 
 
@@ -40,8 +43,8 @@ If you are using Debian or Ubuntu, you must of course use apt and sudo instead y
 
 Be sure to enable mod_proxy_uwsgi module in your Apache config. 
 ```
-yum install python-devel gcc
-yum install mod_proxy_uwsgi uwsgi-plugin-python2 
+yum install python-devel gcc python3 python3-devel
+yum install mod_proxy_uwsgi uwsgi-plugin-python2 uwsgi-plugin-python36  
 yum install mariadb mariadb-server mariadb-devel
 ```
 Start db and secure instalation
@@ -79,12 +82,15 @@ As deploy user pull the source codes, create virtualenv and install required pyt
 ```
 clone source from repository: git clone git@github.com:CESNET/exafs.git www
 cd www
-virtualenv venv
+virtualenv --python=python3.6 venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 #### make selinux happy - As root
+
+Allow httpd connection in SeLinux
+
 ```
 setsebool -P httpd_can_network_connect 1
 ``` 
