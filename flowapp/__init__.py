@@ -56,6 +56,8 @@ def login(user_info):
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
         try:
             session['user_uuid'] = user.uuid
+            session['user_email'] = user.uuid
+            session['user_name'] = user.name
             session['user_id'] = user.id
             session['user_roles'] = [role.name for role in user.role.all()]
             session['user_orgs'] = ", ".join(org.name for org in user.organization.all())
