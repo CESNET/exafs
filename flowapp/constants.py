@@ -34,6 +34,7 @@ ORDER_ARG = "order"
 RULE_ARG = 'rule_state'
 TYPE_ARG = 'rule_type'
 SEARCH_ARG = 'squery'
+ORDSRC_ARG = 'ordsrc'
 
 RULES_KEY = 'rules'
 

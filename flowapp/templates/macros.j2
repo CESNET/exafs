@@ -113,9 +113,9 @@
     {% for sort_key, col_name in rules_columns %}
     <th>
         {% if search_query %}
-            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, squery=search_query) }}" >
+            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link', squery=search_query) }}" >
         {% else %}
-            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order) }}" >
+            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link') }}" >
         {% endif %}
         {{ col_name }}
         </a>

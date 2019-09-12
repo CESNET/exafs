@@ -4,7 +4,7 @@ import jwt
 from flask import Blueprint, render_template, request, session, make_response
 from flowapp import auth_required, constants, models, app, validators, flowspec
 from flowapp.constants import RULE_TYPE_DISPATCH, SORT_ARG, ORDER_ARG, DEFAULT_ORDER, DEFAULT_SORT, RULE_TYPES, \
-    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY
+    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG
 from flowapp.utils import active_css_rstate
 
 dashboard = Blueprint('dashboard', __name__, template_folder='templates')
@@ -18,15 +18,17 @@ def index(rtype='ipv4', rstate='active'):
         SORT_ARG) else DEFAULT_SORT
     get_sort_order = request.args.get(ORDER_ARG) if request.args.get(
         ORDER_ARG) else DEFAULT_ORDER
+    get_sort_order_source = request.args.get(ORDSRC_ARG) if request.args.get(ORDSRC_ARG) else ""
 
     # store current state for redirects
     session[ORDER_ARG] = get_sort_order
     session[SORT_ARG] = get_sort_key
     session[RULE_ARG] = rstate
     session[TYPE_ARG] = rtype
+    session[SEARCH_ARG] = get_search_query
     # switch order when click on the same column twice
     try:
-        if session[SORT_ARG] == get_sort_key:
+        if session[SORT_ARG] == get_sort_key and get_sort_order_source == 'link':
             get_sort_order = 'desc' if get_sort_order == 'asc' else 'asc'
     except KeyError:
         get_sort_order = DEFAULT_ORDER
