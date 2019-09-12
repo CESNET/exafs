@@ -33,6 +33,7 @@ SORT_ARG = "sort"
 ORDER_ARG = "order"
 RULE_ARG = 'rule_state'
 TYPE_ARG = 'rule_type'
+SEARCH_ARG = 'squery'
 
 RULES_KEY = 'rules'
 
@@ -67,3 +68,19 @@ IPV4_PROTOCOL = {
     'icmp': 'icmp'
 }
 
+
+
+RULE_TYPE_DISPATCH = {
+    'ipv4': {
+        'title': 'IPv4 rules',
+        'columns': RULES_COLUMNS_V4
+    },
+    'ipv6': {
+        'title': 'IPv6 rules',
+        'columns': RULES_COLUMNS_V6
+    },
+    'rtbh': {
+        'title': 'RTBH rules',
+        'columns': RTBH_COLUMNS
+    }
+}

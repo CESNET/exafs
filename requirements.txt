@@ -9,3 +9,4 @@ PyMySQL>=0.9.3
 pytest>=3.4.0
 requests>=2.20.0
 babel>=2.7.0
+mysqlclient>=1.4.4

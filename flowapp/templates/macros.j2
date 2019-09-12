@@ -107,12 +107,16 @@
 {% endmacro %}
 
 
-{% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) %}
+{% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query='') %}
 <thead>
     <tr class="table-sorter">
     {% for sort_key, col_name in rules_columns %}
     <th>
-        <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order) }}" >
+        {% if search_query %}
+            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, squery=search_query) }}" >
+        {% else %}
+            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order) }}" >
+        {% endif %}
         {{ col_name }}
         </a>
         <span class="sort-direction {{ sort_order }}"></span>

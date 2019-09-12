@@ -24,12 +24,27 @@
                  <div class="col-md-6">
                      <ul class="nav nav-pills pull-right">
                          <li>
-                             <form class="navbar-form pull-right" role="search" action="#">
+                             <form class="navbar-form pull-right" role="search" action="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate) }}">
                                 <div class="input-group">
                                     <input
                                         class="form-control"
                                         type="text"
-                                        placeholder="Search..."
+                                        name="squery"
+                                        {% if search_query %}
+                                            value="{{search_query}}"
+                                        {% else %}
+                                            placeholder="Search..."
+                                        {% endif %}
+                                    />
+                                    <input
+                                        type="hidden"
+                                        name="sort"
+                                        value={{ sort_key }}
+                                    />
+                                    <input
+                                        type="hidden"
+                                        name="order"
+                                        value={{ sort_order }}
                                     />
                                     <div class="input-group-btn">
                                         <button class="btn btn-default"><i class="glyphicon glyphicon-search"></i></button>
