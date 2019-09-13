@@ -405,12 +405,12 @@ def announce_all_routes(action=flowapp.constants.ANNOUNCE):
     output.extend(output_rtbh)
 
     for message in output:
-        requests.post('http://localhost:5000/', data={'command': message})
+        requests.post(app.config.get('EXA_API_URL'), data={'command': message})
 
     if action == flowapp.constants.WITHDRAW:
-        map(set_withdraw_state, rules4)
-        map(set_withdraw_state, rules6)
-        map(set_withdraw_state, rules_rtbh)
+        _a = [set_withdraw_state(rule) for rule in rules4]
+        _a = [set_withdraw_state(rule) for rule in rules6]
+        _a = [set_withdraw_state(rule) for rule in rules_rtbh]
 
 
 def set_withdraw_state(rule):

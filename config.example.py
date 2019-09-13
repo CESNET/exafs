@@ -12,6 +12,8 @@ class Config(object):
     LOGOUT_URL = 'https://flowspec.example.com/Shibboleth.sso/Logout?return=https://shibbo.example.com/idp/profile/Logout'
     # SQL Alchemy config
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # URL of the ExaAPI
+    EXA_API_URL = 'http://localhost:5000/'
 
     # Secret keys for Flask Session and JWT (API and CSRF protection)
     JWT_SECRET = 'GenerateSomeLongRandomSequence'
