@@ -88,6 +88,7 @@ def reactivate_rule(rule_type, rule_id):
                                 rtype=session[constants.TYPE_ARG],
                                 rstate=session[constants.RULE_ARG],
                                 sort=session[constants.SORT_ARG],
+                                squery=session[constants.SEARCH_ARG],
                                 order=session[constants.ORDER_ARG]))
     else:
         flash_errors(form)
@@ -141,6 +142,7 @@ def delete_rule(rule_type, rule_id):
                             rtype=session[constants.TYPE_ARG],
                             rstate=session[constants.RULE_ARG],
                             sort=session[constants.SORT_ARG],
+                            squery=session[constants.SEARCH_ARG],
                             order=session[constants.ORDER_ARG]))
 
 
