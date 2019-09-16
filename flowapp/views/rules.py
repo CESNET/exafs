@@ -1,4 +1,6 @@
 # flowapp/views/admin.py
+from typing import Set, Any
+
 import jwt
 
 from datetime import datetime, timedelta
@@ -22,6 +24,7 @@ from flowapp import db, app, messages, constants
 rules = Blueprint('rules', __name__, template_folder='templates')
 
 DATA_MODELS = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
+DATA_MODELS_NAMED = {'rtbh': RTBH, 'ipv4': Flowspec4, 'ipv6': Flowspec6}
 DATA_FORMS = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
 DATA_TEMPLATES = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
 DATA_TABLES = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
@@ -101,6 +104,40 @@ def reactivate_rule(rule_type, rule_id):
     action_url = url_for('rules.reactivate_rule', rule_type=rule_type, rule_id=rule_id)
 
     return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True)
+
+
+@rules.route('/group-delete', methods=['POST'])
+@auth_required
+@user_or_admin_required
+def group_delete():
+    """
+    Delete rules
+    """
+    rules_dict = request.cookies.get(constants.RULES_KEY)
+    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    rule_type = session[constants.TYPE_ARG]
+    rules = [str(rule) for rule in rules_dict[str(constants.RULE_TYPES[rule_type])]]
+    model_name = DATA_MODELS_NAMED[rule_type]
+    to_delete = request.form.getlist('delete-id')
+
+    if set(to_delete).issubset(set(rules)):
+
+        db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
+        db.session.commit()
+
+        flash(u'Rules {} deleted'.format(to_delete), 'alert-success')
+    else:
+        print(rules)
+        print(to_delete)
+        print(set(to_delete).issubset(set(rules)))
+        flash(u'You can not delete rules {}'.format(to_delete), 'alert-warning')
+
+    return redirect(url_for('dashboard.index',
+                            rtype=session[constants.TYPE_ARG],
+                            rstate=session[constants.RULE_ARG],
+                            sort=session[constants.SORT_ARG],
+                            squery=session[constants.SEARCH_ARG],
+                            order=session[constants.ORDER_ARG]))
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])

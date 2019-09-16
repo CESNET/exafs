@@ -4,7 +4,7 @@ import jwt
 from flask import Blueprint, render_template, request, session, make_response
 from flowapp import auth_required, constants, models, app, validators, flowspec
 from flowapp.constants import RULE_TYPE_DISPATCH, SORT_ARG, ORDER_ARG, DEFAULT_ORDER, DEFAULT_SORT, RULE_TYPES, \
-    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG
+    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG, COLSPANS
 from flowapp.utils import active_css_rstate
 
 dashboard = Blueprint('dashboard', __name__, template_folder='templates')
@@ -65,6 +65,7 @@ def create_admin_responose(rtype, rstate, rules, sort_key, sort_order, search_qu
 
     res = make_response(render_template('pages/dashboard_admin.j2',
                                         rules=rules,
+                                        button_colspan=COLSPANS[rtype],
                                         table_title=RULE_TYPE_DISPATCH[rtype]['title'],
                                         rules_columns=RULE_TYPE_DISPATCH[rtype]['columns'],
                                         css_classes=active_css_rstate(rtype, rstate),
@@ -102,6 +103,7 @@ def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_quer
 
     res = make_response(render_template('pages/dashboard_user.j2',
                                         table_title=RULE_TYPE_DISPATCH[rtype]['title'],
+                                        button_colspan=COLSPANS[rtype],
                                         rules_columns=RULE_TYPE_DISPATCH[rtype]['columns'],
                                         rules_editable=rules_editable,
                                         rules_visible=rules_visible,

@@ -7,6 +7,8 @@
     {% include 'pages/submenu_dashboard.j2' %}
 
     <div class="row">
+        <form action="{{ url_for('rules.group_delete') }}" method="post">
+         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
             {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query) }}
             {% if rtype_int == 1 %}
@@ -14,7 +16,20 @@
             {% else %}
                 {{ build_ip_tbody(rules, today, rtype_int) }}
             {% endif %}
+            <tr>
+            <td colspan="{{ button_colspan }}">
+            </td>
+            <td>
+                <input type="submit" value="delete selected" />
+            </td>
+            </tr>
         </table>
+        </form>
     </div>
+    <script type="text/javascript">
+         $("#check-all").click(function(){
+            $('input:checkbox').not(this).prop('checked', this.checked);
+        });
+    </script>
 
 {% endblock %}

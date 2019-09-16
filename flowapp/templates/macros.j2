@@ -1,5 +1,5 @@
 
-{% macro build_ip_tbody(rules, today, rtype_int, editable=True) %}
+{% macro build_ip_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
 <tbody>
     {% for rule in rules %}
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
@@ -57,6 +57,13 @@
                 {% endif %}
             {% endif %}
             </td>
+
+            {% if editable and group_op %}
+                <td>
+                    <input type="checkbox" name="delete-id" value="{{rule.id}}" />
+                </td>
+            {% endif %}
+
         </tr>
 
 
@@ -65,7 +72,7 @@
 {% endmacro %}
 
 
-{% macro build_rtbh_tbody(rules, today, rtype_int, editable=True) %}
+{% macro build_rtbh_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
     <tbody>
 {% for rule in rules %}
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>
@@ -101,13 +108,19 @@
            </button>
          {% endif %}
     </td>
+     {% if editable and group_op %}
+            <td>
+                <input type="checkbox" name="delete-id" value="{{rule.id}}" />
+            </td>
+    {% endif %}
+
     </tr>
 {% endfor %}
 </tbody>
 {% endmacro %}
 
 
-{% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query='') %}
+{% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query='', group_op=True) %}
 <thead>
     <tr class="table-sorter">
     {% for sort_key, col_name in rules_columns %}
@@ -123,6 +136,11 @@
     </th>
     {% endfor %}
     <th>Edit</th>
+    {% if group_op %}
+        <th>
+            <input id="check-all" type="checkbox">
+        </th>
+    {% endif %}
     </tr>
 </thead>
 {% endmacro %}

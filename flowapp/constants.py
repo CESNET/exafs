@@ -85,3 +85,9 @@ RULE_TYPE_DISPATCH = {
         'columns': RTBH_COLUMNS
     }
 }
+
+COLSPANS = {
+    'rtbh': 5,
+    'ipv4': 9,
+    'ipv6': 9
+}
