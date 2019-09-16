@@ -141,7 +141,7 @@ class PortString(object):
 
     def __init__(self, message=None):
         if not message:
-            message = u'Invalid port value: '
+            message = u'Invalid syntax: '
         self.message = message
 
     def __call__(self, form, field):

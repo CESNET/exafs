@@ -240,7 +240,7 @@ class IPForm(FlaskForm):
         validators=[Optional(), Length(max=255), PortString()]
     )
 
-    packet_len = StringField('Packet length', validators=[Optional(), Length(max=255)])
+    packet_len = StringField('Packet length', validators=[Optional(), Length(max=255), PortString()])
 
     action = SelectField(u'Action',
                          coerce=int,
