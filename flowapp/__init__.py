@@ -6,7 +6,7 @@ from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
-__version__ = '0.4.1    '
+__version__ = '0.4.2'
 
 app = Flask(__name__)
 
@@ -139,7 +139,6 @@ def utility_processor():
 
 @app.template_filter('strftime')
 def format_datetime(value):
-
     format = "y/MM/dd HH:mm"
 
     return babel.dates.format_datetime(value, format)

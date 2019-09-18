@@ -59,7 +59,7 @@
             </td>
 
             {% if editable and group_op %}
-                <td>
+                <td class="text-center">
                     <input type="checkbox" name="delete-id" value="{{rule.id}}" />
                 </td>
             {% endif %}
@@ -95,7 +95,7 @@
         {{ rule.user.name }}
     </td>
     <td>
-        <a class="btn btn-primary btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+        <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
             <span class="glyphicon glyphicon-time"></span>
 
         </a>
@@ -109,7 +109,7 @@
          {% endif %}
     </td>
      {% if editable and group_op %}
-            <td>
+            <td class="text-center">
                 <input type="checkbox" name="delete-id" value="{{rule.id}}" />
             </td>
     {% endif %}
@@ -137,7 +137,7 @@
     {% endfor %}
     <th>Edit</th>
     {% if group_op %}
-        <th>
+        <th class="text-center">
             <input id="check-all" type="checkbox">
         </th>
     {% endif %}
