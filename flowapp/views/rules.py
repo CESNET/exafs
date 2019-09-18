@@ -104,7 +104,7 @@ def reactivate_rule(rule_type, rule_id):
 
     action_url = url_for('rules.reactivate_rule', rule_type=rule_type, rule_id=rule_id)
 
-    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True)
+    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True, title="Update")
 
 
 @rules.route('/group-operation', methods=['POST'])
@@ -119,12 +119,10 @@ def group_operation():
         'group-delete': group_delete
     }
 
-    return dispatch[request.form['action']]()
-
     try:
         return dispatch[request.form['action']]()
     except KeyError:
-        flash(u'Bad group action!', 'alert-danger')
+        flash(u'Key Error in action dispatching!', 'alert-danger')
         return redirect(url_for('dashboard.index',
                                 rtype=session[constants.TYPE_ARG],
                                 rstate=session[constants.RULE_ARG],
@@ -208,7 +206,7 @@ def group_update():
 
     action_url = url_for('rules.group_update_save', rule_type=rule_type_int)
 
-    return render_template(DATA_TEMPLATES[rule_type_int], form=form, action_url=action_url, editing=True)
+    return render_template(DATA_TEMPLATES[rule_type_int], form=form, action_url=action_url, editing=True, title="Group Update")
 
 
 @rules.route('/group-save-update/<int:rule_type>', methods=['POST'])

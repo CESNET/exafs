@@ -19,17 +19,15 @@
             <tr>
             <td colspan="{{ button_colspan }}">
             </td>
-            <td>
-            <div class="input-group">
-                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete">
-                    <span class="glyphicon glyphicon-remove"></span> selected
+            <td  class="text-center">
+
+                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
+                    <span class="glyphicon glyphicon-remove"></span>
                 </button>
-            </div>
-            <div class="input-group">
-                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update">
-                    <span class="glyphicon glyphicon-time"></span> selected
+
+                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
+                    <span class="glyphicon glyphicon-time"></span>
                 </button>
-            </div>
             </td>
             </tr>
         </table>
