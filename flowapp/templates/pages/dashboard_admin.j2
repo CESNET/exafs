@@ -7,7 +7,7 @@
     {% include 'pages/submenu_dashboard.j2' %}
 
     <div class="row">
-        <form action="{{ url_for('rules.group_delete') }}" method="post">
+        <form action="{{ url_for('rules.group_operation') }}" method="post">
          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
             {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query) }}
@@ -20,7 +20,16 @@
             <td colspan="{{ button_colspan }}">
             </td>
             <td>
-                <input type="submit" value="delete selected" />
+            <div class="input-group">
+                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete">
+                    <span class="glyphicon glyphicon-remove"></span> selected
+                </button>
+            </div>
+            <div class="input-group">
+                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update">
+                    <span class="glyphicon glyphicon-time"></span> selected
+                </button>
+            </div>
             </td>
             </tr>
         </table>

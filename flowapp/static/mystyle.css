@@ -82,3 +82,7 @@ td.bottom_row {
 .table-sorter a:visited {
     color: #0a0a0a;
 }
+
+#group-delete {
+    margin-bottom: 2px;
+}

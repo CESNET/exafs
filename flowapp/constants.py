@@ -88,6 +88,6 @@ RULE_TYPE_DISPATCH = {
 
 COLSPANS = {
     'rtbh': 5,
-    'ipv4': 9,
-    'ipv6': 9
+    'ipv4': 10,
+    'ipv6': 10
 }
