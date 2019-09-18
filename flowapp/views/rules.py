@@ -241,7 +241,7 @@ def group_update_save(rule_type):
         model = db.session.query(model_name).get(rule_id)
         model.expires = expires
         model.rstate_id = rstate_id
-        model.comment = comment
+        model.comment = "{} {}".format(model.comment, comment)
         db.session.commit()
 
         if model.rstate_id == 1:
