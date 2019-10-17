@@ -107,6 +107,49 @@ def reactivate_rule(rule_type, rule_id):
     return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True, title="Update")
 
 
+@rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
+@auth_required
+@user_or_admin_required
+def delete_rule(rule_type, rule_id):
+    """
+    Delete rule with given id and type
+    :param sort_key:
+    :param filter_text:
+    :param rstate:
+    :param rule_type: string - type of rule to be deleted
+    :param rule_id: integer - rule id
+    """
+    rules_dict = request.cookies.get(constants.RULES_KEY)
+    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    rules = rules_dict[str(rule_type)]
+    model_name = DATA_MODELS[rule_type]
+    route_model = ROUTE_MODELS[rule_type]
+
+    model = db.session.query(model_name).get(rule_id)
+
+    if model.id in rules:
+        # withdraw route
+        route = route_model(model, flowapp.constants.WITHDRAW)
+        announce_route(route)
+
+        log_withdraw(session['user_id'], route, rule_type, model.id)
+
+        # delete from db
+        db.session.delete(model)
+        db.session.commit()
+        flash(u'Rule deleted', 'alert-success')
+
+    else:
+        flash(u'You can not delete this rule', 'alert-warning')
+
+    return redirect(url_for('dashboard.index',
+                            rtype=session[constants.TYPE_ARG],
+                            rstate=session[constants.RULE_ARG],
+                            sort=session[constants.SORT_ARG],
+                            squery=session[constants.SEARCH_ARG],
+                            order=session[constants.ORDER_ARG]))
+
+
 @rules.route('/group-operation', methods=['POST'])
 @auth_required
 @user_or_admin_required
@@ -143,9 +186,19 @@ def group_delete():
     rule_type = session[constants.TYPE_ARG]
     rules = [str(rule) for rule in rules_dict[str(constants.RULE_TYPES[rule_type])]]
     model_name = DATA_MODELS_NAMED[rule_type]
+    rule_type_int = constants.RULE_TYPES[rule_type]
+    route_model = ROUTE_MODELS[rule_type_int]
+
     to_delete = request.form.getlist('delete-id')
 
     if set(to_delete).issubset(set(rules)):
+        for rule_id in to_delete:
+            # withdraw route
+            model = db.session.query(model_name).get(rule_id)
+            route = route_model(model, flowapp.constants.WITHDRAW)
+            announce_route(route)
+
+            log_withdraw(session['user_id'], route, rule_type, model.id)
 
         db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
         db.session.commit()
@@ -206,7 +259,8 @@ def group_update():
 
     action_url = url_for('rules.group_update_save', rule_type=rule_type_int)
 
-    return render_template(DATA_TEMPLATES[rule_type_int], form=form, action_url=action_url, editing=True, title="Group Update")
+    return render_template(DATA_TEMPLATES[rule_type_int], form=form, action_url=action_url, editing=True,
+                           title="Group Update")
 
 
 @rules.route('/group-save-update/<int:rule_type>', methods=['POST'])
@@ -258,49 +312,6 @@ def group_update_save(rule_type):
             log_withdraw(session['user_id'], route, rule_type, model.id)
 
     flash(u'Rules {} successfully updated'.format(to_update), 'alert-success')
-
-    return redirect(url_for('dashboard.index',
-                            rtype=session[constants.TYPE_ARG],
-                            rstate=session[constants.RULE_ARG],
-                            sort=session[constants.SORT_ARG],
-                            squery=session[constants.SEARCH_ARG],
-                            order=session[constants.ORDER_ARG]))
-
-
-@rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
-@auth_required
-@user_or_admin_required
-def delete_rule(rule_type, rule_id):
-    """
-    Delete rule with given id and type
-    :param sort_key:
-    :param filter_text:
-    :param rstate:
-    :param rule_type: string - type of rule to be deleted
-    :param rule_id: integer - rule id
-    """
-    rules_dict = request.cookies.get(constants.RULES_KEY)
-    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
-    rules = rules_dict[str(rule_type)]
-    model_name = DATA_MODELS[rule_type]
-    route_model = ROUTE_MODELS[rule_type]
-
-    model = db.session.query(model_name).get(rule_id)
-
-    if model.id in rules:
-        # withdraw route
-        route = route_model(model, flowapp.constants.WITHDRAW)
-        announce_route(route)
-
-        log_withdraw(session['user_id'], route, rule_type, model.id)
-
-        # delete from db
-        db.session.delete(model)
-        db.session.commit()
-        flash(u'Rule deleted', 'alert-success')
-
-    else:
-        flash(u'You can not delete this rule', 'alert-warning')
 
     return redirect(url_for('dashboard.index',
                             rtype=session[constants.TYPE_ARG],
