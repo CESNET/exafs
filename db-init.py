@@ -25,10 +25,10 @@ def create_app():
     db.init_app(app)
 
     with app.app_context():
-        print "#: cleaning database"
+        print("#: cleaning database")
         db.reflect()
         db.drop_all()
-        print "#: creating tables"
+        print("#: creating tables")
         db.create_all()
 
 
