@@ -3,11 +3,20 @@ from flask import Blueprint, render_template, redirect, flash, request, url_for
 from sqlalchemy.exc import IntegrityError
 
 from ..forms import UserForm, ActionForm, OrganizationForm, CommunityForm
-from ..models import User, Action, Organization, Role, insert_user, get_existing_action, Community, get_existing_community
+from ..models import User, Action, Organization, Role, insert_user, get_existing_action, Community, \
+    get_existing_community, Log
 from ..auth import auth_required, admin_required
 from flowapp import db
 
 admin = Blueprint('admin', __name__, template_folder='templates')
+
+
+@admin.route('/log', methods=['GET', 'POST'])
+@auth_required
+@admin_required
+def log():
+    logs = Log.query.all()
+    return render_template('pages/logs.j2', logs=logs)
 
 
 @admin.route('/user', methods=['GET', 'POST'])

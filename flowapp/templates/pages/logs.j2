@@ -1,0 +1,22 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}Flowspec Users{% endblock %}
+{% block content %}
+    <table class="table table-hover">
+    <tr>
+    <th>time</th>
+    <th>task</th>
+    <th>rule_type</th>
+    <th>rule_id</th>
+    <th>user</th>
+    </tr>
+    {% for log in logs %}
+        <tr>
+        <td>{{ log.time }}</td>
+        <td>{{ log.task }}</td>
+        <td>{{ log.rule_type }}</td>
+        <td>{{ log.rule_id }}</td>
+        <td>{{ log.user.name }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+{% endblock %}
