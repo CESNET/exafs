@@ -93,20 +93,20 @@ def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_quer
     net_ranges = models.get_user_nets(session['user_id'])
 
     if rtype == 'rtbh':
-        rules_editable = validators.filter_rtbh_rules(net_ranges, rules)
-        rules_visible = []
+        rules_editable, read_only_rules = validators.split_rtbh_rules_for_user(net_ranges, rules)
     else:
-        rules = validators.filter_rules_in_network(net_ranges, rules)
+        user_rules, read_only_rules = validators.split_rules_for_user(net_ranges, rules)
         user_actions = models.get_user_actions(session['user_role_ids'])
         user_actions = [act[0] for act in user_actions]
-        rules_editable, rules_visible = flowspec.filter_rules_action(user_actions, rules)
+        rules_editable, rules_visible = flowspec.filter_rules_action(user_actions, user_rules)
+        read_only_rules = read_only_rules + rules_visible
 
     res = make_response(render_template('pages/dashboard_user.j2',
                                         table_title=RULE_TYPE_DISPATCH[rtype]['title'],
                                         button_colspan=COLSPANS[rtype],
                                         rules_columns=RULE_TYPE_DISPATCH[rtype]['columns'],
                                         rules_editable=rules_editable,
-                                        rules_visible=rules_visible,
+                                        rules_visible=read_only_rules,
                                         css_classes=active_css_rstate(rtype, rstate),
                                         sort_order=sort_order,
                                         sort_key=sort_key,

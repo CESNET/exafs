@@ -10,24 +10,40 @@
 
 
     <h2>{{ rstate|capitalize }} {{ table_title }} that you can modify</h2>
-    <table class="table table-hover ip-table">
-    {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
-    {% if rtype_int == 1 %}
-        {{ build_rtbh_tbody(rules_editable, today, rtype_int) }}
-    {% else %}
-        {{ build_ip_tbody(rules_editable, today, rtype_int) }}
-    {% endif %}
-    </table>
-
-
-    <h2>{{ rstate|capitalize }}  {{ table_title }} that are read-only for you</h2>
-    {% if rules_visible %}
-
-        <p>Those rules somehow including your network ranges. However, they have privileged / admin only action. Therefore you can not modify their expiration time.</p>
+    <form action="{{ url_for('rules.group_operation') }}" method="post">
+         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
         {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
         {% if rtype_int == 1 %}
-            {{ build_rtbh_tbody(rules_editable, today, rtype_int, False) }}
+            {{ build_rtbh_tbody(rules_editable, today, rtype_int) }}
+        {% else %}
+            {{ build_ip_tbody(rules_editable, today, rtype_int) }}
+        {% endif %}
+         <tr>
+            <td colspan="{{ button_colspan }}">
+            </td>
+            <td  class="text-center">
+
+                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </button>
+
+                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
+                    <span class="glyphicon glyphicon-time"></span>
+                </button>
+            </td>
+            </tr>
+        </table>
+    </form>
+
+
+    {% if rules_visible %}
+    <h2>{{ rstate|capitalize }}  {{ table_title }} that are read-only for you</h2>
+        <p>Those rules somehow including your network ranges. You can see them all for your information. However, you can not modify their expiration time or delete them.</p>
+        <table class="table table-hover ip-table">
+        {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, group_op=False) }}
+        {% if rtype_int == 1 %}
+            {{ build_rtbh_tbody(rules_visible, today, rtype_int, editable=False, group_op=False) }}
         {% else %}
             {{ build_ip_tbody(rules_visible, today, rtype_int, False) }}
         {% endif %}
@@ -35,6 +51,10 @@
     {% else %}
         <p>There are no ReadOnly rules that including your network ranges.</p
     {% endif %}
-
+    <script type="text/javascript">
+         $("#check-all").click(function(){
+            $('input:checkbox').not(this).prop('checked', this.checked);
+        });
+    </script>
 
 {% endblock %}

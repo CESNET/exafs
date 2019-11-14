@@ -17,6 +17,24 @@ def filter_rules_in_network(net_ranges, rules):
             or network_in_range(rule.dest, rule.dest_mask, net_ranges)]
 
 
+def split_rules_for_user(net_ranges, rules):
+    """
+    Return rules matching user net ranges and the rest
+    :param net_ranges: list of network ranges
+    :param rules: list of rules (ipv4 or ipv6
+    :return: filtered list of rules, rest of rules
+    """
+    user_rules = []
+    rest_rules = []
+    for rule in rules:
+        if network_in_range(rule.source, rule.source_mask, net_ranges) or network_in_range(rule.dest, rule.dest_mask, net_ranges):
+            user_rules.append(rule)
+        else:
+            rest_rules.append(rule)
+
+    return user_rules, rest_rules
+
+
 def filter_rtbh_rules(net_ranges, rules):
     """
     Return only rules matching user net ranges
@@ -27,6 +45,24 @@ def filter_rtbh_rules(net_ranges, rules):
     return [rule for rule in rules if
             network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges)
             or network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges)]
+
+
+def split_rtbh_rules_for_user(net_ranges, rules):
+    """
+    Return rtbh rules matching user net ranges and the rest
+    :param net_ranges: list of network ranges
+    :param rules: list of RTBH rules
+    :return: filtered list of rules, rest of original list
+    """
+    filtered = []
+    read_only = []
+    for rule in rules:
+        if network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges) or network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges):
+            filtered.append(rule)
+        else:
+            read_only.append(rule)
+
+    return filtered, read_only
 
 
 def address_in_range(address, net_ranges):
