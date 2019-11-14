@@ -15,7 +15,7 @@ admin = Blueprint('admin', __name__, template_folder='templates')
 @auth_required
 @admin_required
 def log():
-    logs = Log.query.all()
+    logs = Log.query.order_by(Log.time.desc()).all()
     return render_template('pages/logs.j2', logs=logs)
 
 

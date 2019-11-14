@@ -1,6 +1,7 @@
 {% extends 'layouts/default.j2' %}
 {% block title %}Flowspec Users{% endblock %}
 {% block content %}
+    <h2>Commands log / latest on top</h2>
     <table class="table table-hover">
     <tr>
     <th>time</th>
@@ -11,7 +12,7 @@
     </tr>
     {% for log in logs %}
         <tr>
-        <td>{{ log.time }}</td>
+        <td>{{ log.time|strftime }}</td>
         <td>{{ log.task }}</td>
         <td>{{ log.rule_type }}</td>
         <td>{{ log.rule_id }}</td>
