@@ -1,6 +1,8 @@
 """
 This module contains constant values used in application
 """
+from operator import ge, lt
+
 
 RULES_COLUMNS_V4 = (
     ('source', 'Source address'),
@@ -90,4 +92,10 @@ COLSPANS = {
     'rtbh': 5,
     'ipv4': 10,
     'ipv6': 10
+}
+
+COMP_FUNCS = {
+    'active': ge,
+    'expired': lt,
+    'all': None
 }

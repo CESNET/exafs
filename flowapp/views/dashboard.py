@@ -1,10 +1,10 @@
 from datetime import datetime
 
 import jwt
-from flask import Blueprint, render_template, request, session, make_response
+from flask import Blueprint, render_template, request, session, make_response, abort
 from flowapp import auth_required, constants, models, app, validators, flowspec
 from flowapp.constants import RULE_TYPE_DISPATCH, SORT_ARG, ORDER_ARG, DEFAULT_ORDER, DEFAULT_SORT, RULE_TYPES, \
-    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG, COLSPANS
+    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG, COLSPANS, COMP_FUNCS
 from flowapp.utils import active_css_rstate
 
 dashboard = Blueprint('dashboard', __name__, template_folder='templates')
@@ -13,6 +13,15 @@ dashboard = Blueprint('dashboard', __name__, template_folder='templates')
 @dashboard.route('/<path:rtype>/<path:rstate>/')
 @auth_required
 def index(rtype='ipv4', rstate='active'):
+
+    # params sanitization
+    if rtype not in RULE_TYPE_DISPATCH.keys():
+        return abort(404)
+    if rstate not in COMP_FUNCS.keys():
+        return abort(404)
+    if sum(session['user_role_ids']) == 1:
+        rstate = 'active'
+
     get_search_query = request.args.get(SEARCH_ARG) if request.args.get(SEARCH_ARG) else ""
     get_sort_key = request.args.get(SORT_ARG) if request.args.get(
         SORT_ARG) else DEFAULT_SORT

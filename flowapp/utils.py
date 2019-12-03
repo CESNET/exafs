@@ -1,6 +1,7 @@
 from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
+from flowapp.constants import COMP_FUNCS
 
 
 def quote_to_ent(comment):
@@ -88,14 +89,9 @@ def active_css_rstate(rtype, rstate):
 
 
 def get_comp_func(rstate='active'):
-    comp_funcs = {
-        'active': ge,
-        'expired': lt,
-        'all': None
-    }
 
     try:
-        comp_func = comp_funcs[rstate]
+        comp_func = COMP_FUNCS[rstate]
     except IndexError:
         comp_func = None
     except KeyError:
