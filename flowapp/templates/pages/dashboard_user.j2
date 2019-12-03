@@ -9,6 +9,7 @@
 
 
 
+    {% if rules_editable %}
     <h2>{{ rstate|capitalize }} {{ table_title }} that you can modify</h2>
     <form action="{{ url_for('rules.group_operation') }}" method="post">
          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -35,7 +36,9 @@
             </tr>
         </table>
     </form>
-
+    {% else %}
+        <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
+    {% endif %}
 
     {% if rules_visible %}
     <h2>{{ rstate|capitalize }}  {{ table_title }} that are read-only for you</h2>
@@ -49,8 +52,9 @@
         {% endif %}
         </table>
     {% else %}
-        <p>There are no ReadOnly rules that including your network ranges.</p
+        <h2>There are no read only {{ rstate }}  {{ table_title }}.</h2>
     {% endif %}
+
     <script type="text/javascript">
          $("#check-all").click(function(){
             $('input:checkbox').not(this).prop('checked', this.checked);

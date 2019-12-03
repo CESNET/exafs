@@ -40,9 +40,12 @@ def index(rtype='ipv4', rstate='active'):
 
     if 3 in session['user_role_ids']:
         res, encoded = create_admin_responose(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query)
-
-    else:
+    elif 2 in session['user_role_ids']:
         res, encoded = create_user_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query)
+    else:
+        res, encoded = create_view_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query)
+
+
 
     if app.config.get('DEVEL'):
         res.set_cookie(RULES_KEY, encoded, httponly=True, samesite='Lax')
@@ -101,6 +104,10 @@ def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_quer
         rules_editable, rules_visible = flowspec.filter_rules_action(user_actions, user_rules)
         read_only_rules = read_only_rules + rules_visible
 
+    # we don't want the read only rules if they are not active
+    if rstate != 'active':
+        read_only_rules = []    
+
     res = make_response(render_template('pages/dashboard_user.j2',
                                         table_title=RULE_TYPE_DISPATCH[rtype]['title'],
                                         button_colspan=COLSPANS[rtype],
@@ -117,6 +124,34 @@ def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_quer
                                         today=datetime.now()))
 
     encoded = create_jwt_payload(rules_editable, rtype)
+
+    return res, encoded
+
+
+
+def create_view_response(rtype, rstate, rules, sort_key, sort_order, search_query=""):
+    """
+    Filter out the rules for normal users
+    :param rules:
+    :param rstate:
+    :return:
+    """
+
+    res = make_response(render_template('pages/dashboard_view.j2',
+                                        table_title=RULE_TYPE_DISPATCH[rtype]['title'],
+                                        button_colspan=COLSPANS[rtype],
+                                        rules_columns=RULE_TYPE_DISPATCH[rtype]['columns'],
+                                        rules=rules,
+                                        css_classes=active_css_rstate(rtype, rstate),
+                                        sort_order=sort_order,
+                                        sort_key=sort_key,
+                                        search_query=search_query,
+                                        rstate=rstate,
+                                        rtype=rtype,
+                                        rtype_int=RULE_TYPES[rtype],
+                                        today=datetime.now()))
+
+    encoded = create_jwt_payload([], rtype)
 
     return res, encoded
 
