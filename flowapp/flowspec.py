@@ -17,7 +17,8 @@ def translate_sequence(sequence, max_val=MAX_PORT):
     @return string ExaBgp rule string
     """
     result = [to_exabgp_string(item, max_val) for item in sequence.split(";") if item]
-    return " ".join(result)
+    result = " ".join(result)
+    return "[{}]".format(result)
 
 
 def to_exabgp_string(value_string, max_val):
