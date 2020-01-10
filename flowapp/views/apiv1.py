@@ -382,7 +382,7 @@ def delete_v4_rule(current_user, rule_id):
     """
     model_name = Flowspec4
     route_model = messages.create_ipv4
-    return delete_rule(current_user, rule_id, model_name, route_model)
+    return delete_rule(current_user, rule_id, model_name, route_model, 4)
 
 
 @api.route('/rules/ipv6/<int:rule_id>', methods=['DELETE'])
@@ -394,7 +394,7 @@ def delete_v6_rule(current_user, rule_id):
     """
     model_name = Flowspec6
     route_model = messages.create_ipv6
-    return delete_rule(current_user, rule_id, model_name, route_model)
+    return delete_rule(current_user, rule_id, model_name, route_model, 6)
 
 
 @api.route('/rules/rtbh/<int:rule_id>', methods=['DELETE'])
@@ -406,10 +406,10 @@ def delete_rtbh_rule(current_user, rule_id):
     """
     model_name = RTBH
     route_model = messages.create_rtbh
-    return delete_rule(current_user, rule_id, model_name, route_model)
+    return delete_rule(current_user, rule_id, model_name, route_model, 1)
 
 
-def delete_rule(current_user, rule_id, model_name, route_model):
+def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
     """
     Common method for deleting ipv4 or ipv6 rules
     :param current_user:
@@ -425,7 +425,7 @@ def delete_rule(current_user, rule_id, model_name, route_model):
             route = route_model(model, flowapp.constants.WITHDRAW)
             announce_route(route)
 
-            # log_withdraw(route, rule_type, model.id)
+            log_withdraw(current_user['id'], route, rule_type, model.id)
             # delete from db
             db.session.delete(model)
             db.session.commit()
