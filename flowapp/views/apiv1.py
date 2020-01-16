@@ -63,7 +63,7 @@ def authorize(user_key):
                 'role_ids': [role.id for role in model.user.role.all()],
                 'org_ids': [org.id for org in model.user.organization.all()]
             },
-            'exp': datetime.utcnow() + timedelta(minutes=30)
+            'exp': datetime.now() + timedelta(minutes=30)
         }
         encoded = jwt.encode(payload, jwt_key, algorithm='HS256').decode("utf-8")
 

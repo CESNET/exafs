@@ -195,7 +195,7 @@ class RTBH(db.Model):
         self.user_id = user_id
         self.comment = comment
         if created is None:
-            created = datetime.utcnow()
+            created = datetime.now()
         self.created = created
         self.rstate_id = rstate_id
 
@@ -239,8 +239,8 @@ class RTBH(db.Model):
             "ipv6_mask": self.ipv6_mask,
             "community": self.community.name,
             "comment": self.comment,
-            "expires": self.expires,
-            "created": self.created,
+            "expires": utils.datetime_to_webpicker(self.expires),
+            "created": utils.datetime_to_webpicker(self.created),
             "user": self.user.uuid,
             "rstate": self.rstate.description
         }
@@ -316,7 +316,7 @@ class Flowspec4(db.Model):
         self.user_id = user_id
         self.action_id = action_id
         if created is None:
-            created = datetime.utcnow()
+            created = datetime.now()
         self.created = created
         self.rstate_id = rstate_id
 
@@ -363,8 +363,8 @@ class Flowspec4(db.Model):
             "flags": self.flags,
             "packet_len": self.packet_len,
             "comment": self.comment,
-            "expires": self.expires,
-            "created": self.created,
+            "expires": utils.datetime_to_webpicker(self.expires),
+            "created": utils.datetime_to_webpicker(self.created),
             "action": self.action.name,
             "user": self.user.uuid,
             "rstate": self.rstate.description
@@ -447,7 +447,7 @@ class Flowspec6(db.Model):
         self.user_id = user_id
         self.action_id = action_id
         if created is None:
-            created = datetime.utcnow()
+            created = datetime.now()
         self.created = created
         self.rstate_id = rstate_id
 
@@ -480,8 +480,8 @@ class Flowspec6(db.Model):
             "flags": self.flags,
             "packet_len": self.packet_len,
             "comment": self.comment,
-            "expires": self.expires,
-            "created": self.created,
+            "expires": utils.datetime_to_webpicker(self.expires),
+            "created": utils.datetime_to_webpicker(self.created),
             "action": self.action.name,
             "user": self.user.uuid,
             "rstate": self.rstate.description
