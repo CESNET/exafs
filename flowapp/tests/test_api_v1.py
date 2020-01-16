@@ -161,7 +161,7 @@ def test_create_v6rule(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 201
     assert data['rule']
-    assert data['rule']['id'] == 1
+    assert data['rule']['id'] == '1'
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
 
 
@@ -186,7 +186,7 @@ def test_validation_v4rule(client, db, jwt_token):
     assert req.status_code == 400
     data = json.loads(req.data)
     assert len(data['validation_errors']) > 0
-    assert data['validation_errors'].keys() == ['dest', 'source']
+    assert sorted(data['validation_errors'].keys()) == sorted(['dest', 'source'])
     assert len(data['validation_errors']['dest']) == 2
     assert data['validation_errors']['dest'][0].startswith('This is not')
     assert data['validation_errors']['dest'][1].startswith('Source or des')

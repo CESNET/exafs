@@ -1,20 +1,24 @@
 
-{% macro build_ip_tbody(rules, today, rtype_int, editable=True) %}
+{% macro build_ip_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
 <tbody>
     {% for rule in rules %}
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
             <td>
                 {{ rule.source }}
-                {{ '/' if rule.source_mask >= 0 else '' }}
-                {{ rule.source_mask if rule.source_mask >= 0 else '' }}
+                {% if rule.source_mask %}
+                    {{ '/' if rule.source_mask >= 0 else '' }}
+                    {{ rule.source_mask if rule.source_mask >= 0 else '' }}
+                {% endif %}
             </td>
             <td>
                 {{ rule.source_port }}
             </td>
             <td>
                 {{ rule.dest }}
-                {{ '/' if rule.dest_mask >= 0 else '' }}
-                {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
+                {% if rule.dest_mask %}
+                    {{ '/' if rule.dest_mask >= 0 else '' }}
+                    {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
+                {% endif %}
             </td>
             <td>
                 {{ rule.dest_port }}
@@ -46,13 +50,20 @@
                 <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button">
                      <span class="glyphicon glyphicon-remove"></span>
                 </a>
-                {% if rule.comment %}
+            {% endif %}
+            {% if rule.comment %}
                 <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
                     <span class="glyphicon glyphicon-comment"></span>
                 </button>
-                {% endif %}
             {% endif %}
             </td>
+
+            {% if editable and group_op %}
+                <td class="text-center">
+                    <input type="checkbox" name="delete-id" value="{{rule.id}}" />
+                </td>
+            {% endif %}
+
         </tr>
 
 
@@ -61,7 +72,7 @@
 {% endmacro %}
 
 
-{% macro build_rtbh_tbody(rules, today, rtype_int, editable=True) %}
+{% macro build_rtbh_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
     <tbody>
 {% for rule in rules %}
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>
@@ -84,37 +95,54 @@
         {{ rule.user.name }}
     </td>
     <td>
-        <a class="btn btn-primary btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+        {% if editable %}
+        <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
             <span class="glyphicon glyphicon-time"></span>
 
         </a>
         <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
                  <span class="glyphicon glyphicon-remove"></span>
         </a>
+        {% endif %}
         {% if rule.comment %}
            <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
                     <span class="glyphicon glyphicon-comment"></span>
            </button>
          {% endif %}
     </td>
+     {% if editable and group_op %}
+            <td class="text-center">
+                <input type="checkbox" name="delete-id" value="{{rule.id}}" />
+            </td>
+    {% endif %}
+
     </tr>
 {% endfor %}
 </tbody>
 {% endmacro %}
 
 
-{% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) %}
+{% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query='', group_op=True) %}
 <thead>
     <tr class="table-sorter">
     {% for sort_key, col_name in rules_columns %}
     <th>
-        <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order) }}" >
+        {% if search_query %}
+            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link', squery=search_query) }}" >
+        {% else %}
+            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link') }}" >
+        {% endif %}
         {{ col_name }}
         </a>
         <span class="sort-direction {{ sort_order }}"></span>
     </th>
     {% endfor %}
     <th>Edit</th>
+    {% if group_op %}
+        <th class="text-center">
+            <input id="check-all" type="checkbox">
+        </th>
+    {% endif %}
     </tr>
 </thead>
 {% endmacro %}

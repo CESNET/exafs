@@ -1,7 +1,6 @@
 from sqlalchemy import event
 from datetime import datetime
-from flowapp import db, constants
-from flowapp import utils as utils
+from flowapp import db, utils
 
 # models and tables
 
@@ -253,22 +252,29 @@ class RTBH(db.Model):
         """
 
         s_source = self.ipv4
-        s_slash = '/' if self.ipv4_mask >= 0 else ''
-        s_mask = self.ipv4_mask if self.ipv4_mask >= 0 else ''
+        s_slash = ''
+        d_slash = ''
+        s_mask = ''
+        d_mask = ''
+
+        if self.ipv4_mask:
+            s_slash = '/' if self.ipv4_mask >= 0 else ''
+            s_mask = self.ipv4_mask if self.ipv4_mask >= 0 else ''
 
         d_source = self.ipv6
-        d_slash = '/' if self.ipv6_mask >= 0 else ''
-        d_mask = self.ipv6_mask if self.ipv6_mask >= 0 else ''
+        if self.ipv6_mask:
+            d_slash = '/' if self.ipv6_mask >= 0 else ''
+            d_mask = self.ipv6_mask if self.ipv6_mask >= 0 else ''
 
         return {
-            "id": str(self.id),
+            "id": "{}".format(self.id),
             "ipv4": "{}{}{}".format(s_source, s_slash, s_mask),
             "ipv6": "{}{}{}".format(d_source, d_slash, d_mask),
             "community": self.community.name,
             "comment": self.comment,
             "expires": utils.datetime_to_webpicker(self.expires),
             "created": utils.datetime_to_webpicker(self.created),
-            "user": str(self.user.uuid),
+            "user": "{}".format(self.user.name),
             "rstate": self.rstate.description
         }
 
@@ -371,13 +377,20 @@ class Flowspec4(db.Model):
 
         """
 
+        s_slash = ''
+        d_slash = ''
+        s_mask = ''
+        d_mask = ''
+
         s_source = self.source
-        s_slash = '/' if self.source_mask >= 0 else ''
-        s_mask = self.source_mask if self.source_mask >= 0 else ''
+        if self.source_mask:
+            s_slash = '/' if self.source_mask >= 0 else ''
+            s_mask = self.source_mask if self.source_mask >= 0 else ''
 
         d_source = self.dest
-        d_slash = '/' if self.dest_mask >= 0 else ''
-        d_mask = self.dest_mask if self.dest_mask >= 0 else ''
+        if self.dest_mask:
+            d_slash = '/' if self.dest_mask >= 0 else ''
+            d_mask = self.dest_mask if self.dest_mask >= 0 else ''
 
         return {
             "id": str(self.id),
@@ -481,13 +494,20 @@ class Flowspec6(db.Model):
 
         """
 
+        s_slash = ''
+        d_slash = ''
+        s_mask = ''
+        d_mask = ''
+
         s_source = self.source
-        s_slash = '/' if self.source_mask >= 0 else ''
-        s_mask = self.source_mask if self.source_mask >= 0 else ''
+        if self.source_mask:
+            s_slash = '/' if self.source_mask >= 0 else ''
+            s_mask = self.source_mask if self.source_mask >= 0 else ''
 
         d_source = self.dest
-        d_slash = '/' if self.dest_mask >= 0 else ''
-        d_mask = self.dest_mask if self.source_mask >= 0 else ''
+        if self.dest_mask:
+            d_slash = '/' if self.dest_mask >= 0 else ''
+            d_mask = self.dest_mask if self.source_mask >= 0 else ''
 
         return {
             "id": self.id,
@@ -541,9 +561,9 @@ def insert_initial_actions(*args, **kwargs):
 
 @event.listens_for(Community.__table__, 'after_create')
 def insert_initial_communities(*args, **kwargs):
-    db.session.add(Community(name='2852:666', command='2852:666', description=''))
-    db.session.add(Community(name='40965:666', command='40965:666', description=''))
-    db.session.add(Community(name='xxxxx:666', command='xxxxx:666', description=''))
+    db.session.add(Community(name='2852:666', comm='2852:666', larcomm='', extcomm='', description=''))
+    db.session.add(Community(name='40965:666', comm='40965:666', larcomm='', extcomm='', description=''))
+    db.session.add(Community(name='xxxxx:666', comm='xxxxx:666', larcomm='', extcomm='', description=''))
     db.session.commit()
 
 

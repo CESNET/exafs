@@ -1,4 +1,6 @@
 # flowapp/views/admin.py
+from typing import Set, Any
+
 import jwt
 
 from datetime import datetime, timedelta
@@ -22,7 +24,9 @@ from flowapp import db, app, messages, constants
 rules = Blueprint('rules', __name__, template_folder='templates')
 
 DATA_MODELS = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
+DATA_MODELS_NAMED = {'rtbh': RTBH, 'ipv4': Flowspec4, 'ipv6': Flowspec6}
 DATA_FORMS = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
+DATA_FORMS_NAMED = {'rtbh': RTBHForm, 'ipv4': IPv4Form, 'ipv6': IPv6Form}
 DATA_TEMPLATES = {1: 'forms/rtbh_rule.j2', 4: 'forms/ipv4_rule.j2', 6: 'forms/ipv6_rule.j2'}
 DATA_TABLES = {1: 'RTBH', 4: 'flowspec4', 6: 'flowspec6'}
 DEFAULT_SORT = {1: 'ivp4', 4: 'source', 6: 'source'}
@@ -88,6 +92,7 @@ def reactivate_rule(rule_type, rule_id):
                                 rtype=session[constants.TYPE_ARG],
                                 rstate=session[constants.RULE_ARG],
                                 sort=session[constants.SORT_ARG],
+                                squery=session[constants.SEARCH_ARG],
                                 order=session[constants.ORDER_ARG]))
     else:
         flash_errors(form)
@@ -99,7 +104,7 @@ def reactivate_rule(rule_type, rule_id):
 
     action_url = url_for('rules.reactivate_rule', rule_type=rule_type, rule_id=rule_id)
 
-    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True)
+    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True, title="Update")
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
@@ -141,6 +146,178 @@ def delete_rule(rule_type, rule_id):
                             rtype=session[constants.TYPE_ARG],
                             rstate=session[constants.RULE_ARG],
                             sort=session[constants.SORT_ARG],
+                            squery=session[constants.SEARCH_ARG],
+                            order=session[constants.ORDER_ARG]))
+
+
+@rules.route('/group-operation', methods=['POST'])
+@auth_required
+@user_or_admin_required
+def group_operation():
+    """
+    Delete rules
+    """
+    dispatch = {
+        'group-update': group_update,
+        'group-delete': group_delete
+    }
+
+    try:
+        return dispatch[request.form['action']]()
+    except KeyError:
+        flash(u'Key Error in action dispatching!', 'alert-danger')
+        return redirect(url_for('dashboard.index',
+                                rtype=session[constants.TYPE_ARG],
+                                rstate=session[constants.RULE_ARG],
+                                sort=session[constants.SORT_ARG],
+                                squery=session[constants.SEARCH_ARG],
+                                order=session[constants.ORDER_ARG]))
+
+
+@rules.route('/group-delete', methods=['POST'])
+@auth_required
+@user_or_admin_required
+def group_delete():
+    """
+    Delete rules
+    """
+    rules_dict = request.cookies.get(constants.RULES_KEY)
+    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    rule_type = session[constants.TYPE_ARG]
+    rules = [str(rule) for rule in rules_dict[str(constants.RULE_TYPES[rule_type])]]
+    model_name = DATA_MODELS_NAMED[rule_type]
+    rule_type_int = constants.RULE_TYPES[rule_type]
+    route_model = ROUTE_MODELS[rule_type_int]
+
+    to_delete = request.form.getlist('delete-id')
+
+    if set(to_delete).issubset(set(rules)):
+        for rule_id in to_delete:
+            # withdraw route
+            model = db.session.query(model_name).get(rule_id)
+            route = route_model(model, flowapp.constants.WITHDRAW)
+            announce_route(route)
+
+            log_withdraw(session['user_id'], route, rule_type, model.id)
+
+        db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
+        db.session.commit()
+
+        flash(u'Rules {} deleted'.format(to_delete), 'alert-success')
+    else:
+        flash(u'You can not delete rules {}'.format(to_delete), 'alert-warning')
+
+    return redirect(url_for('dashboard.index',
+                            rtype=session[constants.TYPE_ARG],
+                            rstate=session[constants.RULE_ARG],
+                            sort=session[constants.SORT_ARG],
+                            squery=session[constants.SEARCH_ARG],
+                            order=session[constants.ORDER_ARG]))
+
+
+@rules.route('/group-edit', methods=['POST'])
+@auth_required
+@user_or_admin_required
+def group_update():
+    """
+    update rules
+    """
+    rule_type = session[constants.TYPE_ARG]
+    model_name = DATA_MODELS_NAMED[rule_type]
+    form_name = DATA_FORMS_NAMED[rule_type]
+    to_update = request.form.getlist('delete-id')
+    rules_dict = request.cookies.get(constants.RULES_KEY)
+    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    rule_type = session[constants.TYPE_ARG]
+    rule_type_int = constants.RULE_TYPES[rule_type]
+    rules = [str(rule) for rule in rules_dict[str(rule_type_int)]]
+
+    # redirect bad request
+    if not set(to_update).issubset(set(rules)):
+        flash(u'You can edit these rules!', 'alert-danger')
+        return redirect(url_for('dashboard.index',
+                                rtype=session[constants.TYPE_ARG],
+                                rstate=session[constants.RULE_ARG],
+                                sort=session[constants.SORT_ARG],
+                                squery=session[constants.SEARCH_ARG],
+                                order=session[constants.ORDER_ARG]))
+
+    # populate the form
+    session['group-update'] = to_update
+    form = form_name(request.form)
+    form.net_ranges = get_user_nets(session['user_id'])
+    if rule_type_int > 2:
+        form.action.choices = [(g.id, g.name)
+                               for g in db.session.query(Action).order_by('name')]
+    if rule_type_int == 1:
+        form.community.choices = get_user_communities(session['user_role_ids'])
+
+    form.expires.data = datetime_to_webpicker(datetime.now())
+    for field in form:
+        if field.name not in ['expires', 'csrf_token', 'comment']:
+            field.render_kw = {'disabled': 'disabled'}
+
+    action_url = url_for('rules.group_update_save', rule_type=rule_type_int)
+
+    return render_template(DATA_TEMPLATES[rule_type_int], form=form, action_url=action_url, editing=True,
+                           title="Group Update")
+
+
+@rules.route('/group-save-update/<int:rule_type>', methods=['POST'])
+@auth_required
+@user_or_admin_required
+def group_update_save(rule_type):
+    # redirect bad request
+    try:
+        to_update = session['group-update']
+    except KeyError:
+        return redirect(url_for('dashboard.index',
+                                rtype=session[constants.TYPE_ARG],
+                                rstate=session[constants.RULE_ARG],
+                                sort=session[constants.SORT_ARG],
+                                squery=session[constants.SEARCH_ARG],
+                                order=session[constants.ORDER_ARG]))
+
+    model_name = DATA_MODELS[rule_type]
+    form_name = DATA_FORMS[rule_type]
+
+    form = form_name(request.form)
+
+    # set new expiration date
+    expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+    # set state by time
+    rstate_id = get_state_by_time(webpicker_to_datetime(form.expires.data))
+    comment = form.comment.data
+    route_model = ROUTE_MODELS[rule_type]
+
+    for rule_id in to_update:
+        # update record
+        model = db.session.query(model_name).get(rule_id)
+        model.expires = expires
+        model.rstate_id = rstate_id
+        model.comment = "{} {}".format(model.comment, comment)
+        db.session.commit()
+
+        if model.rstate_id == 1:
+            # announce route
+            route = route_model(model, flowapp.constants.ANNOUNCE)
+            announce_route(route)
+            # log changes
+            log_route(session['user_id'], model, rule_type)
+        else:
+            # withdraw route
+            route = route_model(model, flowapp.constants.WITHDRAW)
+            announce_route(route)
+            # log changes
+            log_withdraw(session['user_id'], route, rule_type, model.id)
+
+    flash(u'Rules {} successfully updated'.format(to_update), 'alert-success')
+
+    return redirect(url_for('dashboard.index',
+                            rtype=session[constants.TYPE_ARG],
+                            rstate=session[constants.RULE_ARG],
+                            sort=session[constants.SORT_ARG],
+                            squery=session[constants.SEARCH_ARG],
                             order=session[constants.ORDER_ARG]))
 
 
@@ -403,12 +580,12 @@ def announce_all_routes(action=flowapp.constants.ANNOUNCE):
     output.extend(output_rtbh)
 
     for message in output:
-        requests.post('http://localhost:5000/', data={'command': message})
+        requests.post(app.config.get('EXA_API_URL'), data={'command': message})
 
     if action == flowapp.constants.WITHDRAW:
-        map(set_withdraw_state, rules4)
-        map(set_withdraw_state, rules6)
-        map(set_withdraw_state, rules_rtbh)
+        _a = [set_withdraw_state(rule) for rule in rules4]
+        _a = [set_withdraw_state(rule) for rule in rules6]
+        _a = [set_withdraw_state(rule) for rule in rules_rtbh]
 
 
 def set_withdraw_state(rule):

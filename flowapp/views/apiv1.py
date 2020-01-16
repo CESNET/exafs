@@ -52,8 +52,8 @@ def authorize(user_key):
 
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
 
-    if model and ipaddress.ip_address(model.machine.decode('latin1')) == ipaddress.ip_address(
-            request.remote_addr.decode('latin1')):
+    if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(
+            request.remote_addr):
         payload = {
             'user': {
                 'uuid': model.user.uuid,
@@ -65,7 +65,8 @@ def authorize(user_key):
             },
             'exp': datetime.utcnow() + timedelta(minutes=30)
         }
-        encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
+        encoded = jwt.encode(payload, jwt_key, algorithm='HS256').decode("utf-8")
+
         return jsonify({'token': encoded})
     else:
         return jsonify({'message': 'auth token is invalid'}), 403
@@ -87,7 +88,6 @@ def index(current_user):
             "ipv6_rules": [rule.to_dict() for rule in rules6],
             "rules_rtbh": [rule.to_dict() for rule in rules_rtbh]
         }
-        print("PAYLOAD ADMIN", payload)
         return jsonify(payload)
     # filter out the rules for normal users
     else:
@@ -108,7 +108,6 @@ def index(current_user):
             "ipv6_rules_readonly": [rule.to_dict() for rule in rules6_visible],
             "rtbh_rules": [rule.to_dict() for rule in rules_rtbh]
         }
-        print("PAYLOAD FILTERED", payload)
         return jsonify(payload)
 
 
@@ -164,13 +163,12 @@ def create_ipv4(current_user):
     if not form.validate():
         form_errors = get_form_errors(form)
         if form_errors:
-            print("ERRORS", form_errors)
             return jsonify(form_errors), 400
 
     model = get_ipv4_model_if_exists(form.data, 1)
 
     if model:
-        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us'))
         flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
     else:
         model = Flowspec4(
@@ -183,11 +181,11 @@ def create_ipv4(current_user):
             protocol=form.protocol.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us')),
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
-            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
+            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data, 'us'))
         )
         flash_message = u'IPv4 Rule saved'
         db.session.add(model)
@@ -228,7 +226,7 @@ def create_ipv6(current_user):
     model = get_ipv6_model_if_exists(form.data, 1)
 
     if model:
-        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us'))
         flash_message = u'Existing IPv6 Rule found. Expiration time was updated to new value.'
     else:
 
@@ -242,11 +240,11 @@ def create_ipv6(current_user):
             next_header=form.next_header.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us')),
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
-            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
+            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data, 'us'))
         )
         flash_message = u'IPv6 Rule saved'
         db.session.add(model)
@@ -293,7 +291,7 @@ def create_rtbh(current_user):
     model = get_rtbh_model_if_exists(form.data, 1)
 
     if model:
-        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us'))
         flash_message = u'Existing RTBH Rule found. Expiration time was updated to new value.'
     else:
         model = RTBH(
@@ -302,10 +300,10 @@ def create_rtbh(current_user):
             ipv6=form.ipv6.data,
             ipv6_mask=form.ipv6_mask.data,
             community_id=form.community.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us')),
             comment=quote_to_ent(form.comment.data),
             user_id=current_user['id'],
-            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
+            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data, 'us'))
         )
         db.session.add(model)
         db.session.commit()
@@ -384,7 +382,7 @@ def delete_v4_rule(current_user, rule_id):
     """
     model_name = Flowspec4
     route_model = messages.create_ipv4
-    return delete_rule(current_user, rule_id, model_name, route_model)
+    return delete_rule(current_user, rule_id, model_name, route_model, 4)
 
 
 @api.route('/rules/ipv6/<int:rule_id>', methods=['DELETE'])
@@ -396,7 +394,7 @@ def delete_v6_rule(current_user, rule_id):
     """
     model_name = Flowspec6
     route_model = messages.create_ipv6
-    return delete_rule(current_user, rule_id, model_name, route_model)
+    return delete_rule(current_user, rule_id, model_name, route_model, 6)
 
 
 @api.route('/rules/rtbh/<int:rule_id>', methods=['DELETE'])
@@ -408,10 +406,10 @@ def delete_rtbh_rule(current_user, rule_id):
     """
     model_name = RTBH
     route_model = messages.create_rtbh
-    return delete_rule(current_user, rule_id, model_name, route_model)
+    return delete_rule(current_user, rule_id, model_name, route_model, 1)
 
 
-def delete_rule(current_user, rule_id, model_name, route_model):
+def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
     """
     Common method for deleting ipv4 or ipv6 rules
     :param current_user:
@@ -427,7 +425,7 @@ def delete_rule(current_user, rule_id, model_name, route_model):
             route = route_model(model, flowapp.constants.WITHDRAW)
             announce_route(route)
 
-            # log_withdraw(route, rule_type, model.id)
+            log_withdraw(current_user['id'], route, rule_type, model.id)
             # delete from db
             db.session.delete(model)
             db.session.commit()

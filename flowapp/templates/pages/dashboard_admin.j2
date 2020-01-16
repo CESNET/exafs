@@ -7,14 +7,36 @@
     {% include 'pages/submenu_dashboard.j2' %}
 
     <div class="row">
+        <form action="{{ url_for('rules.group_operation') }}" method="post">
+         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
-            {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
+            {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query) }}
             {% if rtype_int == 1 %}
                 {{ build_rtbh_tbody(rules, today, rtype_int) }}
             {% else %}
                 {{ build_ip_tbody(rules, today, rtype_int) }}
             {% endif %}
+            <tr>
+            <td colspan="{{ button_colspan }}">
+            </td>
+            <td  class="text-center">
+
+                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </button>
+
+                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
+                    <span class="glyphicon glyphicon-time"></span>
+                </button>
+            </td>
+            </tr>
         </table>
+        </form>
     </div>
+    <script type="text/javascript">
+         $("#check-all").click(function(){
+            $('input:checkbox').not(this).prop('checked', this.checked);
+        });
+    </script>
 
 {% endblock %}

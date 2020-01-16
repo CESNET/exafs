@@ -1,6 +1,6 @@
 from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MAX_PACKET, IPV4_PROTOCOL, \
     IPV6_NEXT_HEADER
-from flowspec import translate_sequence as trps
+from flowapp.flowspec import translate_sequence as trps
 
 
 def create_ipv4(rule, message_type=ANNOUNCE):
@@ -55,23 +55,15 @@ def create_rtbh(rule, message_type=ANNOUNCE):
         action = 'withdraw'
 
     if rule.ipv4:
-        if 0 <= rule.ipv4_mask <= IPV4_DEFMASK:
-            my_mask = rule.ipv4_mask
-        else:
-            my_mask = IPV4_DEFMASK
-
+        my_4mask = sanitize_mask(rule.ipv4_mask, IPV4_DEFMASK)
         source = '{}'.format(rule.ipv4) if rule.ipv4 else ''
-        source += '/{}'.format(my_mask) if rule.ipv4 else ''
+        source += '/{}'.format(my_4mask) if rule.ipv4 else ''
         nexthop = '192.0.2.1'
 
     if rule.ipv6:
-        if 0 <= rule.ipv4_mask <= IPV6_DEFMASK:
-            my_mask = rule.ipv4_mask
-        else:
-            my_mask = IPV6_DEFMASK
-
+        my_6mask = sanitize_mask(rule.ipv6_mask, IPV6_DEFMASK)
         source = '{}'.format(rule.ipv6) if rule.ipv6 else ''
-        source += '/{}'.format(my_mask) if rule.ipv6 else ''
+        source += '/{}'.format(my_6mask) if rule.ipv6 else ''
         nexthop = '100::1'
 
     community_string = "community [{}]".format(rule.community.comm) if rule.community.comm else ""
@@ -152,6 +144,9 @@ def sanitize_mask(rule_mask, default_mask =IPV4_DEFMASK):
     :param rule: flowspec rule
     :return: int mask
     """
+    if not rule_mask:
+        return default_mask
+
     if 0 <= rule_mask <= default_mask:
         return rule_mask
     else:

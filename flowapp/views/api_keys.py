@@ -1,6 +1,6 @@
 import jwt
 from flask import Blueprint, render_template, redirect, flash, request, url_for, session, make_response
-from os import urandom
+import secrets
 
 from ..forms import ApiKeyForm
 from ..models import ApiKey
@@ -42,7 +42,7 @@ def add():
     Add new ApiKey
     :return: form or redirect to list of keys
     """
-    generated = urandom(24).encode('hex')
+    generated = secrets.token_hex(24)
     form = ApiKeyForm(request.form, key=generated)
 
     if request.method == 'POST' and form.validate():

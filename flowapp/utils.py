@@ -1,6 +1,7 @@
 from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
+from flowapp.constants import COMP_FUNCS
 
 
 def quote_to_ent(comment):
@@ -13,11 +14,16 @@ def quote_to_ent(comment):
     return comment.replace('"', '&quot;')
 
 
-def webpicker_to_datetime(webtime):
+def webpicker_to_datetime(webtime, format='yearfirst'):
     """
     convert 'YYYY/MM/DD HH:mm' to datetime
     """
-    return datetime.strptime(webtime, '%Y/%m/%d %H:%M')
+    if format=='yearfirst':
+        formating_string = '%Y/%m/%d %H:%M'
+    else:
+        formating_string = '%m/%d/%Y %H:%M'
+
+    return datetime.strptime(webtime, formating_string)
 
 
 def datetime_to_webpicker(python_time):
@@ -83,14 +89,9 @@ def active_css_rstate(rtype, rstate):
 
 
 def get_comp_func(rstate='active'):
-    comp_funcs = {
-        'active': ge,
-        'expired': lt,
-        'all': None
-    }
 
     try:
-        comp_func = comp_funcs[rstate]
+        comp_func = COMP_FUNCS[rstate]
     except IndexError:
         comp_func = None
     except KeyError:
