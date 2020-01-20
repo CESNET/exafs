@@ -9,7 +9,9 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     @param rule models.Flowspec4
     @return string message
     """
-    protocol = 'protocol ={};'.format(IPV4_PROTOCOL[rule.protocol]) if rule.protocol else ''
+    protocol = ''
+    if rule.protocol and rule.protocol != 'all':
+        protocol = 'protocol ={};'.format(IPV4_PROTOCOL[rule.protocol])
     flagstring = rule.flags.replace(";", " ")
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
@@ -30,8 +32,9 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     @return string message
     :param message_type:
     """
-    protocol = 'next-header ={};'.format(
-        IPV6_NEXT_HEADER[rule.next_header]) if rule.next_header else ''
+    protocol = ''
+    if rule.next_header and rule.next_header != 'all':
+        protocol = 'next-header ={};'.format(IPV6_NEXT_HEADER[rule.next_header])
     flagstring = rule.flags.replace(";", " ")
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.next_header == 'tcp' else ''

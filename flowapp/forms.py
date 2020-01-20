@@ -5,6 +5,8 @@ from wtforms.validators import DataRequired, Length, Email, NumberRange, Optiona
 from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
     whole_world_range, network_in_range, IPAddress
 
+from flowapp.constants import IPV4_PROTOCOL, IPV6_NEXT_HEADER
+
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
              ('ECE', 'ECE'), ('CWR', 'CWR'), ('NS', 'NS')]
 
@@ -347,7 +349,7 @@ class IPv4Form(IPForm):
                              validators=[Optional(), NumberRange(min=0, max=32, message='invalid mask value (0-32)')])
 
     protocol = SelectField('Protocol',
-                           choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
+                           choices=[(pr, pr.upper()) for pr in IPV4_PROTOCOL.keys()],
                            validators=[DataRequired()])
 
     def validate_ipv_specific(self):
@@ -389,7 +391,7 @@ class IPv6Form(IPForm):
                                          NumberRange(min=0, max=128, message='invalid prefix value (0-128)')])
 
     next_header = SelectField('Next Header',
-                              choices=[('tcp', 'TCP'), ('udp', 'UDP'), ('icmp', 'ICMP')],
+                              choices=[(pr, pr.upper()) for pr in IPV6_NEXT_HEADER.keys()],
                               validators=[DataRequired()])
 
     def validate_ipv_specific(self):

@@ -62,13 +62,15 @@ MAX_PACKET = 9216
 IPV6_NEXT_HEADER = {
     'tcp': 'tcp',
     'udp': 'udp',
-    'icmp': '58'
+    'icmp': '58',
+    'all': ''
 }
 
 IPV4_PROTOCOL = {
     'tcp': 'tcp',
     'udp': 'udp',
-    'icmp': 'icmp'
+    'icmp': 'icmp',
+    'all': ''
 }
 
 
