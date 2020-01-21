@@ -9,6 +9,9 @@ def output_date_format(json_request_data, pref_format='yearfirst'):
     prefer user setting from parameter, if the parameter is not set
     then use the prefered format computed from input date
     """
+    if not json_request_data:
+        return pref_format
+
     if "time_format" in json_request_data and json_request_data["time_format"]:
         return json_request_data["time_format"]
     else:
@@ -21,6 +24,8 @@ def parse_api_time(apitime):
     :param apitime: string with date and time
     :returns: datetime, prefered format
     """
+    apitime = str(apitime)
+
     try:
         return round_to_ten_minutes(webpicker_to_datetime(apitime)), "yearfirst"
     except ValueError:

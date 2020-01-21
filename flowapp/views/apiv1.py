@@ -280,6 +280,7 @@ def create_rtbh(current_user):
 
     json_request_data = request.get_json()
     form = RTBHForm(data=json_request_data)
+    print("DD", json_request_data)
 
     form.community.choices = get_user_communities(current_user['role_ids'])
     form.net_ranges = net_ranges
