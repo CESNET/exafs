@@ -11,7 +11,8 @@ from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, Community, get_us
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, \
     get_rtbh_model_if_exists
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
-from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_ent, get_state_by_time, parse_api_time
+from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_ent, get_state_by_time, \
+     parse_api_time, output_date_format
 from flowapp.auth import check_access_rights
 from flowapp.output import ROUTE_MODELS, RULE_TYPES, announce_route, log_route, log_withdraw
 
@@ -154,7 +155,8 @@ def create_ipv4(current_user):
     :return: json response
     """
     net_ranges = get_user_nets(current_user['id'])
-    form = IPv4Form(data=request.get_json())
+    json_request_data = request.get_json()
+    form = IPv4Form(data=json_request_data)
     # add values to form instance
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
@@ -201,6 +203,7 @@ def create_ipv4(current_user):
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['IPv4'])
 
+    pref_format = output_date_format(json_request_data, pref_format)
     return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
 
 
@@ -215,7 +218,8 @@ def create_ipv6(current_user):
     :return:
     """
     net_ranges = get_user_nets(current_user['id'])
-    form = IPv6Form(data=request.get_json())
+    json_request_data = request.get_json()
+    form = IPv6Form(data=json_request_data)
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
 
@@ -260,6 +264,7 @@ def create_ipv6(current_user):
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['IPv6'])
 
+    pref_format = output_date_format(json_request_data, pref_format)
     return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
 
 
@@ -272,7 +277,9 @@ def create_rtbh(current_user):
         insert_initial_communities()
 
     net_ranges = get_user_nets(current_user['id'])
-    form = RTBHForm(data=request.get_json())
+
+    json_request_data = request.get_json()
+    form = RTBHForm(data=json_request_data)
 
     form.community.choices = get_user_communities(current_user['role_ids'])
     form.net_ranges = net_ranges
@@ -292,11 +299,9 @@ def create_rtbh(current_user):
     model = get_rtbh_model_if_exists(form.data, 1)
 
     if model:
-        print("ExIsT")
         model.expires, pref_format = parse_api_time(form.expires.data)
         flash_message = u'Existing RTBH Rule found. Expiration time was updated to new value.'
     else:
-        print("cReaTe")
         expires, pref_format = parse_api_time(form.expires.data)
         model = RTBH(
             ipv4=form.ipv4.data,
@@ -320,6 +325,7 @@ def create_rtbh(current_user):
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['RTBH'])
 
+    pref_format = output_date_format(json_request_data, pref_format)
     return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
 
 

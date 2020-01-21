@@ -4,6 +4,16 @@ from flask import flash
 from flowapp.constants import COMP_FUNCS
 
 
+def output_date_format(json_request_data, pref_format='yearfirst'):
+    """
+    prefer user setting from parameter, if the parameter is not set
+    then use the prefered format computed from input date
+    """
+    if "time_format" in json_request_data and json_request_data["time_format"]:
+        return json_request_data["time_format"]
+    else:
+        return pref_format
+
 
 def parse_api_time(apitime):
     """
