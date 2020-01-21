@@ -1,7 +1,37 @@
-import flowapp.utils
-from datetime import datetime, timedelta
 import ipaddress
 import pytest
+
+from datetime import datetime, timedelta
+
+from flowapp import utils
+
+@pytest.mark.parametrize("apitime, preformat", [
+    ("10/15/2015 14:46", "us"),
+    ("2015/10/15 14:46", "yearfirst"),
+    ("1444913400", "timestamp")
+])
+def test_parse_api_time(apitime, preformat):
+    """
+    is the time parsed correctly
+    """
+    result = utils.parse_api_time(apitime)
+    assert type(result) == type((1,2))
+    assert result[0] == datetime(2015, 10, 15, 14, 50)
+    assert result[1] == preformat
+ 
+
+@pytest.mark.parametrize("apitime", [
+    "10/152015 14:46",
+    "201/10/15 14:46",
+    "144123254913400",
+    "abcd"
+])
+def test_parse_api_time_bad_time(apitime):
+    """
+    is the time parsed correctly
+    """
+    assert utils.parse_api_time(apitime) == False
+
 
 
 def test_get_rule_state_by_time():
@@ -10,7 +40,7 @@ def test_get_rule_state_by_time():
     """
     past = datetime.now() - timedelta(days=1)
 
-    assert flowapp.utils.get_state_by_time(past) == 2
+    assert utils.get_state_by_time(past) == 2
 
 
 def test_round_to_ten():
@@ -21,8 +51,8 @@ def test_round_to_ten():
     d2 = datetime(2013, 9, 2, 16, 32, 59)
     dround = datetime(2013, 9, 2, 16, 30, 00)
 
-    assert flowapp.utils.round_to_ten_minutes(d1) == dround
-    assert flowapp.utils.round_to_ten_minutes(d2) == dround
+    assert utils.round_to_ten_minutes(d1) == dround
+    assert utils.round_to_ten_minutes(d2) == dround
 
 
 @pytest.mark.parametrize("address_a, address_b", [

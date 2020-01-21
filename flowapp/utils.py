@@ -4,6 +4,33 @@ from flask import flash
 from flowapp.constants import COMP_FUNCS
 
 
+
+def parse_api_time(apitime):
+    """
+    check if the api time is in US, EU or timestamp format
+    :param apitime: string with date and time
+    :returns: datetime, prefered format
+    """
+    try:
+        return round_to_ten_minutes(webpicker_to_datetime(apitime)), "yearfirst"
+    except ValueError:
+        mytime = False
+
+    try:
+        return round_to_ten_minutes(webpicker_to_datetime(apitime, 'us')), "us"
+    except ValueError:
+        mytime = False
+
+    try:
+        return round_to_ten_minutes(datetime.fromtimestamp(int(apitime))), "timestamp"
+    except OverflowError:
+        mytime = False
+    except ValueError:
+        mytime = False
+
+    return False             
+
+
 def quote_to_ent(comment):
     """
     Convert all " to &quot;
