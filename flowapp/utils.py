@@ -53,11 +53,16 @@ def webpicker_to_datetime(webtime, format='yearfirst'):
     return datetime.strptime(webtime, formating_string)
 
 
-def datetime_to_webpicker(python_time):
+def datetime_to_webpicker(python_time, format='yearfirst'):
     """
     convert datetime to 'YYYY/MM/DD HH:mm' string
     """
-    return datetime.strftime(python_time, '%Y/%m/%d %H:%M')
+    if format=='yearfirst':
+        formating_string = '%Y/%m/%d %H:%M'
+    else:
+        formating_string = '%m/%d/%Y %H:%M'
+
+    return datetime.strftime(python_time, formating_string)
 
 
 def get_state_by_time(python_time):

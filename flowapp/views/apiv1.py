@@ -11,7 +11,7 @@ from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, Community, get_us
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, \
     get_rtbh_model_if_exists
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
-from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_ent, get_state_by_time
+from flowapp.utils import round_to_ten_minutes, webpicker_to_datetime, quote_to_ent, get_state_by_time, parse_api_time
 from flowapp.auth import check_access_rights
 from flowapp.output import ROUTE_MODELS, RULE_TYPES, announce_route, log_route, log_withdraw
 
@@ -168,9 +168,10 @@ def create_ipv4(current_user):
     model = get_ipv4_model_if_exists(form.data, 1)
 
     if model:
-        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us'))
+        model.expires, pref_format = parse_api_time(form.expires.data)
         flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
     else:
+        expires, pref_format = parse_api_time(form.expires.data)
         model = Flowspec4(
             source=form.source.data,
             source_mask=form.source_mask.data,
@@ -181,11 +182,11 @@ def create_ipv4(current_user):
             protocol=form.protocol.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us')),
+            expires=expires,
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
-            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data, 'us'))
+            rstate_id=get_state_by_time(expires)
         )
         flash_message = u'IPv4 Rule saved'
         db.session.add(model)
@@ -200,7 +201,7 @@ def create_ipv4(current_user):
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['IPv4'])
 
-    return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
+    return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
 
 
 @api.route('/rules/ipv6', methods=['POST'])
@@ -226,10 +227,10 @@ def create_ipv6(current_user):
     model = get_ipv6_model_if_exists(form.data, 1)
 
     if model:
-        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us'))
+        model.expires, pref_format = parse_api_time(form.expires.data)
         flash_message = u'Existing IPv6 Rule found. Expiration time was updated to new value.'
     else:
-
+        expires, pref_format = parse_api_time(form.expires.data)
         model = Flowspec6(
             source=form.source.data,
             source_mask=form.source_mask.data,
@@ -240,11 +241,11 @@ def create_ipv6(current_user):
             next_header=form.next_header.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us')),
+            expires=expires,
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user['id'],
-            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data, 'us'))
+            rstate_id=get_state_by_time(expires)
         )
         flash_message = u'IPv6 Rule saved'
         db.session.add(model)
@@ -259,7 +260,7 @@ def create_ipv6(current_user):
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['IPv6'])
 
-    return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
+    return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
 
 
 @api.route('/rules/rtbh', methods=['POST'])
@@ -291,19 +292,22 @@ def create_rtbh(current_user):
     model = get_rtbh_model_if_exists(form.data, 1)
 
     if model:
-        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us'))
+        print("ExIsT")
+        model.expires, pref_format = parse_api_time(form.expires.data)
         flash_message = u'Existing RTBH Rule found. Expiration time was updated to new value.'
     else:
+        print("cReaTe")
+        expires, pref_format = parse_api_time(form.expires.data)
         model = RTBH(
             ipv4=form.ipv4.data,
             ipv4_mask=form.ipv4_mask.data,
             ipv6=form.ipv6.data,
             ipv6_mask=form.ipv6_mask.data,
             community_id=form.community.data,
-            expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data, 'us')),
+            expires=expires,
             comment=quote_to_ent(form.comment.data),
             user_id=current_user['id'],
-            rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data, 'us'))
+            rstate_id=get_state_by_time(expires)
         )
         db.session.add(model)
         db.session.commit()
@@ -316,7 +320,7 @@ def create_rtbh(current_user):
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['RTBH'])
 
-    return jsonify({'message': flash_message, 'rule': model.to_dict()}), 201
+    return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
 
 
 @api.route('/rules/ipv4/<int:rule_id>', methods=['GET'])
@@ -459,3 +463,5 @@ def get_form_errors(form):
         return {'message': 'error - invalid request data', 'validation_errors': form.errors}
 
     return False
+
+

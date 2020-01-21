@@ -225,11 +225,18 @@ class RTBH(db.Model):
         self.expires = utils.webpicker_to_datetime(form.expire_date.data)
         db.session.commit()
 
-    def to_dict(self):
+    def to_dict(self, prefered_format='yearfirst'):
         """
-        Serialize to dict
+        Serialize to dict used in API
+        :param prefered_format: string with prefered time format
         :return: dictionary
         """
+        if prefered_format == 'timestamp':
+            expires = str(int(datetime.timestamp(self.expires)))
+            created = str(int(datetime.timestamp(self.expires)))
+        else:
+            expires = utils.datetime_to_webpicker(self.expires, prefered_format)
+            created = utils.datetime_to_webpicker(self.created, prefered_format)
 
         return {
             "id": self.id,
@@ -239,8 +246,8 @@ class RTBH(db.Model):
             "ipv6_mask": self.ipv6_mask,
             "community": self.community.name,
             "comment": self.comment,
-            "expires": utils.datetime_to_webpicker(self.expires),
-            "created": utils.datetime_to_webpicker(self.created),
+            "expires": expires,
+            "created": created,
             "user": self.user.uuid,
             "rstate": self.rstate.description
         }
@@ -346,11 +353,19 @@ class Flowspec4(db.Model):
 
         return not compars
 
-    def to_dict(self):
+    def to_dict(self, prefered_format='yearfirst'):
         """
         Serialize to dict
+        :param prefered_format: string with prefered time format
         :return: dictionary
         """
+        if prefered_format == 'timestamp':
+            expires = str(int(datetime.timestamp(self.expires)))
+            created = str(int(datetime.timestamp(self.expires)))
+        else:
+            expires = utils.datetime_to_webpicker(self.expires, prefered_format)
+            created = utils.datetime_to_webpicker(self.created, prefered_format)
+
         return {
             "id": self.id,
             "source": self.source,
@@ -363,8 +378,8 @@ class Flowspec4(db.Model):
             "flags": self.flags,
             "packet_len": self.packet_len,
             "comment": self.comment,
-            "expires": utils.datetime_to_webpicker(self.expires),
-            "created": utils.datetime_to_webpicker(self.created),
+            "expires": expires,
+            "created": created,
             "action": self.action.name,
             "user": self.user.uuid,
             "rstate": self.rstate.description
@@ -463,11 +478,19 @@ class Flowspec6(db.Model):
                and self.flags == other.flags and self.packet_len == other.packet_len \
                and self.action_id == other.action_id and self.rstate_id == other.rstate_id
 
-    def to_dict(self):
+    def to_dict(self, prefered_format='yearfirst'):
         """
         Serialize to dict
-        :return: dictionary
+        :param prefered_format: string with prefered time format
+        :returns: dictionary
         """
+        if prefered_format == 'timestamp':
+            expires = str(int(datetime.timestamp(self.expires)))
+            created = str(int(datetime.timestamp(self.expires)))
+        else:
+            expires = utils.datetime_to_webpicker(self.expires, prefered_format)
+            created = utils.datetime_to_webpicker(self.created, prefered_format)
+
         return {
             "id": str(self.id),
             "source": self.source,
@@ -480,8 +503,8 @@ class Flowspec6(db.Model):
             "flags": self.flags,
             "packet_len": self.packet_len,
             "comment": self.comment,
-            "expires": utils.datetime_to_webpicker(self.expires),
-            "created": utils.datetime_to_webpicker(self.created),
+            "expires": expires,
+            "created": created,
             "action": self.action.name,
             "user": self.user.uuid,
             "rstate": self.rstate.description

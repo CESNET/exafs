@@ -246,3 +246,144 @@ def test_rules(client, db, jwt_token):
     data = json.loads(req.data)
     assert len(data['ipv4_rules']) == 1
     assert len(data['ipv6_rules']) == 1
+
+
+def test_update_existing_v4rule_with_timestamp(client, db, jwt_token):
+    """
+   test that update with different data passes
+    """
+    req = client.post('/api/v1/rules/ipv4',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "action": 2,
+                          "protocol": "tcp",
+                          "source": "147.230.17.17",
+                          "source_mask": 32,
+                          "source_port": "",
+                          "expires": "1444913400"
+                      }
+                      )
+
+    assert req.status_code == 201
+    data = json.loads(req.data)
+    assert data['rule']
+    assert data['rule']['id'] == 1
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+    assert data['rule']['expires'] == "1444913400"
+
+
+
+def test_create_v4rule_with_timestamp(client, db, jwt_token):
+    """
+    test that creating with valid data returns 201
+    """
+    req = client.post('/api/v1/rules/ipv4',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "action": 2,
+                          "protocol": "tcp",
+                          "source": "147.230.17.117",
+                          "source_mask": 32,
+                          "source_port": "",
+                          "expires": "1444913400"
+                      }
+                      )
+
+    assert req.status_code == 201
+    data = json.loads(req.data)
+    assert data['rule']
+    assert data['rule']['id'] == 2
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+    assert data['rule']['expires'] == "1444913400"    
+
+
+def test_update_existing_v6rule_with_timestamp(client, db, jwt_token):
+    """
+    test that update with different data passes
+    """
+    req = client.post('/api/v1/rules/ipv6',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "action": 3,
+                          "next_header": "tcp",
+                          "source": "2001:718:1C01:1111::",
+                          "source_mask": 64,
+                          "source_port": "",
+                          "expires": "1444913400"
+                      }
+                      )
+    data = json.loads(req.data)
+    assert req.status_code == 201
+    assert data['rule']
+    assert data['rule']['id'] == '1'
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+    assert data['rule']['expires'] == "1444913400"
+
+
+def test_create_v6rule_with_timestamp(client, db, jwt_token):
+    """
+    test that creating with valid data returns 201
+    """
+    req = client.post('/api/v1/rules/ipv6',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "action": 2,
+                          "next_header": "udp",
+                          "source": "2001:718:1C01:1111::",
+                          "source_mask": 64,
+                          "source_port": "",
+                          "expires": "1444913400"
+                      }
+                      )
+    data = json.loads(req.data)
+    assert req.status_code == 201
+    assert data['rule']
+    assert data['rule']['id'] == '2'
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+    assert data['rule']['expires'] == "1444913400"    
+
+
+def test_update_existing_rtbh_rule_with_timestamp(client, db, jwt_token):
+    """
+    test that update with different data passes
+    """
+    req = client.post('/api/v1/rules/rtbh',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "community": 1,
+                          "ipv4": "147.230.17.17",
+                          "ipv4_mask": 32,
+                          "expires": "1444913400"
+                      }
+                      )
+    data = json.loads(req.data)
+    print("RTBH DATA", data)
+    assert req.status_code == 201
+    assert data['rule']
+    assert data['rule']['id'] == 1
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+    assert data['rule']['expires'] == "1444913400"
+
+
+
+def test_create_rtbh_rule_with_timestamp(client, db, jwt_token):
+    """
+    test that creating with valid data returns 201
+    """
+    req = client.post('/api/v1/rules/rtbh',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "community": 1,
+                          "ipv4": "147.230.17.117",
+                          "ipv4_mask": 32,
+                          "expires": "1444913400"
+                      }
+                      )
+    data = json.loads(req.data)
+    print("RTBH DATA", data)
+    assert req.status_code == 201
+    assert data['rule']
+    assert data['rule']['id'] == 2
+    assert data['rule']['user'] == 'jiri.vrany@tul.cz'
+    assert data['rule']['expires'] == "1444913400"
+
