@@ -1,10 +1,10 @@
 from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
-from flowapp.constants import COMP_FUNCS
+from flowapp.constants import COMP_FUNCS, TIME_YEAR, TIME_US, TIME_STMP, TIME_FORMAT_ARG
 
 
-def output_date_format(json_request_data, pref_format='yearfirst'):
+def output_date_format(json_request_data, pref_format=TIME_YEAR):
     """
     prefer user setting from parameter, if the parameter is not set
     then use the prefered format computed from input date
@@ -12,8 +12,8 @@ def output_date_format(json_request_data, pref_format='yearfirst'):
     if not json_request_data:
         return pref_format
 
-    if "time_format" in json_request_data and json_request_data["time_format"]:
-        return json_request_data["time_format"]
+    if TIME_FORMAT_ARG in json_request_data and json_request_data[TIME_FORMAT_ARG]:
+        return json_request_data[TIME_FORMAT_ARG]
     else:
         return pref_format
 
@@ -27,17 +27,17 @@ def parse_api_time(apitime):
     apitime = str(apitime)
 
     try:
-        return round_to_ten_minutes(webpicker_to_datetime(apitime)), "yearfirst"
+        return round_to_ten_minutes(webpicker_to_datetime(apitime)), TIME_YEAR
     except ValueError:
         mytime = False
 
     try:
-        return round_to_ten_minutes(webpicker_to_datetime(apitime, 'us')), "us"
+        return round_to_ten_minutes(webpicker_to_datetime(apitime, TIME_US)), TIME_US
     except ValueError:
         mytime = False
 
     try:
-        return round_to_ten_minutes(datetime.fromtimestamp(int(apitime))), "timestamp"
+        return round_to_ten_minutes(datetime.fromtimestamp(int(apitime))), TIME_STMP
     except OverflowError:
         mytime = False
     except ValueError:
@@ -56,11 +56,11 @@ def quote_to_ent(comment):
     return comment.replace('"', '&quot;')
 
 
-def webpicker_to_datetime(webtime, format='yearfirst'):
+def webpicker_to_datetime(webtime, format=TIME_YEAR):
     """
     convert 'YYYY/MM/DD HH:mm' to datetime
     """
-    if format=='yearfirst':
+    if format==TIME_YEAR:
         formating_string = '%Y/%m/%d %H:%M'
     else:
         formating_string = '%m/%d/%Y %H:%M'
@@ -68,11 +68,11 @@ def webpicker_to_datetime(webtime, format='yearfirst'):
     return datetime.strptime(webtime, formating_string)
 
 
-def datetime_to_webpicker(python_time, format='yearfirst'):
+def datetime_to_webpicker(python_time, format=TIME_YEAR):
     """
     convert datetime to 'YYYY/MM/DD HH:mm' string
     """
-    if format=='yearfirst':
+    if format==TIME_YEAR:
         formating_string = '%Y/%m/%d %H:%M'
     else:
         formating_string = '%m/%d/%Y %H:%M'

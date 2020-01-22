@@ -38,6 +38,9 @@ TYPE_ARG = 'rule_type'
 SEARCH_ARG = 'squery'
 ORDSRC_ARG = 'ordsrc'
 TIME_FORMAT_ARG = 'time_format'
+TIME_YEAR="yearfirst"
+TIME_US="us"
+TIME_STMP="timestamp"
 
 RULES_KEY = 'rules'
 
