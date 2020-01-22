@@ -232,8 +232,8 @@ class RTBH(db.Model):
         :return: dictionary
         """
         if prefered_format == 'timestamp':
-            expires = str(int(datetime.timestamp(self.expires)))
-            created = str(int(datetime.timestamp(self.expires)))
+            expires = int(datetime.timestamp(self.expires))
+            created = int(datetime.timestamp(self.expires))
         else:
             expires = utils.datetime_to_webpicker(self.expires, prefered_format)
             created = utils.datetime_to_webpicker(self.created, prefered_format)
@@ -360,8 +360,8 @@ class Flowspec4(db.Model):
         :return: dictionary
         """
         if prefered_format == 'timestamp':
-            expires = str(int(datetime.timestamp(self.expires)))
-            created = str(int(datetime.timestamp(self.expires)))
+            expires = int(datetime.timestamp(self.expires))
+            created = int(datetime.timestamp(self.expires))
         else:
             expires = utils.datetime_to_webpicker(self.expires, prefered_format)
             created = utils.datetime_to_webpicker(self.created, prefered_format)
@@ -485,8 +485,8 @@ class Flowspec6(db.Model):
         :returns: dictionary
         """
         if prefered_format == 'timestamp':
-            expires = str(int(datetime.timestamp(self.expires)))
-            created = str(int(datetime.timestamp(self.expires)))
+            expires = int(datetime.timestamp(self.expires))
+            created = int(datetime.timestamp(self.expires))
         else:
             expires = utils.datetime_to_webpicker(self.expires, prefered_format)
             created = utils.datetime_to_webpicker(self.created, prefered_format)

@@ -259,8 +259,8 @@ def test_timestamp_param(client, db, jwt_token):
     assert req.status_code == 200
 
     data = json.loads(req.data)
-    assert data['ipv4_rules'][0]['expires'] == "2549454600"
-    assert data['ipv6_rules'][0]['expires'] == "2550318600"
+    assert data['ipv4_rules'][0]['expires'] == 2549454600
+    assert data['ipv6_rules'][0]['expires'] == 2550318600
 
 
 
@@ -286,7 +286,7 @@ def test_update_existing_v4rule_with_timestamp(client, db, jwt_token):
     assert data['rule']
     assert data['rule']['id'] == 1
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
-    assert data['rule']['expires'] == "1444913400"
+    assert data['rule']['expires'] == 1444913400
 
 
 
@@ -311,7 +311,7 @@ def test_create_v4rule_with_timestamp(client, db, jwt_token):
     assert data['rule']
     assert data['rule']['id'] == 2
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
-    assert data['rule']['expires'] == "1444913400"    
+    assert data['rule']['expires'] == 1444913400
 
 
 def test_update_existing_v6rule_with_timestamp(client, db, jwt_token):
@@ -334,7 +334,7 @@ def test_update_existing_v6rule_with_timestamp(client, db, jwt_token):
     assert data['rule']
     assert data['rule']['id'] == '1'
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
-    assert data['rule']['expires'] == "1444913400"
+    assert data['rule']['expires'] == 1444913400
 
 
 def test_create_v6rule_with_timestamp(client, db, jwt_token):
@@ -357,7 +357,7 @@ def test_create_v6rule_with_timestamp(client, db, jwt_token):
     assert data['rule']
     assert data['rule']['id'] == '2'
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
-    assert data['rule']['expires'] == "1444913400"    
+    assert data['rule']['expires'] == 1444913400 
 
 
 def test_update_existing_rtbh_rule_with_timestamp(client, db, jwt_token):
@@ -379,7 +379,7 @@ def test_update_existing_rtbh_rule_with_timestamp(client, db, jwt_token):
     assert data['rule']
     assert data['rule']['id'] == 1
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
-    assert data['rule']['expires'] == "1444913400"
+    assert data['rule']['expires'] == 1444913400
 
 
 
@@ -402,5 +402,5 @@ def test_create_rtbh_rule_with_timestamp(client, db, jwt_token):
     assert data['rule']
     assert data['rule']['id'] == 2
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
-    assert data['rule']['expires'] == "1444913400"
+    assert data['rule']['expires'] == 1444913400
 
