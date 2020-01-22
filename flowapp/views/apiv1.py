@@ -287,13 +287,6 @@ def create_rtbh(current_user):
     form.community.choices = get_user_communities(current_user['role_ids'])
     form.net_ranges = net_ranges
 
-    if 3 not in current_user['role_ids']:
-        if form.ipv4.data:
-            form.ipv4_mask.data = 32
-
-        if form.ipv6.data:
-            form.ipv6_mask.data = 128
-
     if not form.validate():
         form_errors = get_form_errors(form)
         if form_errors:

@@ -12,11 +12,7 @@
           {{ render_field(form.ipv4) }}
         </div>
         <div class="col-sm-4">
-          {% if  3 in session['user_role_ids'] %}
             {{ render_field(form.ipv4_mask) }}
-          {% else %}
-            {{ render_field(form.ipv4_mask, disabled=True, value="32") }}
-          {% endif %}
         </div>
       </div>
       <div class="row">
@@ -24,12 +20,7 @@
           {{ render_field(form.ipv6) }}
         </div>
         <div class="col-sm-4">
-          {% if  3 in session['user_role_ids'] %}
             {{ render_field(form.ipv6_mask) }}
-          {% else %}
-            {{ render_field(form.ipv6_mask, disabled=True, value="128") }}
-          {% endif %}
-          
         </div>
       </div>
     </div>
