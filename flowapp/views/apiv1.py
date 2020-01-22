@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify
 from functools import wraps
 from datetime import datetime, timedelta
 
-import flowapp.constants
+from flowapp.constants import WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG
 from flowapp import app, db, validators, flowspec, csrf, messages
 from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, Community, get_user_nets, get_user_actions, \
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, \
@@ -76,8 +76,10 @@ def authorize(user_key):
 @api.route('/rules')
 @token_required
 def index(current_user):
-    net_ranges = get_user_nets(current_user['id'])
+    prefered_tf = request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
+  
 
+    net_ranges = get_user_nets(current_user['id'])
     rules4 = db.session.query(Flowspec4).order_by(Flowspec4.expires.desc()).all()
     rules6 = db.session.query(Flowspec6).order_by(Flowspec6.expires.desc()).all()
     rules_rtbh = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
@@ -85,9 +87,9 @@ def index(current_user):
     # admin can see and edit any rules
     if 3 in current_user['role_ids']:
         payload = {
-            "ipv4_rules": [rule.to_dict() for rule in rules4],
-            "ipv6_rules": [rule.to_dict() for rule in rules6],
-            "rules_rtbh": [rule.to_dict() for rule in rules_rtbh]
+            "ipv4_rules": [rule.to_dict(prefered_tf) for rule in rules4],
+            "ipv6_rules": [rule.to_dict(prefered_tf) for rule in rules6],
+            "rules_rtbh": [rule.to_dict(prefered_tf) for rule in rules_rtbh]
         }
         return jsonify(payload)
     # filter out the rules for normal users
@@ -103,11 +105,11 @@ def index(current_user):
         rules6_editable, rules6_visible = flowspec.filter_rules_action(user_actions, rules6)
 
         payload = {
-            "ipv4_rules": [rule.to_dict() for rule in rules4_editable],
-            "ipv6_rules": [rule.to_dict() for rule in rules6_editable],
-            "ipv4_rules_readonly": [rule.to_dict() for rule in rules4_visible],
-            "ipv6_rules_readonly": [rule.to_dict() for rule in rules6_visible],
-            "rtbh_rules": [rule.to_dict() for rule in rules_rtbh]
+            "ipv4_rules": [rule.to_dict(prefered_tf) for rule in rules4_editable],
+            "ipv6_rules": [rule.to_dict(prefered_tf) for rule in rules6_editable],
+            "ipv4_rules_readonly": [rule.to_dict(prefered_tf) for rule in rules4_visible],
+            "ipv6_rules_readonly": [rule.to_dict(prefered_tf) for rule in rules6_visible],
+            "rtbh_rules": [rule.to_dict(prefered_tf) for rule in rules_rtbh]
         }
         return jsonify(payload)
 
@@ -197,7 +199,7 @@ def create_ipv4(current_user):
 
     # announce route if model is in active state
     if model.rstate_id == 1:
-        route = messages.create_ipv4(model, flowapp.constants.ANNOUNCE)
+        route = messages.create_ipv4(model, ANNOUNCE)
         announce_route(route)
 
     # log changes
@@ -258,7 +260,7 @@ def create_ipv6(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_ipv6(model, flowapp.constants.ANNOUNCE)
+        route = messages.create_ipv6(model, ANNOUNCE)
         announce_route(route)
 
     # log changes
@@ -321,7 +323,7 @@ def create_rtbh(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_rtbh(model, flowapp.constants.ANNOUNCE)
+        route = messages.create_rtbh(model, ANNOUNCE)
         announce_route(route)
     # log changes
     log_route(current_user['id'], model, RULE_TYPES['RTBH'])
@@ -375,9 +377,11 @@ def get_rule(current_user, model, rule_id):
     :param model: rule model
     :return: json
     """
+    prefered_tf = request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
+
     if model:
         if check_access_rights(current_user, model.user_id):
-            return jsonify(model.to_dict()), 200
+            return jsonify(model.to_dict(prefered_tf)), 200
         else:
             return jsonify({'message': 'not allowed to view this rule'}), 401
     else:
@@ -433,7 +437,7 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
     if model:
         if check_access_rights(current_user, model.user_id):
             # withdraw route
-            route = route_model(model, flowapp.constants.WITHDRAW)
+            route = route_model(model, WITHDRAW)
             announce_route(route)
 
             log_withdraw(current_user['id'], route, rule_type, model.id)

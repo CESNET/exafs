@@ -248,6 +248,23 @@ def test_rules(client, db, jwt_token):
     assert len(data['ipv6_rules']) == 1
 
 
+
+def test_timestamp_param(client, db, jwt_token):
+    """
+    test that url param for time format works as expected
+    """
+    req = client.get('/api/v1/rules?time_format=timestamp',
+                     headers={'x-access-token': jwt_token})
+
+    assert req.status_code == 200
+
+    data = json.loads(req.data)
+    assert data['ipv4_rules'][0]['expires'] == "2549454600"
+    assert data['ipv6_rules'][0]['expires'] == "2550318600"
+
+
+
+
 def test_update_existing_v4rule_with_timestamp(client, db, jwt_token):
     """
    test that update with different data passes
