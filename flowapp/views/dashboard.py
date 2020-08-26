@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import jwt
 from flask import Blueprint, render_template, request, session, make_response, abort
 from flowapp import auth_required, constants, models, app, validators, flowspec
 from flowapp.constants import RULE_TYPE_DISPATCH, SORT_ARG, ORDER_ARG, DEFAULT_ORDER, DEFAULT_SORT, RULE_TYPES, \
@@ -54,12 +53,7 @@ def index(rtype='ipv4', rstate='active'):
     else:
         res, encoded = create_view_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query)
 
-
-
-    if app.config.get('DEVEL'):
-        res.set_cookie(RULES_KEY, encoded, httponly=True, samesite='Lax')
-    else:
-        res.set_cookie(RULES_KEY, encoded, secure=True, httponly=True, samesite='Lax')
+    session[RULES_KEY] = encoded
 
     return res
 
@@ -89,7 +83,7 @@ def create_admin_responose(rtype, rstate, rules, sort_key, sort_order, search_qu
                                         rtype_int=RULE_TYPES[rtype],
                                         today=datetime.now()))
 
-    encoded = create_jwt_payload(rules, rtype)
+    encoded = create_rules_payload(rules, rtype)
 
     return res, encoded
 
@@ -132,7 +126,7 @@ def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_quer
                                         rtype_int=RULE_TYPES[rtype],
                                         today=datetime.now()))
 
-    encoded = create_jwt_payload(rules_editable, rtype)
+    encoded = create_rules_payload(rules_editable, rtype)
 
     return res, encoded
 
@@ -160,21 +154,18 @@ def create_view_response(rtype, rstate, rules, sort_key, sort_order, search_quer
                                         rtype_int=RULE_TYPES[rtype],
                                         today=datetime.now()))
 
-    encoded = create_jwt_payload([], rtype)
+    encoded = create_rules_payload([], rtype)
 
     return res, encoded
 
 
-def create_jwt_payload(rules, rtype):
-    jwt_key = app.config.get('JWT_SECRET')
-
+def create_rules_payload(rules, rtype):
+    
     payload = {
         RULE_TYPES[rtype]: [rule.id for rule in rules]
     }
-
-    encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
-
-    return encoded
+    
+    return payload
 
 
 def filter_rules(rules, get_search_query):

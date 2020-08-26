@@ -1,25 +1,26 @@
 # flowapp/views/admin.py
-from typing import Set, Any
-
-import jwt
-
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, redirect, flash, request, url_for, session
-import requests
 from operator import ge, lt
+from typing import Any, Set
 
-import flowapp.constants
-from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RULE_TYPES
-from flowapp.forms import RTBHForm, IPv4Form, IPv6Form
-from flowapp.models import Action, RTBH, Flowspec4, Flowspec6, get_user_nets, get_user_actions, \
-    get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, Community, \
-    get_rtbh_model_if_exists
-from flowapp.auth import auth_required, admin_required, user_or_admin_required, localhost_only
-from flowapp.utils import webpicker_to_datetime, flash_errors, datetime_to_webpicker, round_to_ten_minutes, \
-    quote_to_ent, \
-    get_state_by_time
+import requests
+from flask import (Blueprint, flash, redirect, render_template, request,
+                   session, url_for)
 
-from flowapp import db, app, messages, constants
+from flowapp import app, constants, db, messages
+from flowapp.auth import (admin_required, auth_required, localhost_only,
+                          user_or_admin_required)
+from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
+from flowapp.models import (RTBH, Action, Community, Flowspec4, Flowspec6,
+                            get_ipv4_model_if_exists, get_ipv6_model_if_exists,
+                            get_rtbh_model_if_exists, get_user_actions,
+                            get_user_communities, get_user_nets,
+                            insert_initial_communities)
+from flowapp.output import (ROUTE_MODELS, RULE_TYPES, announce_route,
+                            log_route, log_withdraw)
+from flowapp.utils import (datetime_to_webpicker, flash_errors,
+                           get_state_by_time, quote_to_ent,
+                           round_to_ten_minutes, webpicker_to_datetime)
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
@@ -77,13 +78,13 @@ def reactivate_rule(rule_type, rule_id):
 
         if model.rstate_id == 1:
             # announce route
-            route = route_model(model, flowapp.constants.ANNOUNCE)
+            route = route_model(model, constants.ANNOUNCE)
             announce_route(route)
             # log changes
             log_route(session['user_id'], model, rule_type)
         else:
             # withdraw route
-            route = route_model(model, flowapp.constants.WITHDRAW)
+            route = route_model(model, constants.WITHDRAW)
             announce_route(route)
             # log changes
             log_withdraw(session['user_id'], route, rule_type, model.id)
@@ -119,17 +120,15 @@ def delete_rule(rule_type, rule_id):
     :param rule_type: string - type of rule to be deleted
     :param rule_id: integer - rule id
     """
-    rules_dict = request.cookies.get(constants.RULES_KEY)
-    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    rules_dict = session[constants.RULES_KEY]
     rules = rules_dict[str(rule_type)]
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]
 
     model = db.session.query(model_name).get(rule_id)
-
     if model.id in rules:
         # withdraw route
-        route = route_model(model, flowapp.constants.WITHDRAW)
+        route = route_model(model, constants.WITHDRAW)
         announce_route(route)
 
         log_withdraw(session['user_id'], route, rule_type, model.id)
@@ -181,8 +180,7 @@ def group_delete():
     """
     Delete rules
     """
-    rules_dict = request.cookies.get(constants.RULES_KEY)
-    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    rules_dict = session[constants.RULES_KEY]
     rule_type = session[constants.TYPE_ARG]
     rules = [str(rule) for rule in rules_dict[str(constants.RULE_TYPES[rule_type])]]
     model_name = DATA_MODELS_NAMED[rule_type]
@@ -195,7 +193,7 @@ def group_delete():
         for rule_id in to_delete:
             # withdraw route
             model = db.session.query(model_name).get(rule_id)
-            route = route_model(model, flowapp.constants.WITHDRAW)
+            route = route_model(model, constants.WITHDRAW)
             announce_route(route)
 
             log_withdraw(session['user_id'], route, rule_type, model.id)
@@ -226,8 +224,7 @@ def group_update():
     model_name = DATA_MODELS_NAMED[rule_type]
     form_name = DATA_FORMS_NAMED[rule_type]
     to_update = request.form.getlist('delete-id')
-    rules_dict = request.cookies.get(constants.RULES_KEY)
-    rules_dict = jwt.decode(rules_dict, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    rules_dict = session[constants.RULES_KEY]
     rule_type = session[constants.TYPE_ARG]
     rule_type_int = constants.RULE_TYPES[rule_type]
     rules = [str(rule) for rule in rules_dict[str(rule_type_int)]]
@@ -300,13 +297,13 @@ def group_update_save(rule_type):
 
         if model.rstate_id == 1:
             # announce route
-            route = route_model(model, flowapp.constants.ANNOUNCE)
+            route = route_model(model, constants.ANNOUNCE)
             announce_route(route)
             # log changes
             log_route(session['user_id'], model, rule_type)
         else:
             # withdraw route
-            route = route_model(model, flowapp.constants.WITHDRAW)
+            route = route_model(model, constants.WITHDRAW)
             announce_route(route)
             # log changes
             log_withdraw(session['user_id'], route, rule_type, model.id)
@@ -365,7 +362,7 @@ def ipv4_rule():
 
         # announce route if model is in active state
         if model.rstate_id == 1:
-            route = messages.create_ipv4(model, flowapp.constants.ANNOUNCE)
+            route = messages.create_ipv4(model, constants.ANNOUNCE)
             announce_route(route)
 
         # log changes
@@ -429,7 +426,7 @@ def ipv6_rule():
 
         # announce routes
         if model.rstate_id == 1:
-            route = messages.create_ipv6(model, flowapp.constants.ANNOUNCE)
+            route = messages.create_ipv6(model, constants.ANNOUNCE)
             announce_route(route)
 
         # log changes
@@ -491,7 +488,7 @@ def rtbh_rule():
         flash(flash_message, 'alert-success')
         # announce routes
         if model.rstate_id == 1:
-            route = messages.create_rtbh(model, flowapp.constants.ANNOUNCE)
+            route = messages.create_rtbh(model, constants.ANNOUNCE)
             announce_route(route)
         # log changes
         log_route(session['user_id'], model, RULE_TYPES['RTBH'])
@@ -533,18 +530,18 @@ def export():
 @rules.route('/announce_all', methods=['GET'])
 @localhost_only
 def announce_all():
-    announce_all_routes(flowapp.constants.ANNOUNCE)
+    announce_all_routes(constants.ANNOUNCE)
     return ' '
 
 
 @rules.route('/withdraw_expired', methods=['GET'])
 @localhost_only
 def withdraw_expired():
-    announce_all_routes(flowapp.constants.WITHDRAW)
+    announce_all_routes(constants.WITHDRAW)
     return ' '
 
 
-def announce_all_routes(action=flowapp.constants.ANNOUNCE):
+def announce_all_routes(action=constants.ANNOUNCE):
     """
     get routes from db and send it to ExaBGB api
 
@@ -552,7 +549,7 @@ def announce_all_routes(action=flowapp.constants.ANNOUNCE):
     :param action: action with routes - announce valid routes or withdraw expired routes
     """
     today = datetime.now()
-    comp_func = ge if action == flowapp.constants.ANNOUNCE else lt
+    comp_func = ge if action == constants.ANNOUNCE else lt
 
     rules4 = db.session.query(Flowspec4).filter(Flowspec4.rstate_id == 1).filter(
         comp_func(Flowspec4.expires, today)).order_by(
@@ -575,7 +572,7 @@ def announce_all_routes(action=flowapp.constants.ANNOUNCE):
     for message in output:
         requests.post(app.config.get('EXA_API_URL'), data={'command': message})
 
-    if action == flowapp.constants.WITHDRAW:
+    if action == constants.WITHDRAW:
         _a = [set_withdraw_state(rule) for rule in rules4]
         _a = [set_withdraw_state(rule) for rule in rules6]
         _a = [set_withdraw_state(rule) for rule in rules_rtbh]
