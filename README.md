@@ -1,6 +1,8 @@
 # ExaFS
 
-ExaFS is a web layer for creation, validation, and execution of ExaBGP messages (https://github.com/Exa-Networks/exabgp).
+ExaFS brings new functionality to the environment of backbone computer network security. The tool allows fast but reliable networking hardware configuration by adding an extra layer for configuration rules creation, validation, and authorization. With this new layer, a larger group of network administrators can safely create new [BGP protocol](https://github.com/Exa-Networks/exabgp) rules to prevent DDoS and other forms of malicious cyber attacks. 
+
+ExaFS is open source with MIT license. The system is regularly used at [CESNET](https://www.cesnet.cz/) - the Czech national e-infrastructure for science, research and education operator.
 
 ExaFS provides both the user Web interface and the REST API for web service. 
 
