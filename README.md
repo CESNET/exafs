@@ -18,7 +18,7 @@ ExaFS is an integral part of daily cybersecurity tools at CESNET. However, it ca
 
 On the picture below, you can see as the ExaFS is integrated into the network. 
 
-![ExaFS schema](./docs/schema.png)
+![ExaFS integration schema](./docs/schema.png)
 
 ## Project presentations
 
@@ -29,13 +29,19 @@ On the picture below, you can see as the ExaFS is integrated into the network.
 * 2019 - CZ [Nástroje pro obranu proti útokům na páteřních směrovačích](https://konference.cesnet.cz/prezentace2019/sal1/3_Verich.pdf),[Konference e-infrastruktury CESNET](https://konference.cesnet.cz/) 2019
 
 
-## Main parts
+## System overview
 
-The main part of the ExaFS is a web application, written in Python3.6 with Flask framework. It provides a user interface for ExaBGP rule CRUD operations. All rules are carefully validated and only valid rules are sent to the ExaBGP table.  This application also provides the REST API with CRUD operations for the configuration rules.
+![ExaFS schema](./docs/app_schema_en.png)
 
-The web app creates the ExaBGP commands and forwards them to ExaAPI. This second part of the system is another web application that replicates the received command to the stdout. The ExaBGP daemon must be configured for monitoring stdout of ExaAPI. Every time this API gets a  command from ExaFS,  it replicates this command to the ExaBGP daemon through the stdout. The registered daemon then updates the ExaBGP table – create, modify or remove the rule from command.
+The main part of the ExaFS is a web application, written in Python3.6 with Flask framework. It provides a user interface for ExaBGP rule CRUD operations. Application also provides the REST API with CRUD operations for the configuration rules. Web app uses Shibboleth authorization, the REST API authotrization is based on tokens. 
 
-Last part of the system is Guarda service. This systemctl service is running in the host system and is wanted by ExaBGP service.  That means for every restart of ExaBPG this service will start and again put the valid and active rules to Exa table. 
+The app creates the ExaBGP commands and forwards them to ExaAPI. All rules are carefully validated and only valid rules are stored in database and sent to the ExaBGP connector. 
+
+This This second part of the system is another web application that replicates the received command to the stdout. The ExaBGP daemon must be configured for monitoring stdout of ExaAPI. Every time this API gets a  command from ExaFS,  it replicates this command to the ExaBGP daemon through the stdout. The registered daemon then updates the ExaBGP table – create, modify or remove the rule from command.
+
+Last part of the system is Guarda service. This systemctl service is running in the host system and watching ExaBGP service.  That means for every restart of ExaBPG this service will put all the valid and active rules to ExaBGP rules table. 
+
+
 
 ## DOCS
 * [Install notes](./docs/INSTALL.md)
