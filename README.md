@@ -39,9 +39,7 @@ The app creates the ExaBGP commands and forwards them to ExaAPI. All rules are c
 
 This This second part of the system is another web application that replicates the received command to the stdout. The ExaBGP daemon must be configured for monitoring stdout of ExaAPI. Every time this API gets a  command from ExaFS,  it replicates this command to the ExaBGP daemon through the stdout. The registered daemon then updates the ExaBGP table – create, modify or remove the rule from command.
 
-Last part of the system is Guarda service. This systemctl service is running in the host system and watching ExaBGP service.  That means for every restart of ExaBPG this service will put all the valid and active rules to ExaBGP rules table. 
-
-
+Last part of the system is Guarda service. This systemctl service is running in the host system and gets notification on each restart of ExaBGP service via systemcl WantedBy config option.  For every restart of ExaBPG Guarda service will put all the valid and active rules to ExaBGP rules table again.
 
 ## DOCS
 * [Install notes](./docs/INSTALL.md)
