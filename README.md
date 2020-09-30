@@ -1,6 +1,8 @@
 # ExaFS
+ExaFS brings new functionality to the environment of routing protocols configuration for backbone network hardware security. 
 
-ExaFS brings new functionality to the environment of backbone computer network security. The tool allows fast but reliable networking hardware configuration by adding an extra layer for configuration rules creation, validation, and authorization. With this new layer, a larger group of network administrators can safely create new [BGP protocol](https://github.com/Exa-Networks/exabgp) rules to prevent DDoS and other forms of malicious cyber attacks. 
+The tool extends network administrators toolset by adding an extra layer for configuration rules creation, validation, and authorization. With this new layer, a larger group of network administrators can safely create new
+ [BGP protocol](https://github.com/Exa-Networks/exabgp) rules to prevent DDoS and other forms of malicious cyber attacks. 
 
 ExaFS is open source with MIT license. The system is regularly used at [CESNET](https://www.cesnet.cz/) - the Czech national e-infrastructure for science, research and education operator.
 
@@ -8,15 +10,16 @@ ExaFS provides both the user Web interface and the REST API for web service.
 
 Key contributions of the system are **user authorization** mechanism and **validation system for BGP commands**.
 
-Without ExaFS the system Root privileges are required for direct interaction with ExaBGP. ExaFS provides several user roles and access rights similarly to user roles in other software systems such as SQL. The user rights can be specified for various kind of sub-nets following the network topology. 
+Without ExaFS the system Root privileges are required for direct interaction with ExaBGP and networking hardware. ExaFS provides several user roles and access rights similarly to user roles in other software systems such as SQL. The system allows specifying user rights for various kinds of sub-nets following the network topology.
 
-Validation system for BGP commands assures that only error-free messages are passed to the system BGP API. Both syntax and access rights are validated before a new rule is saved to the database. 
+Validation system for BGP commands assures that only error-free messages can pass to the system BGP API. Both syntax and access rights are validated before a new rule can be stored in the database.
 
 Thanks to the storage, all the rules can be restored quickly after a system reboot or failure. All rules are validated again, before sending them to ExaBPG from the storage, to prevent any malicious database manipulation.
 
-ExaFS is an integral part of daily cybersecurity tools at CESNET. However, it can be used in any network where ExaBGP is available.
+ExaFS is an integral part of cybersecurity tools at CESNET. However, it can be used in any network where ExaBGP is available.
 
-On the picture below, you can see as the ExaFS is integrated into the network. 
+See how is ExaFS integrated into the network in the picture below. 
+
 
 ![ExaFS integration schema](./docs/schema.png)
 
@@ -33,13 +36,14 @@ On the picture below, you can see as the ExaFS is integrated into the network.
 
 ![ExaFS schema](./docs/app_schema_en.png)
 
-The main part of the ExaFS is a web application, written in Python3.6 with Flask framework. It provides a user interface for ExaBGP rule CRUD operations. Application also provides the REST API with CRUD operations for the configuration rules. Web app uses Shibboleth authorization, the REST API authotrization is based on tokens. 
+The central part of the ExaFS is a web application, written in Python3.6 with Flask framework. It provides a user interface for ExaBGP rule CRUD operations. The application also provides the REST API with CRUD operations for the configuration rules. The web app uses Shibboleth authorization; the REST API is using token-based authorization. 
 
-The app creates the ExaBGP commands and forwards them to ExaAPI. All rules are carefully validated and only valid rules are stored in database and sent to the ExaBGP connector. 
-
-This This second part of the system is another web application that replicates the received command to the stdout. The ExaBGP daemon must be configured for monitoring stdout of ExaAPI. Every time this API gets a  command from ExaFS,  it replicates this command to the ExaBGP daemon through the stdout. The registered daemon then updates the ExaBGP table – create, modify or remove the rule from command.
-
-Last part of the system is Guarda service. This systemctl service is running in the host system and gets notification on each restart of ExaBGP service via systemcl WantedBy config option.  For every restart of ExaBPG Guarda service will put all the valid and active rules to ExaBGP rules table again.
+The app creates the ExaBGP commands and forwards them to ExaAPI. All rules are carefully validated, and only valid rules are stored in the database and sent to the ExaBGP connector.
+ 
+This second part of the system is another web application that replicates the received command to the stdout. The connection between ExaBGP daemon and stdout of ExaAPI is specified in the ExaBGP config. 
+ 
+Every time this API gets a command from ExaFS, it replicates this command to the ExaBGP daemon through the stdout. The registered daemon then updates the ExaBGP table – create, modify or remove the rule from command.
+Last part of the system is Guarda service. This systemctl service is running in the host system and gets a notification on each restart of ExaBGP service via systemctl WantedBy config option. For every restart of ExaBGP the Guarda service will put all the valid and active rules to the ExaBGP rules table again.
 
 ## DOCS
 * [Install notes](./docs/INSTALL.md)
