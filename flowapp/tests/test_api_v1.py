@@ -259,8 +259,8 @@ def test_timestamp_param(client, db, jwt_token):
     assert req.status_code == 200
 
     data = json.loads(req.data)
-    assert data['ipv4_rules'][0]['expires'] == 2549454600
-    assert data['ipv6_rules'][0]['expires'] == 2550318600
+    assert data['ipv4_rules'][0]['expires'] == 2549451000
+    assert data['ipv6_rules'][0]['expires'] == 2550315000
 
 
 

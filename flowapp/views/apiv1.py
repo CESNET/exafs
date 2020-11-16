@@ -6,7 +6,6 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 from flowapp.constants import WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG
-from flowapp import app, db, validators, flowspec, csrf, messages
 from flowapp.models import RTBH, Flowspec4, Flowspec6, ApiKey, Community, get_user_nets, get_user_actions, \
     get_ipv4_model_if_exists, get_ipv6_model_if_exists, insert_initial_communities, get_user_communities, \
     get_rtbh_model_if_exists
@@ -17,6 +16,9 @@ from flowapp.auth import check_access_rights
 from flowapp.output import ROUTE_MODELS, RULE_TYPES, announce_route, log_route, log_withdraw
 
 api = Blueprint('apiv1', __name__, template_folder='templates')
+
+from flowapp import app, db, validators, flowspec, csrf, messages
+
 
 
 def token_required(f):
@@ -158,7 +160,7 @@ def create_ipv4(current_user):
     """
     net_ranges = get_user_nets(current_user['id'])
     json_request_data = request.get_json()
-    form = IPv4Form(data=json_request_data)
+    form = IPv4Form(data=json_request_data, meta={'csrf': False})
     # add values to form instance
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
@@ -221,7 +223,7 @@ def create_ipv6(current_user):
     """
     net_ranges = get_user_nets(current_user['id'])
     json_request_data = request.get_json()
-    form = IPv6Form(data=json_request_data)
+    form = IPv6Form(data=json_request_data, meta={'csrf': False})
     form.action.choices = get_user_actions(current_user['role_ids'])
     form.net_ranges = net_ranges
 
@@ -281,7 +283,7 @@ def create_rtbh(current_user):
     net_ranges = get_user_nets(current_user['id'])
 
     json_request_data = request.get_json()
-    form = RTBHForm(data=json_request_data)
+    form = RTBHForm(data=json_request_data, meta={'csrf': False})
     print("DD", json_request_data)
 
     form.community.choices = get_user_communities(current_user['role_ids'])
@@ -460,7 +462,10 @@ def get_form_errors(form):
     valid_errors = []
 
     # if the only error is in CSRF then it is ok - csrf is exempt for this view
-    del (form.errors['csrf_token'])
+    try:
+        del (form.errors['csrf_token'])
+    except KeyError:
+        pass    
 
     errors = form.errors.items()
     if len(errors) > 0:
