@@ -1,6 +1,7 @@
 from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MAX_PACKET, IPV4_PROTOCOL, \
     IPV6_NEXT_HEADER
 from flowapp.flowspec import translate_sequence as trps
+from flask import current_app
 
 
 def create_ipv4(rule, message_type=ANNOUNCE):
@@ -69,17 +70,26 @@ def create_rtbh(rule, message_type=ANNOUNCE):
         source += '/{}'.format(my_6mask) if rule.ipv6 else ''
         nexthop = '100::1'
 
+    try:
+        if current_app.config['USE_RD']:
+            rd_string = 'rd {rd} label {label}'.format(rd=current_app.config['RD_STRING'], label=current_app.config['RD_LABEL'])
+        else:
+            rd_string = ''    
+    except KeyError:
+        rd_string = ''        
+
     community_string = "community [{}]".format(rule.community.comm) if rule.community.comm else ""
     large_community_string = "large-community [{}]".format(rule.community.larcomm) if rule.community.larcomm else ""
     extended_community_string = "extended-community [{}]".format(rule.community.extcomm) if rule.community.extcomm else ""
 
-    return "{action} route {source} next-hop {nexthop} {community} {large_community} {extended_community}".format(
+    return "{action} route {source} next-hop {nexthop} {community} {large_community} {extended_community}{rd_string}".format(
         action=action,
         source=source,
         community=community_string,
         large_community=large_community_string,
         extended_community=extended_community_string,
-        nexthop=nexthop)
+        nexthop=nexthop,
+        rd_string=rd_string)
 
 
 def create_message(rule, ipv_specific, message_type=ANNOUNCE):
@@ -132,10 +142,19 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
 
     command = '{};'.format(rule.action.command)
 
-    message_body = '{action} flow route {{ match {{ {match_body} }} then {{ {command} }} }}'.format(
+    try:
+        if current_app.config['USE_RD']:
+            rd_string = 'route-distinguisher {rd};'.format(rd=current_app.config['RD_STRING'])
+        else:
+            rd_string = ''
+    except KeyError:
+        rd_string = '' 
+  
+    message_body = '{action} flow route {{ {rd_string} match {{ {match_body} }} then {{ {command} }} }}'.format(
         action=action,
         match_body=match_body,
-        command=command)
+        command=command,
+        rd_string=rd_string)
 
     return message_body
 
