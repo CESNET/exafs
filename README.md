@@ -50,3 +50,7 @@ Last part of the system is Guarda service. This systemctl service is running in 
 * [API documentation ](https://exafs.docs.apiary.io/#)
 * [Database backup configuration](./docs/DB_BACKUP.md)
 * [Local database instalation notes](./docs/DB_LOCAL.md)
+
+## Change Log
+
+- v0.4.6 - Route Distinguisher for VRF is now supported. See config example and update your config.py. 
