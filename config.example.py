@@ -40,6 +40,14 @@ class Config(object):
     LOCAL_USER_ROLE_IDS = [3]
     # Defined in Organization model
     LOCAL_USER_ORG_IDS = [1]
+    # APP Name - display in main toolbar
+    APP_NAME = 'ExaFS'
+    # Route Distinguisher for VRF
+    # When True set your rd string and label to be used in messages 
+    USE_RD = True 
+    RD_STRING = '2852:2505'
+    RD_LABEL = 'label 16' 
+
 
 
 class ProductionConfig(Config):
