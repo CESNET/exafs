@@ -145,16 +145,20 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     try:
         if current_app.config['USE_RD']:
             rd_string = 'route-distinguisher {rd};'.format(rd=current_app.config['RD_STRING'])
+            rt_string = 'extended-community target:{rt};'.format(rt=current_app.config['RT_STRING'])
         else:
             rd_string = ''
+            rt_string = ''
     except KeyError:
         rd_string = '' 
+        rt_string = ''
   
-    message_body = '{action} flow route {{ {rd_string} match {{ {match_body} }} then {{ {command} }} }}'.format(
+    message_body = '{action} flow route {{ {rd_string} match {{ {match_body} }} then {{ {command} {rt_string} }} }}'.format(
         action=action,
         match_body=match_body,
         command=command,
-        rd_string=rd_string)
+        rd_string=rd_string,
+        rt_string=rt_string)
 
     return message_body
 
