@@ -55,9 +55,11 @@ def localhost_only(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if request.remote_addr != app.config.get('LOCAL_IP'):
-            print(request.remote_addr)
-            print(app.config.get('LOCAL_IP'))
+        remote = request.remote_addr
+        localv4 = app.config.get('LOCAL_IP')
+        localv6 = app.config.get('LOCAL_IP6')
+        if remote != localv4 and remote != localv6:
+            print("AUTH LOCAL ONLY FAIL FROM {} / local adresses [{}, {}]".format(remote, localv4, localv6))
             abort(403)  # Forbidden
         return f(*args, **kwargs)
 
