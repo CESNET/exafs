@@ -170,7 +170,18 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
         rd_string = '' 
         rt_string = ''
   
-    message_body = '{action} flow route {{ {rd_string} match {{ {match_body} }} then {{ {command} {rt_string} }} }}'.format(
+    try:
+        if current_app.config['USE_MULTI_NEIGHBOR']:
+            target = current_app.config['MULTI_NEIGHBOR'].get('primary')
+            neighbor = 'neighbor {target1}, neighbor {target2} '.format(target1=target[0], target2=target[1])
+        else:
+            neighbor = ''
+    except KeyError:
+        neighbor = ''
+
+
+    message_body = '{neighbor}{action} flow route {{ {rd_string} match {{ {match_body} }} then {{ {command} {rt_string} }} }}'.format(
+        neighbor=neighbor,
         action=action,
         match_body=match_body,
         command=command,

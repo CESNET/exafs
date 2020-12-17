@@ -53,4 +53,5 @@ Last part of the system is Guarda service. This systemctl service is running in 
 
 ## Change Log
 
+- v0.4.7 - Multi neighbor support enabled. See config example and update your config.py. 
 - v0.4.6 - Route Distinguisher for VRF is now supported. See config example and update your config.py. 
