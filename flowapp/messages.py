@@ -76,13 +76,30 @@ def create_rtbh(rule, message_type=ANNOUNCE):
         else:
             rd_string = ''    
     except KeyError:
-        rd_string = ''        
+        rd_string = ''
+
+    try:
+        if current_app.config['USE_MULTI_NEIGHBOR'] and rule.community.comm:
+            print("rule community", rule.community.comm)
+            if rule.community.comm in current_app.config['MULTI_NEIGHBOR'].keys():
+                target = current_app.config['MULTI_NEIGHBOR'].get(rule.community.comm)
+                neighbor = 'neighbor {target} '.format(target=target)
+            else:
+                target = current_app.config['MULTI_NEIGHBOR'].get('primary')
+                neighbor = 'neighbor {target1}, neighbor {target2} '.format(target1=target[0], target2=target[1])
+        else:
+            neighbor = ''
+    except KeyError:
+        neighbor = ''
+
+    print('generated neighbor', neighbor)
 
     community_string = "community [{}]".format(rule.community.comm) if rule.community.comm else ""
     large_community_string = "large-community [{}]".format(rule.community.larcomm) if rule.community.larcomm else ""
     extended_community_string = "extended-community [{}]".format(rule.community.extcomm) if rule.community.extcomm else ""
 
-    return "{action} route {source} next-hop {nexthop} {community} {large_community} {extended_community}{rd_string}".format(
+    return "{neighbor}{action} route {source} next-hop {nexthop} {community} {large_community} {extended_community}{rd_string}".format(
+        neighbor=neighbor,
         action=action,
         source=source,
         community=community_string,
