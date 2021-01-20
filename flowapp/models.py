@@ -800,7 +800,7 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
 
     if rule_type == 'ipv4':
 
-        sorter_ip4 = getattr(Flowspec4, sort)
+        sorter_ip4 = getattr(Flowspec4, sort, Flowspec4.id)
         sorting_ip4 = getattr(sorter_ip4, order)
         if comp_func:
             rules4 = db.session.query(Flowspec4).filter(
@@ -812,7 +812,7 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
 
     if rule_type == 'ipv6':
 
-        sorter_ip6 = getattr(Flowspec6, sort)
+        sorter_ip6 = getattr(Flowspec6, sort, Flowspec6.id)
         sorting_ip6 = getattr(sorter_ip6, order)
         if comp_func:
             rules6 = db.session.query(Flowspec6).filter(
@@ -824,7 +824,7 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
 
     if rule_type == 'rtbh':
 
-        sorter_rtbh = getattr(RTBH, sort)
+        sorter_rtbh = getattr(RTBH, sort, RTBH.id)
         sorting_rtbh = getattr(sorter_rtbh, order)
 
         if comp_func:

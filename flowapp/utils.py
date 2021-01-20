@@ -1,7 +1,21 @@
 from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
-from flowapp.constants import COMP_FUNCS, TIME_YEAR, TIME_US, TIME_STMP, TIME_FORMAT_ARG
+from flowapp.constants import COMP_FUNCS, TIME_YEAR, TIME_US, TIME_STMP, TIME_FORMAT_ARG, RULE_TYPES
+
+
+def other_rtypes(rtype):
+    """
+    get rtype and return list of remaining rtypes
+    for example get ipv4 and return [ipv6, rtbh]
+    """
+    result = list(RULE_TYPES.keys())
+    try:
+        result.remove(rtype)
+    except ValueError:
+        pass
+
+    return result    
 
 
 def output_date_format(json_request_data, pref_format=TIME_YEAR):

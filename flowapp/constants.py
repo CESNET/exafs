@@ -105,3 +105,9 @@ COMP_FUNCS = {
     'expired': lt,
     'all': None
 }
+
+COUNT_MATCH = {
+    'ipv4':0,
+    'ipv6':0,
+    'rtbh':0
+}

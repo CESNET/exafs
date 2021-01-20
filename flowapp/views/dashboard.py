@@ -3,10 +3,11 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, session, make_response, abort
 from flowapp import auth_required, constants, models, app, validators, flowspec
 from flowapp.constants import RULE_TYPE_DISPATCH, SORT_ARG, ORDER_ARG, DEFAULT_ORDER, DEFAULT_SORT, RULE_TYPES, \
-    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG, COLSPANS, COMP_FUNCS
-from flowapp.utils import active_css_rstate
+    SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG, COLSPANS, COMP_FUNCS, COUNT_MATCH
+from flowapp.utils import active_css_rstate, other_rtypes
 
 dashboard = Blueprint('dashboard', __name__, template_folder='templates')
+
 
 
 @dashboard.route('/<path:rtype>/<path:rstate>/')
@@ -21,13 +22,11 @@ def index(rtype='ipv4', rstate='active'):
     if sum(session['user_role_ids']) == 1:
         rstate = 'active'
 
-    get_search_query = request.args.get(SEARCH_ARG) if request.args.get(SEARCH_ARG) else ""
-    get_sort_key = request.args.get(SORT_ARG) if request.args.get(
-        SORT_ARG) else DEFAULT_SORT
-    get_sort_order = request.args.get(ORDER_ARG) if request.args.get(
-        ORDER_ARG) else DEFAULT_ORDER
-    get_sort_order_source = request.args.get(ORDSRC_ARG) if request.args.get(ORDSRC_ARG) else ""
-
+    get_search_query = request.args.get(SEARCH_ARG, session.get(SEARCH_ARG, ""))
+    get_sort_key = request.args.get(SORT_ARG, session.get(SORT_ARG, DEFAULT_SORT))
+    get_sort_order = request.args.get(ORDER_ARG, session.get(ORDER_ARG, DEFAULT_ORDER))
+    get_sort_order_source = request.args.get(ORDSRC_ARG, session.get(ORDSRC_ARG, ""))
+    
     # store current state for redirects
     session[ORDER_ARG] = get_sort_order
     session[SORT_ARG] = get_sort_key
@@ -38,27 +37,41 @@ def index(rtype='ipv4', rstate='active'):
     try:
         if session[SORT_ARG] == get_sort_key and get_sort_order_source == 'link':
             get_sort_order = 'desc' if get_sort_order == 'asc' else 'asc'
+            session[ORDER_ARG] = get_sort_order
     except KeyError:
         get_sort_order = DEFAULT_ORDER
 
     rules = models.get_ip_rules(rtype, rstate, get_sort_key, get_sort_order)
 
     if get_search_query:
+        count_match = {
+            'ipv4':0,
+            'ipv6':0,
+            'rtbh':0
+        }
         rules = filter_rules(rules, get_search_query)
-
-    if 3 in session['user_role_ids']:
-        res, encoded = create_admin_responose(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query)
-    elif 2 in session['user_role_ids']:
-        res, encoded = create_user_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query)
+        # extended search in for all rule types
+        count_match[rtype] = len(rules)
+        for other_rtype in other_rtypes(rtype):
+            other_rules = models.get_ip_rules(other_rtype, rstate)
+            other_rules = filter_rules(other_rules, get_search_query)
+            count_match[other_rtype] = len(other_rules)
     else:
-        res, encoded = create_view_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query)
+        count_match = ""                
+    
+    if 3 in session['user_role_ids']:
+        res, encoded = create_admin_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query, count_match)
+    elif 2 in session['user_role_ids']:
+        res, encoded = create_user_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query, count_match)
+    else:
+        res, encoded = create_view_response(rtype, rstate, rules, get_sort_key, get_sort_order, get_search_query, count_match)
 
     session[RULES_KEY] = encoded
 
     return res
 
 
-def create_admin_responose(rtype, rstate, rules, sort_key, sort_order, search_query=""):
+def create_admin_response(rtype, rstate, rules, sort_key, sort_order, search_query="", count_match=COUNT_MATCH):
     """
     Admin can see and edit any rules
     :param rtype:
@@ -78,6 +91,7 @@ def create_admin_responose(rtype, rstate, rules, sort_key, sort_order, search_qu
                                         sort_order=sort_order,
                                         sort_key=sort_key,
                                         search_query=search_query,
+                                        count_match=count_match,
                                         rstate=rstate,
                                         rtype=rtype,
                                         rtype_int=RULE_TYPES[rtype],
@@ -88,7 +102,7 @@ def create_admin_responose(rtype, rstate, rules, sort_key, sort_order, search_qu
     return res, encoded
 
 
-def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_query=""):
+def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_query="", count_match=COUNT_MATCH):
     """
     Filter out the rules for normal users
     :param rules:
@@ -121,6 +135,7 @@ def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_quer
                                         sort_order=sort_order,
                                         sort_key=sort_key,
                                         search_query=search_query,
+                                        count_match=count_match,
                                         rstate=rstate,
                                         rtype=rtype,
                                         rtype_int=RULE_TYPES[rtype],
@@ -132,7 +147,7 @@ def create_user_response(rtype, rstate, rules, sort_key, sort_order, search_quer
 
 
 
-def create_view_response(rtype, rstate, rules, sort_key, sort_order, search_query=""):
+def create_view_response(rtype, rstate, rules, sort_key, sort_order, search_query="", count_match=COUNT_MATCH):
     """
     Filter out the rules for normal users
     :param rules:
@@ -149,6 +164,7 @@ def create_view_response(rtype, rstate, rules, sort_key, sort_order, search_quer
                                         sort_order=sort_order,
                                         sort_key=sort_key,
                                         search_query=search_query,
+                                        count_match=count_match,
                                         rstate=rstate,
                                         rtype=rtype,
                                         rtype_int=RULE_TYPES[rtype],
