@@ -31,6 +31,9 @@ RULES_COLUMNS_V6 = (
 DEFAULT_SORT = 'expires'
 DEFAULT_ORDER = 'desc'
 
+# Maximum allowed comma separated values for port string or packet lenght
+MAX_COMMA_VALUES = 6    
+
 SORT_ARG = "sort"
 ORDER_ARG = "order"
 RULE_ARG = 'rule_state'

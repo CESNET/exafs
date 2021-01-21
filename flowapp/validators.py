@@ -173,19 +173,26 @@ class DateNotExpired(object):
 class PortString(object):
     """
     Validator for port string - must be translatable to ExaBgp syntax
+    Max number of comma separated values must be <= 6 (default)
     """
 
-    def __init__(self, message=None):
+    def __init__(self, message=None, max_values=constants.MAX_COMMA_VALUES):
         if not message:
             message = u'Invalid syntax: '
         self.message = message
+        self.max_values = max_values
 
     def __call__(self, form, field):
+        field_data = field.data.split(";")
+        if len(field_data) > self.max_values:
+            raise ValidationError("{} maximum {} comma separated values".format(self.message, self.max_values))
         try:
-            for port_string in field.data.split(";"):
+            for port_string in field_data:
                 flowspec.to_exabgp_string(port_string, constants.MAX_PORT)
         except ValueError as e:
             raise ValidationError(self.message + str(e.args[0]))
+
+        
 
 
 class PacketString(object):

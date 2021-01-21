@@ -7,6 +7,8 @@ from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortStr
 
 from flowapp.constants import IPV4_PROTOCOL, IPV6_NEXT_HEADER
 
+from flask import current_app
+
 TCP_FLAGS = [('SYN', 'SYN'), ('ACK', 'ACK'), ('FIN', 'FIN'), ('URG', 'URG'), ('PSH', 'PSH'), ('RST', 'RST'),
              ('ECE', 'ECE'), ('CWR', 'CWR'), ('NS', 'NS')]
 
@@ -223,6 +225,7 @@ class IPForm(FlaskForm):
         super(IPForm, self).__init__(*args, **kwargs)
         self.net_ranges = None
 
+
     zero_address = None
     source = None
     source_mask = None
@@ -242,7 +245,9 @@ class IPForm(FlaskForm):
         validators=[Optional(), Length(max=255), PortString()]
     )
 
-    packet_len = StringField('Packet length', validators=[Optional(), Length(max=255), PortString()])
+    packet_len = StringField(
+        'Packet length - ; separated ',
+        validators=[Optional(), Length(max=255), PortString()])
 
     action = SelectField(u'Action',
                          coerce=int,

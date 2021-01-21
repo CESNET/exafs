@@ -2,6 +2,13 @@ import pytest
 import flowapp.validators
 
 
+def test_port_string_len_raises(field):
+    port = flowapp.validators.PortString()
+    field.data = "1;2;3;4;5;6;7;8"
+    with pytest.raises(flowapp.validators.ValidationError):
+        port(None, field)
+        
+
 @pytest.mark.parametrize("address, mask, expected", [
     ("147.230.23.25", "24", False),
     ("147.230.23.0", "24", True),
