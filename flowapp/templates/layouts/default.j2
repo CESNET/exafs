@@ -73,7 +73,7 @@
             {% endif %}
 
           </ul>
-          <p class="navbar-text">Logged in as {{ session['user_name']}} &lt;{{ session['user_email'] }}&gt;, role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_orgs'] }}</p>
+          <p class="navbar-text">{{ session['user_name']}} &lt;{{ session['user_email'] }}&gt;, role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_orgs'] }}</p>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
