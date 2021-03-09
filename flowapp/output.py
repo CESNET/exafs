@@ -22,7 +22,7 @@ def announce_route(route):
         requests.post('http://localhost:5000/', data={'command': route})
 
 
-def log_route(user_id, route_model, rule_type):
+def log_route(user_id, route_model, rule_type, author):
     """
     Convert route to EXAFS message and log it to database
     :param user_id : int curent user
@@ -36,12 +36,13 @@ def log_route(user_id, route_model, rule_type):
               task=task,
               rule_type=rule_type,
               rule_id=route_model.id,
-              user_id=user_id)
+              user_id=user_id,
+              author=author)
     db.session.add(log)
     db.session.commit()
 
 
-def log_withdraw(user_id, task, rule_type, deleted_id):
+def log_withdraw(user_id, task, rule_type, deleted_id, author):
     """
     Log the withdraw command to database
     :param task: command message
@@ -50,7 +51,9 @@ def log_withdraw(user_id, task, rule_type, deleted_id):
               task=task,
               rule_type=rule_type,
               rule_id=deleted_id,
-              user_id=user_id)
+              user_id=user_id,
+              author=author
+            )
     db.session.add(log)
     db.session.commit()
 

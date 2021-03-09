@@ -81,13 +81,13 @@ def reactivate_rule(rule_type, rule_id):
             route = route_model(model, constants.ANNOUNCE)
             announce_route(route)
             # log changes
-            log_route(session['user_id'], model, rule_type)
+            log_route(session['user_id'], model, rule_type, "{} / {}".format(session['user_email'], session['user_orgs']))
         else:
             # withdraw route
             route = route_model(model, constants.WITHDRAW)
             announce_route(route)
             # log changes
-            log_withdraw(session['user_id'], route, rule_type, model.id)
+            log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
 
         return redirect(url_for('dashboard.index',
                                 rtype=session[constants.TYPE_ARG],
@@ -131,7 +131,7 @@ def delete_rule(rule_type, rule_id):
         route = route_model(model, constants.WITHDRAW)
         announce_route(route)
 
-        log_withdraw(session['user_id'], route, rule_type, model.id)
+        log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
 
         # delete from db
         db.session.delete(model)
@@ -196,7 +196,7 @@ def group_delete():
             route = route_model(model, constants.WITHDRAW)
             announce_route(route)
 
-            log_withdraw(session['user_id'], route, rule_type, model.id)
+            log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
 
         db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
         db.session.commit()
@@ -300,13 +300,13 @@ def group_update_save(rule_type):
             route = route_model(model, constants.ANNOUNCE)
             announce_route(route)
             # log changes
-            log_route(session['user_id'], model, rule_type)
+            log_route(session['user_id'], model, rule_type, "{} / {}".format(session['user_email'], session['user_orgs']))
         else:
             # withdraw route
             route = route_model(model, constants.WITHDRAW)
             announce_route(route)
             # log changes
-            log_withdraw(session['user_id'], route, rule_type, model.id)
+            log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
 
     flash(u'Rules {} successfully updated'.format(to_update), 'alert-success')
 
@@ -366,7 +366,7 @@ def ipv4_rule():
             announce_route(route)
 
         # log changes
-        log_route(session['user_id'], model, RULE_TYPES['IPv4'])
+        log_route(session['user_id'], model, RULE_TYPES['IPv4'], "{} / {}".format(session['user_email'], session['user_orgs']))
 
         return redirect(url_for('index'))
     else:
@@ -430,7 +430,7 @@ def ipv6_rule():
             announce_route(route)
 
         # log changes
-        log_route(session['user_id'], model, RULE_TYPES['IPv6'])
+        log_route(session['user_id'], model, RULE_TYPES['IPv6'], "{} / {}".format(session['user_email'], session['user_orgs']))
 
         return redirect(url_for('index'))
     else:
@@ -491,7 +491,7 @@ def rtbh_rule():
             route = messages.create_rtbh(model, constants.ANNOUNCE)
             announce_route(route)
         # log changes
-        log_route(session['user_id'], model, RULE_TYPES['RTBH'])
+        log_route(session['user_id'], model, RULE_TYPES['RTBH'],"{} / {}".format(session['user_email'], session['user_orgs']))
 
         return redirect(url_for('index'))
     else:

@@ -205,7 +205,7 @@ def create_ipv4(current_user):
         announce_route(route)
 
     # log changes
-    log_route(current_user['id'], model, RULE_TYPES['IPv4'])
+    log_route(current_user['id'], model, RULE_TYPES['IPv4'], "{} / {}".format(current_user['uuid'], current_user['org']))
 
     pref_format = output_date_format(json_request_data, pref_format)
     return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
@@ -266,7 +266,7 @@ def create_ipv6(current_user):
         announce_route(route)
 
     # log changes
-    log_route(current_user['id'], model, RULE_TYPES['IPv6'])
+    log_route(current_user['id'], model, RULE_TYPES['IPv6'], "{} / {}".format(current_user['uuid'], current_user['org']))
 
     pref_format = output_date_format(json_request_data, pref_format)
     return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
@@ -320,7 +320,7 @@ def create_rtbh(current_user):
         route = messages.create_rtbh(model, ANNOUNCE)
         announce_route(route)
     # log changes
-    log_route(current_user['id'], model, RULE_TYPES['RTBH'])
+    log_route(current_user['id'], model, RULE_TYPES['RTBH'], "{} / {}".format(current_user['uuid'], current_user['org']))
 
     pref_format = output_date_format(json_request_data, pref_format)
     return jsonify({'message': flash_message, 'rule': model.to_dict(pref_format)}), 201
@@ -434,7 +434,7 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
             route = route_model(model, WITHDRAW)
             announce_route(route)
 
-            log_withdraw(current_user['id'], route, rule_type, model.id)
+            log_withdraw(current_user['id'], route, rule_type, model.id, "{} / {}".format(current_user['uuid'], current_user['org']))
             # delete from db
             db.session.delete(model)
             db.session.commit()

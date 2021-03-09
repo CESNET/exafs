@@ -86,9 +86,10 @@ def delete_user(user_id):
     alert_type = 'alert-success'
     try:
         db.session.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         message = u'User {} owns some rules, can not be deleted!'.format(username)
         alert_type = 'alert-danger'
+        print(e)
 
     flash(message, alert_type)
     return redirect(url_for('admin.users'))
