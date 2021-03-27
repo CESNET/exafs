@@ -114,3 +114,12 @@ COUNT_MATCH = {
     'ipv6':0,
     'rtbh':0
 }
+
+TCP_FLAGS = [
+    ('SYN', 'SYN'),
+    ('ACK', 'ACK'),
+    ('FIN', 'FIN'),
+    ('RST', 'RST'),
+    ('PUSH', 'PSH'),
+    ('URGENT', 'URG')
+    ]
