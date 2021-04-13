@@ -91,7 +91,7 @@ def index(current_user):
         payload = {
             "ipv4_rules": [rule.to_dict(prefered_tf) for rule in rules4],
             "ipv6_rules": [rule.to_dict(prefered_tf) for rule in rules6],
-            "rules_rtbh": [rule.to_dict(prefered_tf) for rule in rules_rtbh]
+            "rtbh_rules": [rule.to_dict(prefered_tf) for rule in rules_rtbh]
         }
         return jsonify(payload)
     # filter out the rules for normal users
