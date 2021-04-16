@@ -1,4 +1,6 @@
 # flowapp/views/admin.py
+from datetime import datetime, timedelta
+
 from flask import Blueprint, render_template, redirect, flash, request, url_for
 from sqlalchemy.exc import IntegrityError
 
@@ -15,7 +17,12 @@ admin = Blueprint('admin', __name__, template_folder='templates')
 @auth_required
 @admin_required
 def log():
-    logs = Log.query.order_by(Log.time.desc()).all()
+    """
+    Displays logs for last two days
+    """
+    now = datetime.now()
+    two_days_ago = now - timedelta(days=2)
+    logs = Log.query.order_by(Log.time.desc()).filter(Log.time > two_days_ago).all()
     return render_template('pages/logs.j2', logs=logs)
 
 

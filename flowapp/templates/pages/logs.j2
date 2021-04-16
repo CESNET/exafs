@@ -2,13 +2,14 @@
 {% block title %}Flowspec Users{% endblock %}
 {% block content %}
     <h2>Commands log / latest on top</h2>
+    {% if logs %}
     <table class="table table-hover">
     <tr>
     <th>time</th>
     <th>task</th>
     <th>rule_type</th>
     <th>rule_id</th>
-    <th>user</th>
+    <th>author</th>
     </tr>
     {% for log in logs %}
         <tr>
@@ -16,8 +17,11 @@
         <td>{{ log.task }}</td>
         <td>{{ log.rule_type }}</td>
         <td>{{ log.rule_id }}</td>
-        <td>{{ log.user.name }}</td>
+        <td>{{ log.author }}</td>
         </tr>
     {% endfor %}
     </table>
+    {% else %}
+    <h3>No logs for last two days</h3>
+    {% endif %}
 {% endblock %}
