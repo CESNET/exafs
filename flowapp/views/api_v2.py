@@ -20,7 +20,7 @@ def index(current_user):
             "rtbh_rules": "rtbh_any_rw", 
             "ipv4_rules_readonly": "flowspec_ipv4_ro",
             "ipv6_rules_readonly": "flowspec_ipv6_ro",
-            "rtbh_rules_reqdonly": "rtbh_any_ro", 
+            "rtbh_rules_readonly": "rtbh_any_ro", 
     }
     return api_common.index(current_user, key_map)
 
