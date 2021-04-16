@@ -13,16 +13,18 @@ from flowapp import db
 admin = Blueprint('admin', __name__, template_folder='templates')
 
 
-@admin.route('/log', methods=['GET', 'POST'])
+@admin.route('/log', methods=['GET'], defaults={"page": 1})
+@admin.route('/log/<int:page>', methods=['GET'])
 @auth_required
 @admin_required
-def log():
+def log(page):
     """
     Displays logs for last two days
     """
+    per_page = 20
     now = datetime.now()
-    two_days_ago = now - timedelta(days=2)
-    logs = Log.query.order_by(Log.time.desc()).filter(Log.time > two_days_ago).all()
+    week_ago = now - timedelta(weeks=1)
+    logs = Log.query.order_by(Log.time.desc()).filter(Log.time > week_ago).paginate(page,per_page,error_out=False)
     return render_template('pages/logs.j2', logs=logs)
 
 
