@@ -3,6 +3,10 @@
 {% block content %}
     <h2>Commands log / latest on top</h2>
     {% if logs %}
+        <h5>
+        {% if logs.has_prev %}<a href="{{ url_for('admin.log', page=logs.prev_num) }}">&lt;&lt; Newer logs</a>{% else %}&lt;&lt; Newer logs{% endif %} | 
+        {% if logs.has_next %}<a href="{{ url_for('admin.log', page=logs.next_num) }}">Older logs &gt;&gt;</a>{% else %}Older logs &gt;&gt;{% endif %}
+        </h5>
         <table class="table table-hover">
         <tr>
         <th>time</th>
@@ -21,9 +25,10 @@
             </tr>
         {% endfor %}
         </table>
-        {{logs}}
+        <h5>
         {% if logs.has_prev %}<a href="{{ url_for('admin.log', page=logs.prev_num) }}">&lt;&lt; Newer logs</a>{% else %}&lt;&lt; Newer logs{% endif %} | 
         {% if logs.has_next %}<a href="{{ url_for('admin.log', page=logs.next_num) }}">Older logs &gt;&gt;</a>{% else %}Older logs &gt;&gt;{% endif %}
+        </h5>
     {% else %}
         <h3>No logs for last two days</h3>
     {% endif %}
