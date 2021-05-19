@@ -5,11 +5,12 @@ from operator import ge, lt
 
 
 RULES_COLUMNS_V4 = (
-    ('source', 'Source address'),
-    ('source_port', 'Source port'),
-    ('dest', 'Dest. address'),
-    ('dest_port', 'Dest. port'),
-    ('protocol', 'Protocol'),
+    ('source', 'Source addr.'),
+    ('source_port', 'S port'),
+    ('dest', 'Dest. addr.'),
+    ('dest_port', 'D port'),
+    ('protocol', 'Proto'),
+    ('packet_len', 'Packet len'),
     ('expires', 'Expires'),
     ('action_id', 'Action'),
     ('flags', 'Flags'),
@@ -17,11 +18,12 @@ RULES_COLUMNS_V4 = (
 )
 
 RULES_COLUMNS_V6 = (
-    ('source', 'Source address'),
-    ('source_port', 'Source port'),
-    ('dest', 'Dest. address'),
-    ('dest_port', 'Dest. port'),
+    ('source', 'Source addr.'),
+    ('source_port', 'S port'),
+    ('dest', 'Dest. addr.'),
+    ('dest_port', 'D port'),
     ('next_header', 'Next header'),
+    ('packet_len', 'Packet len'),
     ('expires', 'Expires'),
     ('action_id', 'Action'),
     ('flags', 'Flags'),
