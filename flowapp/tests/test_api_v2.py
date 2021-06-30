@@ -90,7 +90,7 @@ def test_delete_v4rule(client, db, jwt_token):
 
     assert req.status_code == 201
     data = json.loads(req.data)
-    assert data['rule']['id'] == 2
+    assert data['rule']['id'] == 3
     assert data['rule']['rstate'] == 'withdrawed rule'
 
     req2 = client.delete('/api/v2/rules/ipv4/{}'.format(data['rule']['id']),
@@ -136,7 +136,7 @@ def test_delete_rtbh_rule(client, db, jwt_token):
 
     assert req.status_code == 201
     data = json.loads(req.data)
-    assert data['rule']['id'] == 2
+    assert data['rule']['id'] == 3
     req2 = client.delete('/api/v2/rules/rtbh/{}'.format(data['rule']['id']),
                          headers={'x-access-token': jwt_token}
                          )
@@ -244,8 +244,8 @@ def test_rules(client, db, jwt_token):
     assert req.status_code == 200
 
     data = json.loads(req.data)
-    assert len(data['flowspec_ipv4_rw']) == 1
-    assert len(data['flowspec_ipv6_rw']) == 1
+    assert len(data['flowspec_ipv4_rw']) == 2
+    assert len(data['flowspec_ipv6_rw']) == 2
 
 
 
@@ -309,7 +309,7 @@ def test_create_v4rule_with_timestamp(client, db, jwt_token):
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data['rule']
-    assert data['rule']['id'] == 2
+    assert data['rule']['id'] == 3
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
     assert data['rule']['expires'] == 1444913400
 
@@ -355,7 +355,7 @@ def test_create_v6rule_with_timestamp(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 201
     assert data['rule']
-    assert data['rule']['id'] == '2'
+    assert data['rule']['id'] == '3'
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
     assert data['rule']['expires'] == 1444913400 
 
@@ -400,7 +400,7 @@ def test_create_rtbh_rule_with_timestamp(client, db, jwt_token):
     print("RTBH DATA", data)
     assert req.status_code == 201
     assert data['rule']
-    assert data['rule']['id'] == 2
+    assert data['rule']['id'] == 3
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
     assert data['rule']['expires'] == 1444913400
 

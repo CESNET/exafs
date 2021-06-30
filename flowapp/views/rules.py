@@ -326,8 +326,10 @@ def ipv4_rule():
     form = IPv4Form(request.form)
 
     # add values to form instance
-    form.action.choices = get_user_actions(session['user_role_ids'])
-
+    user_actions = get_user_actions(session['user_role_ids'])
+    user_actions = [(0, '---- select action ----'),] + user_actions
+    form.action.choices = user_actions
+    form.action.default = 0
     form.net_ranges = net_ranges
 
     if request.method == 'POST' and form.validate():
@@ -390,8 +392,13 @@ def ipv6_rule():
     net_ranges = get_user_nets(session['user_id'])
     form = IPv6Form(request.form)
 
-    form.action.choices = get_user_actions(session['user_role_ids'])
+    # set up form
+    user_actions = get_user_actions(session['user_role_ids'])
+    user_actions = [(0, '---- select action ----'),] + user_actions
+    form.action.choices = user_actions
+    form.action.default = 0
     form.net_ranges = net_ranges
+    form.process()
 
     if request.method == 'POST' and form.validate():
 
@@ -456,10 +463,13 @@ def rtbh_rule():
         insert_initial_communities()
 
     net_ranges = get_user_nets(session['user_id'])
+    user_communities = get_user_communities(session['user_role_ids'])
+    # setup form
     form = RTBHForm(request.form)
-
-    form.community.choices = get_user_communities(session['user_role_ids'])
+    user_communities =  [(0, '---- select community ----'),] + user_communities
+    form.community.choices = user_communities
     form.net_ranges = net_ranges
+    form.process()
 
     if request.method == 'POST' and form.validate():
 

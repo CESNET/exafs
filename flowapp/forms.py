@@ -1,9 +1,9 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField
-from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional
+from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional, IPAddress
 
 from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
-    whole_world_range, network_in_range, IPAddress
+    whole_world_range, network_in_range, ipaddress
 
 from flowapp.constants import IPV4_PROTOCOL, IPV6_NEXT_HEADER, TCP_FLAGS
 
@@ -173,7 +173,7 @@ class RTBHForm(FlaskForm):
 
     community = SelectField('Community',
                             coerce=int,
-                            validators=[DataRequired()])
+                            validators=[DataRequired(message="Please select a community for the rule."),])
 
     expires = StringField('Expires')
 
@@ -248,7 +248,7 @@ class IPForm(FlaskForm):
 
     action = SelectField(u'Action',
                          coerce=int,
-                         validators=[DataRequired()])
+                         validators=[DataRequired(message="Please select an action for the rule.")])
 
     expires = StringField('Expires')
 

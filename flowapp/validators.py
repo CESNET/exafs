@@ -352,3 +352,4 @@ def subnet_of(net_a, net_b):
 def supernet_of(net_a, net_b):
     """Return True if this network is a supernet of other."""
     return _is_subnet_of(net_b, net_a)
+
