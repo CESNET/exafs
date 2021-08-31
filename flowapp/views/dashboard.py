@@ -1,3 +1,4 @@
+import subprocess
 from datetime import datetime
 
 from flask import Blueprint, render_template, request, session, make_response, abort
@@ -8,6 +9,12 @@ from flowapp.utils import active_css_rstate, other_rtypes
 
 dashboard = Blueprint('dashboard', __name__, template_folder='templates')
 
+
+@dashboard.route('/whois/<string:ip_address>', methods=['GET'])
+@auth_required
+def whois(ip_address):
+    result = subprocess.run(['whois', ip_address], stdout=subprocess.PIPE)
+    return render_template('pages/dashboard_whois.j2', result=result.stdout.decode('utf-8'), ip_address=ip_address)
 
 
 @dashboard.route('/<path:rtype>/<path:rstate>/')

@@ -53,5 +53,11 @@ Last part of the system is Guarda service. This systemctl service is running in 
 
 ## Change Log
 
-- v0.4.7 - Multi neighbor support enabled. See config example and update your config.py. 
-- v0.4.6 - Route Distinguisher for VRF is now supported. See config example and update your config.py. 
+- 0.5.4 - Right click menu on adress / Whois or Copy to clipboard
+- 0.5.3 - Dashboard update, forms with default action
+- 0.5.2 - API v2 with new keys 
+- 0.5.1 - Bug fixes
+- 0.5.0 - New format of LOG table in database. **Run migration scripts to update your DB**. Removed foreign key user_id, author email is stored directly to logs for faster grep text search.
+- 0.4.8 - Enhanced String Filtering
+- 0.4.7 - Multi neighbor support enabled. See config example and update your config.py. 
+- 0.4.6 - Route Distinguisher for VRF is now supported. See config example and update your config.py. 

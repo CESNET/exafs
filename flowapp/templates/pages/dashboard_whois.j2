@@ -1,0 +1,11 @@
+{% extends 'layouts/default.j2' %}
+
+{% block title %}Flowspec{% endblock %}
+{% block content %}
+    <h2>WHOIS for {{ ip_address }}</h2>
+
+    <div class="row">
+        <pre>{{ result }}</pre>        
+    </div>
+
+{% endblock %}

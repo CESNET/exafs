@@ -398,8 +398,7 @@ def ipv6_rule():
     form.action.choices = user_actions
     form.action.default = 0
     form.net_ranges = net_ranges
-    form.process()
-
+    
     if request.method == 'POST' and form.validate():
 
         model = get_ipv6_model_if_exists(form.data, 1)
@@ -469,8 +468,7 @@ def rtbh_rule():
     user_communities =  [(0, '---- select community ----'),] + user_communities
     form.community.choices = user_communities
     form.net_ranges = net_ranges
-    form.process()
-
+    
     if request.method == 'POST' and form.validate():
 
         model = get_rtbh_model_if_exists(form.data, 1)

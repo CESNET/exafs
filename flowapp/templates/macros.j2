@@ -4,21 +4,13 @@
     {% for rule in rules %}
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
             <td>
-                {{ rule.source }}
-                {% if rule.source_mask %}
-                    {{ '/' if rule.source_mask >= 0 else '' }}
-                    {{ rule.source_mask if rule.source_mask >= 0 else '' }}
-                {% endif %}
+                <span class="task">{{ rule.source }}</span>{% if rule.source_mask %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.source_port }}
             </td>
             <td>
-                {{ rule.dest }}
-                {% if rule.dest_mask %}
-                    {{ '/' if rule.dest_mask >= 0 else '' }}
-                    {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}
-                {% endif %}
+                <span class="task">{{ rule.dest }}</span>{% if rule.dest_mask %}{{ '/' if rule.dest_mask >= 0 else '' }}{{ rule.dest_mask if rule.dest_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.dest_port }}
@@ -81,10 +73,10 @@
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>
     <td>
     {% if rule.ipv4 %}
-        {{ rule.ipv4 }} {{ '/' if rule.ipv4_mask else '' }} {{rule.ipv4_mask|default("", True)}}
+        <span class="task">{{ rule.ipv4 }}</span>{{ '/' if rule.ipv4_mask else '' }}{{rule.ipv4_mask|default("", True)}}
     {% endif %}
     {% if rule.ipv6 %}
-        {{ rule.ipv6 }} {{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
+        <span class="task">{{ rule.ipv6 }}</span>{{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
     {% endif %}
     </td>
      <td>

@@ -27,6 +27,7 @@
     <script type="text/javascript" src="/static/bootstrap/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/static/datepicker/js/bootstrap-datetimepicker.min.js"></script>
     
+    
     <link rel="stylesheet" href="/static/datepicker/css/bootstrap-datetimepicker.min.css" />
 
   </head>
@@ -92,5 +93,18 @@
 
       {% block content %}{% endblock %}
     </div>
+    <nav id="context-menu" class="context-menu">
+        <ul class="context-menu__items">
+            <li class="context-menu__item">
+            <a href="#" class="context-menu__link" data-action="whois"><i class="fa fa-eye"></i>WHOIS</a>
+            </li>
+            <li class="context-menu__item">
+            <a href="#" class="context-menu__link" data-action="copy"><i class="fa fa-copy"></i>Copy</a>
+            </li>
+        </ul>
+    </nav>
+
+    <script type="text/javascript" src="/static/js/ip_context.js"></script>  
+
   </body>
 </html>
