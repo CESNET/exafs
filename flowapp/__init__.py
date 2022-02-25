@@ -32,6 +32,7 @@ from .views.admin import admin
 from .views.rules import rules
 from .views.api_v1 import api as api_v1
 from .views.api_v2 import api as api_v2
+from .views.api_v2 import api as api_v3
 from .views.api_keys import api_keys
 from .auth import auth_required
 from .views.dashboard import dashboard
@@ -45,6 +46,7 @@ app.register_blueprint(rules, url_prefix='/rules')
 app.register_blueprint(api_keys, url_prefix='/api_keys')
 app.register_blueprint(api_v1, url_prefix='/api/v1')
 app.register_blueprint(api_v2, url_prefix='/api/v2')
+app.register_blueprint(api_v3, url_prefix='/api/v3')
 app.register_blueprint(dashboard, url_prefix='/dashboard')
 
 
