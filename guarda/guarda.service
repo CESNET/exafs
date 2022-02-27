@@ -7,7 +7,7 @@ ConditionPathExists=/home/deploy/www/guarda/guarda.py
 
 [Service]
 Type=simple
-ExecStart=/home/deploy/www/guarda/guarda.py
+ExecStart=/usr/bin/python3.6 /home/deploy/www/guarda/guarda.py
 StandardOutput=syslog
 StandardError=syslog
 
