@@ -74,7 +74,8 @@ def authorize(user_key):
     jwt_key = app.config.get("JWT_SECRET")
 
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
-
+    print("MODEL", model)
+    print("ADDR", request.remote_addr)
     if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(
         request.remote_addr
     ):

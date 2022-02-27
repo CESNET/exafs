@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from flowapp.views import api_common
 
-api = Blueprint("api_v2", __name__, template_folder="templates")
+api = Blueprint("api_v3", __name__, template_folder="templates")
 
 from flowapp import app, db, validators, flowspec, csrf, messages
 

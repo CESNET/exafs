@@ -32,7 +32,7 @@ from .views.admin import admin
 from .views.rules import rules
 from .views.api_v1 import api as api_v1
 from .views.api_v2 import api as api_v2
-from .views.api_v2 import api as api_v3
+from .views.api_v3 import api as api_v3
 from .views.api_keys import api_keys
 from .auth import auth_required
 from .views.dashboard import dashboard
