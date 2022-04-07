@@ -144,7 +144,7 @@ You can use following MYSQL commands to insert the user, give him role 'admin' a
 ```
 insert into user (uuid,email,name) values ('example@cesnet.cz', 'example@cesnet.cz', 'Mr. Example Admin');
 insert into user_role (user_id,role_id) values (1, 3);
-insert into user_role (user_id,organization_id) values (1, 2);
+insert into user_organization (user_id,organization_id) values (1, 2);
 ``` 
 You can also modify the models.py for your own default values for db-init.
 
