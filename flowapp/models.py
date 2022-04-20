@@ -297,6 +297,7 @@ class Flowspec4(db.Model):
     protocol = db.Column(db.String(255))
     flags = db.Column(db.String(255))
     packet_len = db.Column(db.String(255))
+    fragment = db.Column(db.String(255))
     comment = db.Column(db.Text)
     expires = db.Column(db.DateTime)
     created = db.Column(db.DateTime)
@@ -308,7 +309,7 @@ class Flowspec4(db.Model):
     rstate = db.relationship('Rstate', backref='flowspec4')
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol,
-                 flags, packet_len, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
+                 flags, packet_len, fragment, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
         self.source = source
         self.source_mask = source_mask
         self.dest = destination
@@ -318,6 +319,7 @@ class Flowspec4(db.Model):
         self.protocol = protocol
         self.flags = flags
         self.packet_len = packet_len
+        self.fragment = fragment
         self.comment = comment
         self.expires = expires
         self.user_id = user_id
@@ -337,6 +339,7 @@ class Flowspec4(db.Model):
                and self.dest_mask == other.dest_mask and self.source_port == other.source_port \
                and self.dest_port == other.dest_port and self.protocol == other.protocol \
                and self.flags == other.flags and self.packet_len == other.packet_len \
+               and self.fragment == other.fragment  \
                and self.action_id == other.action_id and self.rstate_id == other.rstate_id
 
     def __ne__(self, other):
@@ -349,7 +352,7 @@ class Flowspec4(db.Model):
                   and self.dest_mask == other.dest_mask and self.source_port == other.source_port \
                   and self.dest_port == other.dest_port and self.protocol == other.protocol \
                   and self.flags == other.flags and self.packet_len == other.packet_len \
-                  and self.action_id == other.action_id and self.rstate_id == other.rstate_id
+                  and self.fragment == other.fragment and self.action_id == other.action_id and self.rstate_id == other.rstate_id
 
         return not compars
 
@@ -377,6 +380,7 @@ class Flowspec4(db.Model):
             "protocol": self.protocol,
             "flags": self.flags,
             "packet_len": self.packet_len,
+            "fragment" : self.fragment,
             "comment": self.comment,
             "expires": expires,
             "created": created,
@@ -416,6 +420,7 @@ class Flowspec4(db.Model):
             "protocol": self.protocol,
             "flags": self.flags,
             "packet_len": self.packet_len,
+            "fragment" : self.fragment,
             "comment": self.comment,
             "expires": utils.datetime_to_webpicker(self.expires),
             "created": utils.datetime_to_webpicker(self.created),
