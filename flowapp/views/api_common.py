@@ -212,6 +212,7 @@ def create_ipv4(current_user):
             protocol=form.protocol.data,
             flags=";".join(form.flags.data),
             packet_len=form.packet_len.data,
+            fragment=";".join(form.fragment.data),
             expires=expires,
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,

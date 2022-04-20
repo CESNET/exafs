@@ -356,7 +356,7 @@ class IPv4Form(IPForm):
 
     fragment = SelectMultipleField('Fragment',
                            choices=[(fr, fr.upper()) for fr in IPV4_FRAGMENT.keys()],
-                           validators=[DataRequired()])                           
+                           validators=[Optional()])                           
 
     def validate_ipv_specific(self):
         """
