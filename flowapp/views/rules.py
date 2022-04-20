@@ -350,6 +350,7 @@ def ipv4_rule():
                 protocol=form.protocol.data,
                 flags=";".join(form.flags.data),
                 packet_len=form.packet_len.data,
+                fragment=";".join(form.fragment.data),
                 expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,

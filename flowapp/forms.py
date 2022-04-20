@@ -5,7 +5,7 @@ from wtforms.validators import DataRequired, Length, Email, NumberRange, Optiona
 from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
     whole_world_range, network_in_range, ipaddress
 
-from flowapp.constants import IPV4_PROTOCOL, IPV6_NEXT_HEADER, TCP_FLAGS
+from flowapp.constants import IPV4_FRAGMENT, IPV4_PROTOCOL, IPV6_NEXT_HEADER, TCP_FLAGS
 
 from flask import current_app
 
@@ -353,6 +353,10 @@ class IPv4Form(IPForm):
     protocol = SelectField('Protocol',
                            choices=[(pr, pr.upper()) for pr in IPV4_PROTOCOL.keys()],
                            validators=[DataRequired()])
+
+    fragment = SelectMultipleField('Fragment',
+                           choices=[(fr, fr.upper()) for fr in IPV4_FRAGMENT.keys()],
+                           validators=[DataRequired()])                           
 
     def validate_ipv_specific(self):
         """

@@ -14,12 +14,17 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     if rule.protocol and rule.protocol != 'all':
         protocol = 'protocol ={};'.format(IPV4_PROTOCOL[rule.protocol])
     flagstring = rule.flags.replace(";", " ")
+    fragment_string = rule.fragment.replace(";", " ")
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
+
+    fragment = 'fragment [{}];'.format(fragment_string) if rule.fragment else ''
+
 
     spec = {
         'protocol': protocol,
         'flags': flags,
+        'fragment': fragment,
         'mask': IPV4_DEFMASK
     }
 
@@ -144,16 +149,18 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
 
     protocol = ipv_specific['protocol']
     flags = ipv_specific['flags']
+    fragment = ipv_specific.get("fragment", None)
 
     packet_len = 'packet-length {};'.format(
         trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ''
 
-    match_body = '{source} {source_port} {dest} {dest_port} {protocol} {flags} {packet_len}'.format(
+    match_body = '{source} {source_port} {dest} {dest_port} {protocol} {fragment} {flags} {packet_len}'.format(
         source=source,
         source_port=source_port,
         dest=dest,
         dest_port=dest_port,
         protocol=protocol,
+        fragment=fragment,
         flags=flags,
         packet_len=packet_len)
 

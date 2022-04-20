@@ -82,6 +82,13 @@ IPV4_PROTOCOL = {
     'all': ''
 }
 
+IPV4_FRAGMENT = {
+    'dont-fragment' : 'dont-fragment',
+    'first-fragment' : 'first-fragment',
+    'is-fragment' : 'is-fragment',
+    'last-fragment ' : 'last-fragment '
+}
+
 
 
 RULE_TYPE_DISPATCH = {
