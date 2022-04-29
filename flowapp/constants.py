@@ -83,10 +83,10 @@ IPV4_PROTOCOL = {
 }
 
 IPV4_FRAGMENT = {
-    'dont-fragment' : 'dont-fragment',
-    'first-fragment' : 'first-fragment',
-    'is-fragment' : 'is-fragment',
-    'last-fragment ' : 'last-fragment '
+    'dont' : 'dont-fragment',
+    'first' : 'first-fragment',
+    'is' : 'is-fragment',
+    'last' : 'last-fragment'
 }
 
 

@@ -25,7 +25,12 @@
       </div>
     </div>
     <div class="col-sm-2">
+      <div class="row">
             {{ render_field(form.protocol) }}
+      </div>
+        <div class="row">
+            {{ render_field(form.fragment, size=4) }}
+        </div>
     </div>
     <div class="col-sm-2">
           {{ render_field(form.flags, size=9) }}
@@ -40,11 +45,8 @@
     <div class="col-sm-4">
         {{ render_field(form.dest_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
     </div>
-    <div class="col-sm-2">
+    <div class="col-sm-4">
         {{ render_field(form.packet_len, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x")  }}
-    </div>
-    <div class="col-sm-2">
-          {{ render_field(form.fragment, size=4) }}
     </div>
   </div>
 

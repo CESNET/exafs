@@ -18,7 +18,7 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
 
-    fragment = 'fragment [{}];'.format(fragment_string) if rule.fragment else ''
+    fragment = 'fragment [ {} ];'.format(fragment_string) if rule.fragment else ''
 
 
     spec = {

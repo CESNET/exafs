@@ -194,6 +194,31 @@ def test_validation_v4rule(client, db, jwt_token):
     assert data['validation_errors']['source'][0].startswith('Source or des')
 
 
+def test_validation_v4rule_fragment(client, db, jwt_token):
+    """
+    test that creating with invalid fragment values returns 400 and errors
+    """
+    bad_string = "bad-and-ugly"
+    req = client.post('/api/v1/rules/ipv4',
+                      headers={'x-access-token': jwt_token},
+                      json={
+                          "action": 2,
+                          "protocol": "tcp",
+                          "source": "147.230.17.12",
+                          "source_mask": 32,
+                          "source_port": "",
+                          "expires": "10/15/2050 14:46",
+                          "fragment": bad_string
+                      }
+                      )
+
+    assert req.status_code == 400
+    data = json.loads(req.data)
+    assert len(data['validation_errors']) > 0
+    assert 'fragment' in data['validation_errors'].keys()
+    assert bad_string in data['validation_errors']['fragment'][0]
+    
+
 def test_all_validation_errors(client, db, jwt_token):
     """
     test that creating with invalid data returns 400 and errors
