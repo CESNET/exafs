@@ -22,20 +22,16 @@
             <td  class="text-center">
 
                 <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
-                    <span class="glyphicon glyphicon-remove"></span>
+                    <i class="bi bi-x"></i>
                 </button>
 
                 <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
-                    <span class="glyphicon glyphicon-time"></span>
+                    <i class="bi bi-clock"></i>
                 </button>
             </td>
             </tr>
         </table>
         </form>
     </div>
-    <script type="text/javascript">
-         $("#check-all").click(function(){
-            $('input:checkbox').not(this).prop('checked', this.checked);
-        });
-    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/check_all.js') }}"></script>
 {% endblock %}

@@ -3,6 +3,11 @@ body {
     padding-bottom: 30px;
 }
 
+
+#dashboard-search {
+    margin-top: 10px;
+}
+
 .theme-dropdown .dropdown-menu {
     position: static;
     display: block;
@@ -77,6 +82,7 @@ td.bottom_row {
 
 .table-sorter a {
     color: #0a0a0a;
+    text-decoration: none;
 }
 
 .table-sorter a:visited {
@@ -141,4 +147,10 @@ td.bottom_row {
 .context-menu__link:hover {
   color: #fff;
   background-color: #0066aa;
+}
+
+tbody .bi {
+  font-weight: bold;
+  font-size: 105%;
+  color: white;
 }
