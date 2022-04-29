@@ -121,7 +121,7 @@ class ASPath(db.Model):
 
     def __init__(self, prefix, as_path):
         self.prefix = prefix
-        self.arange = as_path
+        self.as_path = as_path
 
     def __repr__(self):
         return f"{self.prefix} : {self.as_path}"
