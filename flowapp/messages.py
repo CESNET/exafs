@@ -17,10 +17,11 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     if rule.protocol and rule.protocol != 'all':
         protocol = 'protocol ={};'.format(IPV4_PROTOCOL[rule.protocol])
     flagstring = rule.flags.replace(";", " ")
-    fragment_string = rule.fragment.replace(";", " ")
+    
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
 
+    fragment_string = rule.fragment.replace(";", " ") if rule.fragment else ''
     fragment = 'fragment [ {} ];'.format(fragment_string) if rule.fragment else ''
 
 
