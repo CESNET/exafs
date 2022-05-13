@@ -1,0 +1,27 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}AS Paths{% endblock %}
+{% block content %}
+    <table class="table table-hover">
+    <tr>
+    <th>Prefix</th>
+    <th>AS-path</th>
+    <th>Action</th>
+    </tr>
+    {% for pth in paths %}
+        <tr>
+        <td>{{ pth.prefix }}</td>
+        <td>
+            {{ pth.as_path }}
+        </td>
+        <td>
+        <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_as_path', path_id=pth.id) }}" role="button">
+            <span class="glyphicon glyphicon-edit"></span>
+        </a>
+        <a class="btn btn-danger btn-sm" href="{{ url_for('admin.delete_as_path', path_id=pth.id) }}" role="button">
+            <span class="glyphicon glyphicon-remove"></span>
+        </a>
+        </td>
+        </tr>
+    {% endfor %}
+    </table>
+{% endblock %}

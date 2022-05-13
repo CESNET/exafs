@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField
+from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional, IPAddress
 
 from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
@@ -95,6 +95,22 @@ class ActionForm(FlaskForm):
                           validators=[DataRequired()])
 
 
+class ASPathForm(FlaskForm):
+    """
+    AS Path form object
+    used in Admin
+    """
+    prefix = StringField(
+        'Prefix',
+        validators=[Length(max=120), DataRequired()]
+    )
+
+    as_path = StringField(
+        'as-path value',
+        validators=[Length(max=250), DataRequired()]
+    )
+
+
 class CommunityForm(FlaskForm):
     """
     Community form object
@@ -125,6 +141,8 @@ class CommunityForm(FlaskForm):
     role_id = SelectField('Minimal required role',
                           choices=[('2', 'user'), ('3', 'admin')],
                           validators=[DataRequired()])
+
+    as_path = BooleanField('add AS-path (checked = true)')                      
 
     def validate(self):
         """

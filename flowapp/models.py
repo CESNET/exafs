@@ -114,6 +114,19 @@ class Organization(db.Model):
         return self.name
 
 
+class ASPath(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    prefix = db.Column(db.String(120), unique=True)
+    as_path = db.Column(db.String(250))
+
+    def __init__(self, prefix, as_path):
+        self.prefix = prefix
+        self.as_path = as_path
+
+    def __repr__(self):
+        return f"{self.prefix} : {self.as_path}"
+
+
 class Action(db.Model):
     """
     Action for rule
@@ -144,15 +157,17 @@ class Community(db.Model):
     larcomm = db.Column(db.String(2047))
     extcomm = db.Column(db.String(2047))
     description = db.Column(db.String(255))
+    as_path = db.Column(db.Boolean, default=False)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
     role = db.relationship('Role', backref='community')
 
-    def __init__(self, name, comm, larcomm, extcomm, description, role_id=2):
+    def __init__(self, name, comm, larcomm, extcomm, description, as_path=False, role_id=2):
         self.name = name
         self.comm = comm
         self.larcomm = larcomm
         self.extcomm = extcomm
         self.description = description
+        self.as_path = as_path
         self.role_id = role_id
 
 
