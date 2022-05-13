@@ -16,7 +16,8 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     protocol = ''
     if rule.protocol and rule.protocol != 'all':
         protocol = 'protocol ={};'.format(IPV4_PROTOCOL[rule.protocol])
-    flagstring = rule.flags.replace(";", " ")
+
+    flagstring = rule.flags.replace(";", " ") if rule.flags else ''
     
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
