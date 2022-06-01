@@ -333,7 +333,12 @@ def ipv4_rule():
     form.net_ranges = net_ranges
 
     print("DEBUG", form.expires)
-
+    print("DEBUG", dir(form.expires))
+    print("DEBUG", form.expires.raw_data)
+    print("DEBUG", form.expires.data)
+    print("DEBUG", form.expires.strptime_format)
+    print("DEBUG", form.expires.format)
+    
     if request.method == 'POST' and form.validate():
 
         model = get_ipv4_model_if_exists(form.data, 1)
@@ -353,11 +358,11 @@ def ipv4_rule():
                 flags=";".join(form.flags.data),
                 packet_len=form.packet_len.data,
                 fragment=";".join(form.fragment.data),
-                expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+                expires=round_to_ten_minutes(form.expires.data),
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session['user_id'],
-                rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
+                rstate_id=get_state_by_time(form.expires.data)
             )
             flash_message = u'IPv4 Rule saved'
             db.session.add(model)

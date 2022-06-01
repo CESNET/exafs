@@ -1,15 +1,17 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField, BooleanField, DateTimeLocalField
-from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional, IPAddress
-
-
-
-from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
-    whole_world_range, network_in_range, ipaddress
-
-from flowapp.constants import IPV4_FRAGMENT, IPV4_PROTOCOL, IPV6_NEXT_HEADER, TCP_FLAGS
-
 from flask import current_app
+from flask_wtf import FlaskForm
+from wtforms import (BooleanField, DateTimeLocalField, HiddenField,
+                     IntegerField, SelectField, SelectMultipleField,
+                     StringField, TextAreaField)
+from wtforms.validators import (DataRequired, Email, InputRequired, IPAddress,
+                                Length, NumberRange, Optional)
+
+from flowapp.constants import (IPV4_FRAGMENT, IPV4_PROTOCOL, IPV6_NEXT_HEADER,
+                               TCP_FLAGS)
+from flowapp.validators import (IPv4Address, IPv6Address, NetRangeString,
+                                PortString, address_in_range,
+                                address_with_mask, ipaddress, network_in_range,
+                                whole_world_range)
 
 
 class UserForm(FlaskForm):
@@ -18,7 +20,7 @@ class UserForm(FlaskForm):
     used in Admin
     """
     uuid = StringField(
-        'Unique User ID', validators=[DataRequired("Please provide UUID"),
+        'Unique User ID', validators=[InputRequired("Please provide UUID"),
                                       Email("Please provide valid email")]
     )
 
@@ -270,7 +272,7 @@ class IPForm(FlaskForm):
                          coerce=int,
                          validators=[DataRequired(message="Please select an action for the rule.")])
 
-    expires = DateTimeLocalField('Expires', format='%Y/%m/%d', validators=[DataRequired()])
+    expires = DateTimeLocalField('Expires',  format='%Y-%m-%dT%H:%M', validators=[InputRequired()])
 
 
     comment = arange = TextAreaField('Comments')
