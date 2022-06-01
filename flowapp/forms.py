@@ -1,6 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField, BooleanField
+from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField, BooleanField, DateTimeLocalField
 from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional, IPAddress
+
+
 
 from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
     whole_world_range, network_in_range, ipaddress
@@ -268,7 +270,8 @@ class IPForm(FlaskForm):
                          coerce=int,
                          validators=[DataRequired(message="Please select an action for the rule.")])
 
-    expires = StringField('Expires')
+    expires = DateTimeLocalField('Expires', format='%Y/%m/%d', validators=[DataRequired()])
+
 
     comment = arange = TextAreaField('Comments')
 

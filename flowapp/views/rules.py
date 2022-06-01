@@ -332,6 +332,8 @@ def ipv4_rule():
     form.action.default = 0
     form.net_ranges = net_ranges
 
+    print("DEBUG", form.expires)
+
     if request.method == 'POST' and form.validate():
 
         model = get_ipv4_model_if_exists(form.data, 1)
@@ -381,7 +383,7 @@ def ipv4_rule():
                 ))
 
     default_expires = datetime.now() + timedelta(days=7)
-    form.expires.data = datetime_to_webpicker(default_expires)
+    #form.expires.data = datetime_to_webpicker(default_expires)
 
     return render_template('forms/ipv4_rule.j2', form=form, action_url=url_for('rules.ipv4_rule'))
 

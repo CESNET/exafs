@@ -1,4 +1,9 @@
 body {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    line-height: 1.42857143;
+    color: #333;
+    background-color: #fff;
     padding-top: 70px;
     padding-bottom: 30px;
 }
@@ -150,7 +155,7 @@ td.bottom_row {
 }
 
 tbody .bi {
-  font-weight: bold;
+  -webkit-text-stroke: 1px;
   font-size: 105%;
   color: white;
 }
