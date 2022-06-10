@@ -132,3 +132,5 @@ TCP_FLAGS = [
     ('PUSH', 'PSH'),
     ('URGENT', 'URG')
     ]
+
+FORM_TIME_PATTERN = '%Y-%m-%dT%H:%M'   
