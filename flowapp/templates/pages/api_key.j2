@@ -18,13 +18,13 @@
         </td>
         <td>
                     <a class="btn btn-danger btn-sm" href="{{ url_for('api_keys.delete', key_id=row.id) }}" role="button">
-                         <span class="glyphicon glyphicon-remove"></span>
+                         <i class="bi bi-x"></i>
                     </a>
                 </td>
         </tr>
     {% endfor %}
     </table>
-    <a class="btn btn-info btn-sm" href="{{ url_for('api_keys.add') }}" role="button">
+    <a class="btn btn-primary" href="{{ url_for('api_keys.add') }}" role="button">
                          Add new ApiKey
                     </a>
 {% endblock %}
