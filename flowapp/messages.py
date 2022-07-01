@@ -85,8 +85,9 @@ def create_rtbh(rule, message_type=ANNOUNCE):
                 target = current_app.config['MULTI_NEIGHBOR'].get(rule.community.comm)
                 neighbor = 'neighbor {target} '.format(target=target)
             else:
-                target = current_app.config['MULTI_NEIGHBOR'].get('primary')
-                neighbor = 'neighbor {target1}, neighbor {target2} '.format(target1=target[0], target2=target[1])
+                targets = current_app.config['MULTI_NEIGHBOR'].get('primary')                
+                neighbor = prepare_multi_neighbor(targets)
+                
         else:
             neighbor = ''
     except KeyError:
@@ -172,8 +173,8 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
   
     try:
         if current_app.config['USE_MULTI_NEIGHBOR']:
-            target = current_app.config['MULTI_NEIGHBOR'].get('primary')
-            neighbor = 'neighbor {target1}, neighbor {target2} '.format(target1=target[0], target2=target[1])
+            targets = current_app.config['MULTI_NEIGHBOR'].get('primary')
+            neighbor = prepare_multi_neighbor(targets)
         else:
             neighbor = ''
     except KeyError:
@@ -205,3 +206,11 @@ def sanitize_mask(rule_mask, default_mask =IPV4_DEFMASK):
         return rule_mask
     else:
         return default_mask
+
+
+def prepare_multi_neighbor(targets):
+    """
+    prepare multi neighbor string
+    """
+    neigbors = ['neighbor {}'.format(tgt) for tgt in targets]
+    return ', '.join(neigbors) + ' '        
