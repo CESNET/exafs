@@ -1,0 +1,22 @@
+{
+  "name": "exafs",
+  "version": "0.7.0",
+  "description": "Tool for creation, validation and execution of ExaBGP messages",
+  "main": "ts/index.ts",
+  "scripts": {
+    "build": "sass scss/style.scss style.min.css --style compressed",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CESNET/ExaFS.git"
+  },
+  "author": "Jiří Vraný, Petr Adamec, Josef Verich, Jakub Man",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CESNET/ExaFS/issues"
+  },
+  "homepage": "https://github.com/CESNET/ExaFS#readme",
+  "dependencies": {
+  }
+}
