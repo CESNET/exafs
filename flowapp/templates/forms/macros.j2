@@ -16,7 +16,7 @@
         {% if tooltip %}
             <div class="input-group">
               {{ field(class_='form-control', **kwargs) }}
-               <span class="input-group-text data-toggle="tooltip"  title="{{ tooltip }}">
+               <span class="input-group-text" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ tooltip }}">
                     <i class="bi bi-question-square-fill"></i>
               </span>
             </div>  
