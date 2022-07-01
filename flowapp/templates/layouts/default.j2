@@ -62,9 +62,9 @@
               </li>
               {% endif %}
             </ul>
-            <p class="navbar-text">
+            <span class="navbar-text">
               {{ session['user_name']}} &lt;{{ session['user_email'] }}&gt;, 
-              role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_orgs'] }}</p>
+              role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_orgs'] }}</span>
           </div>    
         
         </div>
@@ -97,6 +97,6 @@
     </nav>
 
     <script type="text/javascript" src="/static/js/ip_context.js"></script>  
-
+    <script type="text/javascript" src="/static/js/enable_tooltips.js"></script>
   </body>
 </html>
