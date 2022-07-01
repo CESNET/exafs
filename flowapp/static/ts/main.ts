@@ -18,6 +18,11 @@ check_all?.addEventListener("click", function(event){
     }
 });
 
+const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new Tooltip(tooltipTriggerEl)
+})
+
 // Specify functions
 
 export function fillOrganization(ipInputId: string, maskInputId: string): void {
