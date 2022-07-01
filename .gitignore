@@ -113,3 +113,6 @@ venv.bak/
 # vscode
 .vscode/
 .vscode/settings.json
+
+# frontend
+flowapp/static/node_modules
