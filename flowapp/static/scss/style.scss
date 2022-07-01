@@ -1,0 +1,10 @@
+// Import local styles
+@import "components";
+@import "forms";
+@import "layout";
+@import "typing";
+// Override bootstrap default variables
+@import "bootstrap_overrides";
+// Import bootstrap
+@import "../node_modules/bootstrap/scss/bootstrap";
+
