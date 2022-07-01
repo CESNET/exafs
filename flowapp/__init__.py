@@ -6,7 +6,7 @@ from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
-__version__ = '0.6.1'
+__version__ = '0.7.0'
 
 app = Flask(__name__)
 
