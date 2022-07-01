@@ -15,13 +15,21 @@
         {% endif %}
         {% if tooltip %}
             <div class="input-group">
-              {{ field(class_='form-control', **kwargs) }}
+              {% if field.type == 'SelectField' %}
+                    {{ field(class_='form-select', **kwargs) }}
+                {% else %}
+                    {{ field(class_='form-control', **kwargs) }}
+                {% endif %}
                <span class="input-group-text" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ tooltip }}">
                     <i class="bi bi-question-square-fill"></i>
               </span>
             </div>  
         {% else %}
-            {{ field(class_='form-control', **kwargs) }}
+            {% if field.type == 'SelectField' %}
+                    {{ field(class_='form-select', **kwargs) }}
+                {% else %}
+                    {{ field(class_='form-control', **kwargs) }}
+                {% endif %}
         {% endif %}
         {% if field.errors %}
             {% for e in field.errors %}
