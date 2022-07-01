@@ -189,7 +189,7 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     try:
         if current_app.config['USE_MULTI_NEIGHBOR']:
             targets = current_app.config['MULTI_NEIGHBOR'].get('primary')
-            neigbors = [f'neighbor {tgt}' for tgt in targets]
+            neigbors = ['neighbor {}'.format(tgt) for tgt in targets]
             neighbor = ', '.join(neigbors)
         else:
             neighbor = ''
