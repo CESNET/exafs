@@ -8,7 +8,13 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, './js'),
-    filename: "exafs-bundle.js"
+    filename: "exafs-bundle.js",
+    libraryTarget: 'var',
+    library: {
+      name: 'ExaFS',
+      type: 'var',
+      umdNamedDefine: true
+    }
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],

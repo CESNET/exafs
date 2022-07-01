@@ -20,11 +20,33 @@ check_all?.addEventListener("click", function(event){
 
 // Specify functions
 
-function fillOrganization(ipInputId: string, maskInputId: string) {
+export function fillOrganization(ipInputId: string, maskInputId: string): void {
     const modalContainer = document.getElementById('orgSelectModal');
     if (!modalContainer) {
         return;
     }
     const modal = new Modal(modalContainer, {backdrop: true});
     modal.show();
+    const btn = document.getElementById('fill-org-btn');
+    if (btn) {
+        btn.onclick = function () {
+            fillOrgValue(document.getElementById(ipInputId) as HTMLInputElement,
+                document.getElementById(maskInputId) as HTMLInputElement);
+            modal.hide();
+        }
+    }
+}
+
+ export function fillOrgValue(ipField: HTMLInputElement | null, maskField: HTMLInputElement | null) {
+    const org_select = document.getElementById('orgSelect') as HTMLInputElement;
+    if (!org_select) {
+        return;
+    }
+    const val = org_select.value.split('/');
+    if (ipField) {
+        ipField.value = val[0];
+    }
+    if (maskField) {
+        maskField.value = val[1];
+    }
 }
