@@ -128,7 +128,7 @@
                 range</a>
         {% endif %}
         <div class="input-group mb-3">
-            {{ fieldIP(class_='form-control', **ipKwargs) }}
+            {{ fieldIP(class_='form-control', onkeypress="ExaFS.switchFocusOnKeypress(event, '/', '" + fieldMask.id + "')", **ipKwargs) }}
             <span class="input-group-text">/</span>
             {{ fieldMask(class_='form-control ip-mask', **maskKwargs) }}
         </div>
