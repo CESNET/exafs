@@ -134,7 +134,7 @@
     <th>Edit</th>
     {% if group_op %}
         <th class="text-center">
-            <input id="check-all" type="checkbox">
+            <input id="check-all" type="checkbox" onchange="ExaFS.changeAllCheckboxes(this.checked)">
         </th>
     {% endif %}
     </tr>

@@ -70,3 +70,18 @@ export function switchFocusOnKeypress(event: KeyboardEvent, key: string, focusId
         }
     }
 }
+
+/***
+ * Change value of all checkboxes corresponding to given selector to given value.
+ *
+ * @param {boolean} newValue - Value to change the checkboxes to
+ * @param {string}  selector - Query selector for the targeted checkboxes.
+ *                             Set to "input[type='checkbox']" by default to target
+ *                             all checkboxes on a page.
+ */
+export function changeAllCheckboxes(newValue: boolean, selector="input[type='checkbox']") {
+    const inputs = document.querySelectorAll(selector) as NodeListOf<HTMLInputElement>;
+    for (let input of inputs) {
+        input.checked = newValue;
+    }
+}
