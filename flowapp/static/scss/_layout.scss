@@ -2,66 +2,68 @@
 @import "variables";
 
 body {
-    background-color: $color-body-bg;
-    padding-top: 70px;
-    padding-bottom: 30px;
+  background-color: $color-body-bg;
+  color: $color-text;
+  padding-top: 70px;
+  padding-bottom: 30px;
 }
 
 .theme-dropdown .dropdown-menu {
-    position: static;
-    display: block;
-    margin-bottom: 20px;
+  position: static;
+  display: block;
+  margin-bottom: 20px;
 }
 
 .theme-showcase {
-    background-color: $color-item-bg;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  padding: 10px 20px;
+  border-radius: 5px;
+  background-color: $color-item-bg;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 .theme-showcase > p > .btn {
-    margin: 5px 0;
+  margin: 5px 0;
 }
 
 .theme-showcase .navbar .container {
-    width: auto;
+  width: auto;
 }
 
 tr.bottom_row > td,
 tr.bottom_row > th,
 td.bottom_row {
-    border-bottom: solid black 1px;
-    padding-bottom: 1em;
+  border-bottom: solid black 1px;
+  padding-bottom: 1em;
 }
 
 .ip-table thead {
-    background-color: #adadad;
-    cursor: pointer;
+  background-color: #adadad;
+  cursor: pointer;
 }
 
 .sort-direction {
-    display: inline-block;
-    height: 0;
-    width: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
+  display: inline-block;
+  height: 0;
+  width: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
 }
 
 .asc {
-    border-bottom: 5px solid black;
+  border-bottom: 5px solid black;
 }
 
 .desc {
-    border-top: 5px solid black;
+  border-top: 5px solid black;
 }
 
 .table-sorter a {
+  color: #0a0a0a;
+  text-decoration: none;
+
+  &:visited {
     color: #0a0a0a;
-    text-decoration: none;
-    &:visited {
-        color: #0a0a0a;
-    }
+  }
 }
 
 .tasks {
@@ -85,24 +87,24 @@ tbody .bi {
 }
 
 #dashboard-search {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 
 #dashboard-nav h1 {
-    font-size: 130%;
-    font-weight: bold;
-    margin-top: 10px;
+  font-size: 130%;
+  font-weight: bold;
+  margin-top: 10px;
 }
 
 #dashboard-nav .nav > li > a {
-    padding-top: 5px;
-    padding-bottom: 5px;
-    margin-top: 10px;
-    font-size: 130%;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-top: 10px;
+  font-size: 130%;
 }
 
 #dashboard-nav a.active {
-    background-color: #1b67ad;
-    color: white;
+  background-color: #1b67ad;
+  color: white;
 }
 
