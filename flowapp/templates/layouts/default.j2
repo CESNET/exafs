@@ -79,6 +79,33 @@
                         </ul>
                     </li>
                 {% endif %}
+                {% if True %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDDP"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            DDoS Protector
+                        </a>
+                        <ul class="dropdown-menu scale-in-top" aria-labelledby="navbarDropdownDDP">
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{{ url_for('ddos-protector.presets') }}">Rule presets</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{{ url_for('ddos-protector.edit_preset') }}">Add a rule
+                                    preset</a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a target="_blank" class="dropdown-item"
+                                   href="https://www.liberouter.org/technologies/ddos-protector/">About
+                                    DDoS Protector <i class="bi bi-link-45deg"></i></a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
             </ul>
             <span class="navbar-text">
                 {{ session['user_name'] }} &lt;{{ session['user_email'] }}&gt;,

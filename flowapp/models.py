@@ -1,6 +1,7 @@
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
+from typing import Optional, Dict
 
 # models and tables
 
@@ -588,6 +589,71 @@ class Log(db.Model):
         self.user_id = user_id
         self.author = author
 
+class DDPApiKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(1000), nullable=False)
+    key = db.Column(db.String(1000), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
+    active = db.Column(db.Boolean, nullable=False)
+
+    def __init__(self, url, key, user_id, active):
+        self.url = url
+        self.key = key
+        self.user_id = user_id
+        self.active = active
+
+
+class DDPRulePreset(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(1000), nullable=False)
+    rule_type = db.Column(db.String(1000), nullable=False)
+    threshold_bps = db.Column(db.BigInteger, nullable=True)
+    threshold_pps = db.Column(db.BigInteger, nullable=True)
+    vlan = db.Column(db.Integer, nullable=True)
+
+    # Filter rule
+    protocol = db.Column(db.String(1000), nullable=True)
+
+    # SynDrop rule
+    threshold_syn_soft = db.Column(db.BigInteger, nullable=True)
+    threshold_syn_hard = db.Column(db.BigInteger, nullable=True)
+
+    # Amplification rule
+    fragmentation = db.Column(db.String(1000), nullable=True)
+    packet_lengths = db.Column(db.String(1000), nullable=True)
+    limit_bps = db.Column(db.BigInteger, nullable=True)
+    limit_pps = db.Column(db.BigInteger, nullable=True)
+    tcp_flags = db.Column(db.String(1000), nullable=True)
+
+    # TCPAuth
+    validity_timeout = db.Column(db.String(200), nullable=True)
+    # threshold_hard
+    algorithm_type = db.Column(db.String(200), nullable=True)
+
+    # SynDrop, Amplification or TCPAuth
+    table_exponent = db.Column(db.Integer, nullable=True)
+
+    editable = db.Column(db.String(1000))
+
+    def __init__(self, name, rule_type, threshold_bps=None, threshold_pps=None, vlan=None, protocol=None,
+                 threshold_syn_soft=None, threshold_syn_hard=None, fragmentation=None, limit_bps=None, limit_pps=None,
+                 validity_timeout=None, algorithm_type=None, table_exponent=None, editable=''):
+        self.name = name
+        self.rule_type = rule_type
+        self.threshold_bps = threshold_bps
+        self.threshold_pps = threshold_pps
+        self.vlan = vlan
+        self.protocol = protocol
+        self.threshold_syn_soft = threshold_syn_soft
+        self.threshold_syn_hard = threshold_syn_hard
+        self.fragmentation = fragmentation
+        self.limit_bps = limit_bps
+        self.limit_pps = limit_pps
+        self.validity_timeout = validity_timeout
+        self.algorithm_type = algorithm_type
+        self.table_exponent = table_exponent
+        self.editable = editable
+
 
 # DDL
 # default values for tables inserted after create
@@ -597,6 +663,9 @@ def insert_initial_actions(*args, **kwargs):
     db.session.add(Action(name='QoS 100 kbps', command='rate-limit 12800', description='QoS'))
     db.session.add(Action(name='QoS 1Mbps', command='rate-limit 13107200', description='QoS'))
     db.session.add(Action(name='QoS 10Mbps', command='rate-limit 131072000', description='QoS'))
+    db.session.add(Action(name='Redirect to DDoS Protector',
+                          command='',
+                          description='Redirect to the DDoS Protector device'))
     db.session.add(Action(name='Discard', command='discard', description='Discard'))
     db.session.commit()
 
@@ -854,3 +923,29 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
             rules_rtbh = db.session.query(RTBH).order_by(sorting_rtbh()).all()
 
         return rules_rtbh
+
+
+def format_preset(preset: Optional[DDPRulePreset]) -> Optional[Dict[str, any]]:
+    if preset is None:
+        return None
+    fields = preset.__dict__.copy()
+    for key in preset.__dict__:
+        if fields[key] is None:
+            fields.pop(key)
+
+    fields.pop('_sa_instance_state')
+    name = fields['name']
+    id = fields['id']
+    editable = fields['editable'].split(';')
+    fields.pop('name')
+    fields.pop('id')
+    fields.pop('editable')
+    return {'name': name, 'id': id, 'editable': editable, 'fields': fields}
+
+
+def get_presets():
+    presets = db.session.query(DDPRulePreset).all()
+    data = []
+    for preset in presets:
+        data.append(format_preset(preset))
+    return data

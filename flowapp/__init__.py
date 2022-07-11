@@ -36,6 +36,7 @@ from .views.api_v3 import api as api_v3
 from .views.api_keys import api_keys
 from .auth import auth_required
 from .views.dashboard import dashboard
+from .views.ddos_protector import ddos_protector
 
 # no need for csrf on api because we use JWT
 csrf.exempt(api_v1)
@@ -48,6 +49,7 @@ app.register_blueprint(api_v1, url_prefix='/api/v1')
 app.register_blueprint(api_v2, url_prefix='/api/v2')
 app.register_blueprint(api_v3, url_prefix='/api/v3')
 app.register_blueprint(dashboard, url_prefix='/dashboard')
+app.register_blueprint(ddos_protector, url_prefix='/ddos_protector')
 
 
 @ext.login_handler
