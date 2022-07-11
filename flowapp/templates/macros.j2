@@ -140,3 +140,21 @@
     </tr>
 </thead>
 {% endmacro %}
+
+{% macro nav_link(name, endpoint) %}
+    {% if request.view_args %}
+        {% set current_url = url_for(request.endpoint, **request.view_args) %}
+    {% elif request.endpoint %}
+        {% set current_url = url_for(request.endpoint) %}
+    {% else %}
+        {# request.endpoint returns None on 404 error, url_for can not handle None #}
+        {% set current_url = '' %}
+    {% endif %}
+
+    {% if current_url == url_for(endpoint, **kwargs) %}
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for(endpoint, **kwargs) }}">{{ name }}</a></li>
+    {% else %}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for(endpoint, **kwargs) }}">{{ name }}</a></li>
+    {% endif %}
+
+{% endmacro %}
