@@ -8,17 +8,20 @@ body {
   padding-bottom: 30px;
 }
 
-.theme-dropdown .dropdown-menu {
-  position: static;
-  display: block;
-  margin-bottom: 20px;
+.menu-bg {
+  background-color: $color-menu;
 }
 
 .theme-showcase {
-  padding: 10px 20px;
-  border-radius: 5px;
+  padding: 20px;
+  border-radius: 20px;
   background-color: $color-item-bg;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  .dropdown-menu {
+    position: static;
+    display: block;
+    margin-bottom: 20px;
+  }
 }
 
 .theme-showcase > p > .btn {
