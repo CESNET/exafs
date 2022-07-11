@@ -33,7 +33,7 @@
                  {{ render_field(form.fragment, size=4) }}
             </div>
             <div class="col-sm-2">
-                {{ render_field(form.protocol, id='protocolSelect', onchange='protocolChanged()') }}
+                {{ render_field(form.protocol, id='protocolSelect', onchange="ExaFS.hideFieldIfNot(this.value, 'tcp', 'tcpFlagContainer')" ) }}
             </div>
             <div class="col-sm-2" id="tcpFlagContainer">
                 {{ render_field(form.flags, size=6) }}
@@ -75,6 +75,8 @@
             <div class="col-sm-10">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
+        </div>
+     <div class="d-none" id="ddos-protector-form-wrapper">
         </div>
     </form>
         {{ fill_org_form(form.net_ranges) }}

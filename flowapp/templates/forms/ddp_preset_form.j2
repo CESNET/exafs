@@ -1,0 +1,97 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}
+    {% if preset == None %}
+        New DDoS Protector rule preset
+    {% else %}
+        Edit preset {{ preset['name'] }}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <h1>
+                {% if preset == None %}
+                    New DDoS Protector rule preset
+                    {% set preset = {'name': '', 'fields': []} %}
+                {% else %}
+                    Edit preset {{ preset['name'] }}
+                {% endif %}
+            </h1>
+        </div>
+    </div>
+    <div class="row my-2">
+        <div class="col-6 mb-3">
+            <label for="presetName" class="form-label">Preset name *</label>
+            <input type="text" class="form-control" id="presetName"
+                   placeholder="Give your preset a descriptive name"
+                   value="{{ preset['name'] }}" onChange="ExaFS.onPresetNameChange(this, 'presetNameError')">
+            <span class="form-text text-danger" id="presetNameError"></span>
+
+        </div>
+    </div>
+    <hr>
+    <div class="row my-3">
+        <div class="col-6">
+            <button class="btn btn-secondary btn-sm" role="button"
+                    onclick="ExaFS.presetFormAddField('generated-fields', document.getElementById('rule-type').value, 'threshold_bps')">
+                <i class="bi-plus-circle"></i>
+                Add field
+            </button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <label for="rule-type" class="form-label">Rule type</label>
+            <select class="form-select" id="rule-type"
+                    onchange="ExaFS.rebuildDropdowns(this.value)">
+                <option disabled>--- Select a rule type ---</option>
+                <option value="syn_drop">SYN drop</option>
+                <option value="amplification">Amplification</option>
+                <option value="filter">Filter</option>
+                <option value="tcp_authenticator">TCP authenticator</option>
+            </select>
+        </div>
+    </div>
+    <div id="generated-fields">
+
+    </div>
+    <div class="row my-3">
+        <div class="col-6">
+            <button class="btn btn-secondary btn-sm" role="button"
+                    onclick="ExaFS.presetFormAddField('generated-fields', document.getElementById('rule-type').value, 'threshold_bps')">
+                <i class="bi-plus-circle"></i>
+                Add field
+            </button>
+        </div>
+    </div>
+    <hr>
+    <div class="row my-2">
+        <div class="col">
+            <button class="btn btn-primary" id="save-btn"
+                    onclick="ExaFS.savePreset('presetName',
+                            document.getElementById('rule-type').value,
+                            '{{ csrf_token() }}',
+                            {% if new %}
+                                '{{ url_for('ddos-protector.preset_form_callback') }}',
+                            {% else %}
+                                '{{ url_for('ddos-protector.preset_form_callback', preset_id=preset['id']) }}',
+                            {% endif %}
+                            'save-btn',
+                                '{{ url_for('ddos-protector.presets') }}')">
+                    {% if new %}
+                    Save preset
+                    {% else %}
+                    Save changes
+                    {% endif %}
+            </button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        {% if preset is not none and preset['fields'] != [] %}
+            ExaFS.initEditPresetsForm({{ preset|tojson|safe }}, 'generated-fields', 'rule-type');
+        {% else %}
+            ExaFS.presetFormAddField('generated-fields', document.getElementById('rule-type').value, 'threshold_bps');
+        {% endif %}
+    </script>
+{% endblock %}

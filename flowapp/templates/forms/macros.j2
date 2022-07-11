@@ -13,27 +13,29 @@
         {% if (field.type != 'HiddenField' and field.type !='CSRFTokenField') and label_visible %}
             <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
         {% endif %}
+        {% if field.type == 'SelectField' %}
+            {% set input_class = 'form-select' %}
+        {% else %}
+            {% set input_class = 'form-control' %}
+        {% endif %}
+        {% if field.errors %}
+            {% set input_class = input_class + ' is-invalid' %}
+        {% endif %}
+
         {% if tooltip %}
             <div class="input-group">
-              {% if field.type == 'SelectField' %}
-                    {{ field(class_='form-select', **kwargs) }}
-                {% else %}
-                    {{ field(class_='form-control', **kwargs) }}
-                {% endif %}
-               <span class="input-group-text" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ tooltip }}">
+                {{ field(class_=input_class, **kwargs) }}
+                <span class="input-group-text" data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="{{ tooltip }}">
                     <i class="bi bi-question-square-fill"></i>
               </span>
-            </div>  
+            </div>
         {% else %}
-            {% if field.type == 'SelectField' %}
-                    {{ field(class_='form-select', **kwargs) }}
-                {% else %}
-                    {{ field(class_='form-control', **kwargs) }}
-                {% endif %}
+            {{ field(class_=input_class, **kwargs) }}
         {% endif %}
         {% if field.errors %}
             {% for e in field.errors %}
-                <p class="help-block">{{ e }}</p>
+                <p class="help-block text-danger form-text">{{ e }}</p>
             {% endfor %}
         {% endif %}
     </div>
@@ -74,7 +76,8 @@
     {% for value, label, _ in field.iter_choices() %}
         <div class="radio">
             <label>
-                <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">{{ label }}
+                <input type="radio" name="{{ field.id }}" id="{{ field.id }}"
+                       value="{{ value }}">{{ label }}
             </label>
         </div>
     {% endfor %}
@@ -120,26 +123,36 @@
 {% macro render_ip_and_mask_field_group(fieldIP, fieldMask, label_visible=true, tooltip=False, ipKwargs={}, maskKwargs={}) -%}
     <div class="form-group {% if fieldIP.errors or fieldMask.errors %}has-error{% endif %} {{ kwargs.pop('class_', '') }}  mb-3">
         {% if (fieldIP.type != 'HiddenField' and fieldIP.type !='CSRFTokenField') and label_visible %}
-            <label for="{{ fieldIP.id }}" class="control-label">{{ fieldIP.label }} / {{ fieldMask.label }}
+            <label for="{{ fieldIP.id }}" class="control-label">{{ fieldIP.label }}
+                / {{ fieldMask.label }}
 
             </label>
             <a role="button" class="float-end" href="#"
                onclick="ExaFS.fillOrganization('{{ fieldIP.id }}', '{{ fieldMask.id }}')">Fill
                 range</a>
         {% endif %}
-        <div class="input-group mb-3">
-            {{ fieldIP(class_='form-control', onkeypress="ExaFS.switchFocusOnKeypress(event, '/', '" + fieldMask.id + "')", **ipKwargs) }}
+        {% set ip_class = 'form-control' %}
+        {% set mask_class = 'form-control ip-mask' %}
+        {% if fieldIP.errors %}
+            {% set ip_class = ip_class + ' is-invalid' %}
+        {% endif %}
+        {% if fieldMask.errors %}
+            {% set mask_class = mask_class + ' is-invalid' %}
+        {% endif %}
+        <div class="input-group">
+            {{ fieldIP(class_=ip_class, onkeypress="ExaFS.switchFocusOnKeypress(event, '/', '" + fieldMask.id + "')", **ipKwargs) }}
             <span class="input-group-text">/</span>
-            {{ fieldMask(class_='form-control ip-mask', **maskKwargs) }}
+            {{ fieldMask(class_=mask_class, **maskKwargs) }}
+
         </div>
         {% if fieldIP.errors %}
             {% for e in fieldIP.errors %}
-                <p class="help-block">{{ e }}</p>
+                <p class="help-block text-danger form-text">{{ e }}</p>
             {% endfor %}
         {% endif %}
         {% if fieldMask.errors %}
             {% for e in fieldMask.errors %}
-                <p class="help-block">{{ e }}</p>
+                <p class="help-block text-danger form-text">{{ e }}</p>
             {% endfor %}
         {% endif %}
     </div>
@@ -152,7 +165,8 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Select organization range</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <label for="orgSelect">Select a range from available organizations</label>
@@ -164,10 +178,38 @@
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="fill-org-btn">Use range</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="fill-org-btn">Use range
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
+{% endmacro %}
+
+{% macro render_ddp_preset_selection(presets) %}
+    <div class="row my-3">
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="presetSelect">DDoS protector rule preset</label>
+                <select name="preset" id="presetSelect" class="form-select"
+                        onchange="ExaFS.presetSelectionChanged(this.value)">
+                    <option selected disabled value="-1">--- Select a preset ---</option>
+                    {% for preset in presets %}
+                        <option value="{{ preset|tojson|safe }}">{{ preset['name'] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row my-2" id="advanced-opts-toggle-wrapper">
+        <a data-bs-toggle="collapse" href="#rule-data-wrapper" role="button" aria-expanded="false"
+           id="advanced-opts-toggle"
+           aria-controls="rule-data-wrapper">
+            Show advanced options
+        </a>
+    </div>
+    <div class="collapse" id="rule-data-wrapper">
     </div>
 {% endmacro %}
