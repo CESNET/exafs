@@ -8,15 +8,12 @@ body {
   padding-bottom: 30px;
 }
 
-.menu-bg {
-  background-color: $color-menu;
-}
-
 .theme-showcase {
   padding: 20px;
   border-radius: 20px;
   background-color: $color-item-bg;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+
   .dropdown-menu {
     position: static;
     display: block;
@@ -30,6 +27,14 @@ body {
 
 .theme-showcase .navbar .container {
   width: auto;
+}
+
+.ddp-preset-detail-container {
+  padding-left: 20px;
+  border-left: 5px solid #ddd;
+  margin-left: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
 }
 
 tr.bottom_row > td,
@@ -81,12 +86,6 @@ td.bottom_row {
 
 .task:last-child {
   border-bottom: none;
-}
-
-tbody .bi {
-  -webkit-text-stroke-width: 1px;
-  font-size: 105%;
-  color: white;
 }
 
 #dashboard-search {
