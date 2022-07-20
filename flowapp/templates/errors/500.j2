@@ -1,6 +1,10 @@
 {% extends 'layouts/default.j2' %}
 {% block content %}
-  <h1>Error ...</h1>
-  <p>Sorry ;-)</p>
-  <p><a href="{{url_for('index')}}">Back</a></p>
+    <div class="text-center">
+        <h1>Error ...</h1>
+        <p>Sorry ;-)</p>
+        <p><a class="btn btn-primary btn-lg" href="{{ url_for('index') }}"><i class="bi bi-caret-left-fill me-1"></i>Go
+            back</a></p>
+    </div>
+
 {% endblock %}
