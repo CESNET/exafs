@@ -1,83 +1,90 @@
-
 {% block submenu_dashboard %}
     <div class="container" id="dashboard-nav">
-    
-    <h1>{{ rstate|capitalize }} {{ table_title }}</h1>
 
-    
-    <div class="row">  
-        <div class="col-6">
-            <ul class="nav nav-pills">
-                <li class="nav-item">
-                    <a class="nav-link {{ css_classes['ipv4'] }}" href="{{ url_for('dashboard.index', rtype='ipv4', rstate=rstate) }}" >
-                    IPv4 
-                    {% if count_match %}
-                    ({{ count_match['ipv4'] }})
-                    {% endif %}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ css_classes['ipv6'] }}" href="{{ url_for('dashboard.index', rtype='ipv6', rstate=rstate) }}" >
-                    IPv6 
-                    {% if count_match %}
-                    ({{ count_match['ipv6'] }})
-                    {% endif %}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ css_classes['rtbh'] }}" href="{{ url_for('dashboard.index', rtype='rtbh', rstate=rstate) }}" >
-                    RTBH
-                    {% if count_match %}
-                    ({{ count_match['rtbh'] }})
-                    {% endif %}
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <div class="col-6">
-            <ul class="nav nav-pills pull-right">
-                <li class="nav-item"> 
-                    <form id="dashboard-search" class="navbar-form pull-right" role="search" action="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate) }}">
-                     <div class="input-group mb3">
-                        <input 
-                            class="form-control"
-                            type="search" 
-                            name="squery"
-                            {% if search_query %}
-                                value="{{search_query}}"
-                            {% else %}
-                                placeholder="Search..."
-                            {% endif %}    
-                        >
-                        <button class="btn btn-outline-secondary" type="submit">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    
-                    </div>
-                    <input
-                            type="hidden"
-                            name="sort"
-                            value={{ sort_key }}
-                        />
-                        <input
-                            type="hidden"
-                            name="order"
-                            value={{ sort_order }}
-                        />
-                </form>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ css_classes['active'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='active') }}" >Active</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ css_classes['expired'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='expired') }}" >Expired</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ css_classes['all'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='all') }}" >All</a>
-                </li>
-            </ul>
+        <h1>{{ rstate|capitalize }} {{ table_title }}</h1>
+
+
+        <div class="row">
+            <div class="col-6">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link {{ css_classes['ipv4'] }}"
+                           href="{{ url_for('dashboard.index', rtype='ipv4', rstate=rstate) }}">
+                            IPv4
+                            {% if count_match %}
+                                ({{ count_match['ipv4'] }})
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ css_classes['ipv6'] }}"
+                           href="{{ url_for('dashboard.index', rtype='ipv6', rstate=rstate) }}">
+                            IPv6
+                            {% if count_match %}
+                                ({{ count_match['ipv6'] }})
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ css_classes['rtbh'] }}"
+                           href="{{ url_for('dashboard.index', rtype='rtbh', rstate=rstate) }}">
+                            RTBH
+                            {% if count_match %}
+                                ({{ count_match['rtbh'] }})
+                            {% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-6">
+                <ul class="nav nav-tabs justify-content-end">
+                    <li class="nav-item">
+                        <form id="dashboard-search" class="navbar-for mx-3" role="search"
+                              action="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate) }}">
+                            <div class="input-group mb3">
+                                <input
+                                        class="form-control"
+                                        type="search"
+                                        name="squery"
+                                        {% if search_query %}
+                                        value="{{ search_query }}"
+                                        {% else %}
+                                        placeholder="Search..."
+                                        {% endif %}
+                                >
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+
+                            </div>
+                            <input
+                                    type="hidden"
+                                    name="sort"
+                                    value={{ sort_key }}
+                            />
+                            <input
+                                    type="hidden"
+                                    name="order"
+                                    value={{ sort_order }}
+                            />
+                        </form>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ css_classes['active'] }}"
+                           href="{{ url_for('dashboard.index', rtype=rtype, rstate='active') }}">Active</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ css_classes['expired'] }}"
+                           href="{{ url_for('dashboard.index', rtype=rtype, rstate='expired') }}">Expired</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ css_classes['all'] }}"
+                           href="{{ url_for('dashboard.index', rtype=rtype, rstate='all') }}">All</a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
-    <hr />
+
 
 {% endblock %}

@@ -8,29 +8,35 @@
 
     <div class="row">
         <form action="{{ url_for('rules.group_operation') }}" method="post">
-         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <table class="table table-hover ip-table">
-            {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query) }}
-            {% if rtype_int == 1 %}
-                {{ build_rtbh_tbody(rules, today, rtype_int) }}
-            {% else %}
-                {{ build_ip_tbody(rules, today, rtype_int) }}
-            {% endif %}
-            <tr>
-            <td colspan="{{ button_colspan }}">
-            </td>
-            <td  class="text-center">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="table-responsive">
+                <table class="table table-hover ip-table">
+                    {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query) }}
+                    {% if rtype_int == 1 %}
+                        {{ build_rtbh_tbody(rules, today, rtype_int) }}
+                    {% else %}
+                        {{ build_ip_tbody(rules, today, rtype_int) }}
+                    {% endif %}
+                    <tr>
+                        <td colspan="{{ button_colspan }}">
+                        </td>
+                        <td class="text-center">
 
-                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
-                    <i class="bi bi-x"></i>
-                </button>
+                            <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm"
+                                    id="group-delete" data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="delete selected rules">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
 
-                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
-                    <i class="bi bi-clock"></i>
-                </button>
-            </td>
-            </tr>
-        </table>
+                            <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm"
+                                    id="group-update" data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="update selected rules">
+                                <i class="bi bi-clock"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
         </form>
     </div>
 {% endblock %}
