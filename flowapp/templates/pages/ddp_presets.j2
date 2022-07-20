@@ -10,7 +10,7 @@
     <div class="row">
         <div class="col">
             <div class="table-responsive">
-                <table class="table table-ddp table-striped">
+                <table class="table table-hover">
                     <thead class="ddp-table-header">
                     <tr>
                         <th scope="col">ID</th>
@@ -24,26 +24,27 @@
                         <tr>
                             <th scope="row">{{ preset['id'] }}</th>
                             <td>{{ preset['name'] }}</td>
-                            <td>{{ preset['fields'] | length  }}</td>
+                            <td>{{ preset['fields'] | length }}</td>
                             <td>
                                 <button role="button" class="btn btn-primary btn-sm" data-bs-toggle="tooltip"
                                         data-bs-placement="top" title="View preset values"
-                                        onclick="ExaFS.showPreset('{{ preset['name']}}', {{ preset['fields'] }}, {{ preset['editable'] }} )">
-                                    <i class="bi-zoom-in"></i>
+                                        onclick="ExaFS.showPreset('{{ preset['name'] }}', {{ preset['fields'] }}, {{ preset['editable'] }} )">
+                                    <i class="bi bi-zoom-in"></i>
                                 </button>
                                 <a class="btn btn-success btn-sm" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" title="Edit preset" href="{{ url_for('ddos-protector.edit_preset',
+                                   data-bs-placement="top" title="Edit preset" href="{{ url_for('ddos-protector.edit_preset',
                                          preset_id=preset['id']) }}">
-                                    <i class="bi-pencil-fill"></i>
+                                    <i class="bi bi-pencil-fill"></i>
                                 </a>
                                 <a class="btn btn-success btn-sm" data-bs-toggle="tooltip" href="{{ url_for('ddos-protector.duplicate_preset',
                                          preset_id=preset['id']) }}"
-                                        data-bs-placement="top" title="Duplicate preset">
-                                    <i class="bi-files"></i>
+                                   data-bs-placement="top" title="Duplicate preset">
+                                    <i class="bi bi-files"></i>
                                 </a>
                                 <a class="btn btn-danger btn-sm" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" title="Remove preset" href="{{ url_for('ddos-protector.delete_ddp_preset', preset_id=preset['id']) }}">
-                                    <i class="bi-trash-fill"></i>
+                                   data-bs-placement="top" title="Remove preset"
+                                   href="{{ url_for('ddos-protector.delete_ddp_preset', preset_id=preset['id']) }}">
+                                    <i class="bi bi-trash-fill"></i>
                                 </a>
                             </td>
                         </tr>
@@ -53,32 +54,32 @@
             </div>
         </div>
     </div>
-<div class="modal fade" id="presetDetailModal" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="presetDetailTitle"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body" >
-          <table class="table table-striped" >
-              <thead>
-              <tr>
-                  <th scope="col">Key</th>
-                  <th scope="col">Value</th>
-                  <th scope="col">User can edit</th>
-              </tr>
-              </thead>
-              <tbody id="presetDetailBody">
+    <div class="modal fade" id="presetDetailModal" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="presetDetailTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">Key</th>
+                            <th scope="col">Value</th>
+                            <th scope="col">User can edit</th>
+                        </tr>
+                        </thead>
+                        <tbody id="presetDetailBody">
 
-              </tbody>
-          </table>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
 {% endblock %}
