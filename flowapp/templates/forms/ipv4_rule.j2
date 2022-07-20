@@ -1,9 +1,9 @@
 {% extends 'layouts/default.j2' %}
-{% from 'forms/macros.j2' import render_field, render_ip_and_mask_field_group, fill_org_form %}
+{% from 'forms/macros.j2' import render_field, render_ip_and_mask_field_group, fill_org_form, render_ddp_preset_selection %}
 {% block title %}Add IPv4 rule{% endblock %}
 {% block content %}
     <h2>{{ title or 'New' }} IPv4 rule</h2>
-    <form action="{{ action_url }}" method="POST">
+    <form action="{{ action_url }}" method="POST" onsubmit="ExaFS.beforeIPFormSend(this, '{{ form.dest.id }}', '{{ form.protocol.id }}')" id="ipv4-form">
         {{ form.hidden_tag() if form.hidden_tag }}
         <div class="row">
             <div class="col-sm-12 col-md-6">
@@ -18,35 +18,38 @@
 
         <div class="row">
             <div class="col-sm-6">
-                {{ render_field(form.source_port, tooltip="Possible values: x;&gt;x;x-y;&lt;x;&lt;=x;&gt;=x") }}
+                {{ render_field(form.source_port, tooltip="Possible values: x;&gt;x;x-y;&lt;x;&lt;=x;&gt;=x", placeholder="x; >x; x-y; <x; <=x; >=x") }}
             </div>
             <div class="col-sm-6">
-                {{ render_field(form.dest_port, tooltip="Possible values: x;&gt;x;x-y;&lt;x;&lt;=x;&gt;=x") }}
+                {{ render_field(form.dest_port, tooltip="Possible values: x;&gt;x;x-y;&lt;x;&lt;=x;&gt;=x", placeholder="x; >x; x-y; <x; <=x; >=x") }}
             </div>
         </div>
 
         <div class="row">
-            <div class="col-sm-4">
-                {{ render_field(form.packet_len, tooltip="Possible values: x;&gt;x;x-y;&lt;x;&lt;=x;&gt;=x") }}
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                {{ render_field(form.protocol, onchange="ExaFS.hideFieldIfNot(this.value, 'tcp', 'tcpFlagContainer')" ) }}
             </div>
-            <div class="col-sm-2">
-                 {{ render_field(form.fragment, size=4) }}
+            <div class="col-lg-2 col-md-6 col-sm-12">
+                <div id="tcpFlagContainer">
+                    {{ render_field(form.flags, size=6) }}
+                </div>
             </div>
-            <div class="col-sm-2">
-                {{ render_field(form.protocol, id='protocolSelect', onchange="ExaFS.hideFieldIfNot(this.value, 'tcp', 'tcpFlagContainer')" ) }}
+            <div class="col-lg-4 col-md-6 col-sm-12">
+                {{ render_field(form.packet_len, tooltip="Possible values: x;&gt;x;x-y;&lt;x;&lt;=x;&gt;=x", placeholder="x; >x; x-y; <x; <=x; >=x") }}
             </div>
-            <div class="col-sm-2" id="tcpFlagContainer">
-                {{ render_field(form.flags, size=6) }}
+            <div class="col-lg-2 col-md-6 col-sm-12">
+                {{ render_field(form.fragment, size=4) }}
             </div>
         </div>
 
         <hr class="my-4">
 
         <div class="row">
-            <div class="col-sm-6">
-                {{ render_field(form.action) }}
+            <div class="col-sm-12 col-md-6">
+                {# FIXME: ID of the action can change - need a better way of detecting the 'redirect to DDoS protector' action #}
+                {{ render_field(form.action, onchange="ExaFS.hideFieldIfNot(this.value, '4', 'ddp-form-wrapper')") }}
             </div>
-            <div class="col-sm-6">
+            <div class="col-sm-12 col-md-6">
                 <div class="form-group">
                     <label for="inputExpiration" class="control-label">Expiration date</label>
                     <div class='input-group date' id='dateTimeExpires'>
@@ -70,14 +73,16 @@
                 {{ render_field(form.comment) }}
             </div>
         </div>
+        <div class="d-none" id="ddp-form-wrapper">
+            {{ render_ddp_preset_selection(presets, form.data) }}
+        </div>
+
 
         <div class="row">
-            <div class="col-sm-10">
+            <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
         </div>
-     <div class="d-none" id="ddos-protector-form-wrapper">
-        </div>
     </form>
-        {{ fill_org_form(form.net_ranges) }}
+    {{ fill_org_form(form.net_ranges) }}
 {% endblock %}

@@ -43,7 +43,7 @@
         <div class="col-6">
             <label for="rule-type" class="form-label">Rule type</label>
             <select class="form-select" id="rule-type"
-                    onchange="ExaFS.rebuildDropdowns(this.value)">
+                    onchange="ExaFS.onRuleTypeChange(this.value)">
                 <option disabled>--- Select a rule type ---</option>
                 <option value="syn_drop">SYN drop</option>
                 <option value="amplification">Amplification</option>
@@ -88,6 +88,7 @@
     </div>
 
     <script type="text/javascript">
+        ExaFS.addBeforeUnloadEventListener()
         {% if preset is not none and preset['fields'] != [] %}
             ExaFS.initEditPresetsForm({{ preset|tojson|safe }}, 'generated-fields', 'rule-type');
         {% else %}

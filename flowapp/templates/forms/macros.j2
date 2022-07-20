@@ -1,4 +1,4 @@
-{# Renders field for bootstrap 3 standards.
+{# Renders field for bootstrap 5 standards.
 
     Params:
         field - WTForm field
@@ -120,16 +120,18 @@
     </form>
 {%- endmacro %}
 
-{% macro render_ip_and_mask_field_group(fieldIP, fieldMask, label_visible=true, tooltip=False, ipKwargs={}, maskKwargs={}) -%}
+{% macro render_ip_and_mask_field_group(fieldIP, fieldMask, label_visible=true, tooltip=False, showFillRange=True, ipKwargs={}, maskKwargs={}) -%}
     <div class="form-group {% if fieldIP.errors or fieldMask.errors %}has-error{% endif %} {{ kwargs.pop('class_', '') }}  mb-3">
         {% if (fieldIP.type != 'HiddenField' and fieldIP.type !='CSRFTokenField') and label_visible %}
             <label for="{{ fieldIP.id }}" class="control-label">{{ fieldIP.label }}
                 / {{ fieldMask.label }}
 
             </label>
+            {% if showFillRange %}
             <a role="button" class="float-end" href="#"
                onclick="ExaFS.fillOrganization('{{ fieldIP.id }}', '{{ fieldMask.id }}')">Fill
                 range</a>
+            {% endif %}
         {% endif %}
         {% set ip_class = 'form-control' %}
         {% set mask_class = 'form-control ip-mask' %}
@@ -188,28 +190,63 @@
     </div>
 {% endmacro %}
 
-{% macro render_ddp_preset_selection(presets) %}
-    <div class="row my-3">
+{% macro render_ddp_preset_selection(presets, initData) %}
+    <div class="row mt-2 mb-4">
+        <div class="col-12">
+            <hr class="mt-2 mb-4">
+        </div>
+
         <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="presetSelect">DDoS protector rule preset</label>
-                <select name="preset" id="presetSelect" class="form-select"
-                        onchange="ExaFS.presetSelectionChanged(this.value)">
-                    <option selected disabled value="-1">--- Select a preset ---</option>
-                    {% for preset in presets %}
-                        <option value="{{ preset|tojson|safe }}">{{ preset['name'] }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <label for="preset-select">DDoS Protector mitigation config</label>
+            <select name="preset" id="preset-select" class="form-select"
+                    onChange="renderPreset(this.value)">
+                <option selected disabled>--- Select a mitigation strategy ---</option>
+                <option value="-1">Redirect only (don't add rules to DDoS Protector)</option>
+                {% for preset in presets %}
+                    <option value="{{ preset.id }}" {% if initData['preset'] is not none and initData['preset'] == preset.id %}
+                    selected {% endif %}>
+                        {{ preset.name }}</option>
+                {% endfor %}
+            </select>
+            <span class="form-text text-danger" id="preset-select-error"></span>
         </div>
     </div>
-    <div class="row my-2" id="advanced-opts-toggle-wrapper">
+    <div class="row my-2 d-none" id="advanced-opts-toggle-wrapper">
         <a data-bs-toggle="collapse" href="#rule-data-wrapper" role="button" aria-expanded="false"
-           id="advanced-opts-toggle"
-           aria-controls="rule-data-wrapper">
-            Show advanced options
-        </a>
+           id="advanced-opts-toggle" onClick="toggleAdvancedOpts()"
+           aria-controls="rule-data-wrapper">Show advanced options <i class="bi bi-caret-down-fill"></i></a>
     </div>
-    <div class="collapse" id="rule-data-wrapper">
+    <div class="row">
+        <div class="ddp-preset-detail-container collapse" id="rule-data-wrapper">
+
+        </div>
+
     </div>
+    <script type="text/javascript">
+        ExaFS.hideFieldIfNot(document.getElementById('protocol').value, 'tcp', 'tcpFlagContainer');
+        const presets = {{ presets|tojson|safe }};
+        let advancedOptsOpen = false;
+
+        function toggleAdvancedOpts() {
+            advancedOptsOpen = !advancedOptsOpen;
+            ExaFS.changeAdvancedOptionsText('advanced-opts-toggle', advancedOptsOpen);
+        }
+
+        function renderPreset(id, initData={}) {
+            if (id === '-1') {
+                ExaFS.initSelectPresetForm({name: 'Redirect only', id: -1, editable: [], fields: {rule_type: 'No rule'}}, 'rule-data-wrapper', 'advanced-opts-toggle-wrapper');
+            }
+            const idx = presets.findIndex((preset) => {return preset.id === +id})
+            if (idx !== -1) {
+                ExaFS.initSelectPresetForm(presets[idx], 'rule-data-wrapper', 'advanced-opts-toggle-wrapper', initData);
+            }
+        }
+
+        {% if initData['action'] == 4 %}
+            ExaFS.hideFieldIfNot('4', '4', 'ddp-form-wrapper');
+        {% endif %}
+        {% if initData['preset'] is not none %}
+            renderPreset({{ initData['preset'] }}, {{ initData|tojson|safe }});
+        {% endif %}
+    </script>
 {% endmacro %}

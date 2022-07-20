@@ -2,21 +2,34 @@ import {
     DDPPreset,
     DDPPresetField,
     DDPRuleType,
-    EnumPresetFieldOpts,
     getPresetField,
     getPresetFieldsByRuleType,
+    PresetFieldRequirementRelationship,
     PresetFieldType,
-    RangePresetFieldOpts
+    RangePresetFieldOpts,
+    SliderType
 } from "./ddp_presets";
-import {attachHtmlTo, stringToHtml} from "../renderer";
-import {formatSIUnitNumber} from "../utils";
-import {logarithmicValueFromPos, posFromLogarithmicValue} from "./logscale";
-import {sendToBackend} from "../http";
+import {createChild} from "../renderer";
+import {logarithmicValueFromPos} from "./logscale";
+import {sendFormDataToBackend} from "../http";
+import {checkboxesToStr, createPresetFormField} from "./inputs";
 
 let presetFormContext = {
     maxId: 0,
     selectedRuleType: DDPRuleType.FILTER,
     activeFields: [] as DDPPresetField[]
+}
+let changes = false;
+
+export function addBeforeUnloadEventListener() {
+    window.addEventListener("beforeunload", function (e) {
+        let confirmationMessage = 'There are unsaved changes in the rule template, are you sure you want to exit before saving?';
+        if (!changes) {
+            return undefined;
+        }
+        (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+        return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+    });
 }
 
 export function initEditPresetsForm(preset: DDPPreset, containerId: string, ruleTypeSelectId: string) {
@@ -34,6 +47,7 @@ export function initEditPresetsForm(preset: DDPPreset, containerId: string, rule
             }
         }
     });
+    checkFieldRequirements(presetFormContext.activeFields, presetFormContext.selectedRuleType);
 }
 
 export function presetFormAddField(containerId: string, ruleType: DDPRuleType | string, initFieldName: string, initValue?: any): number {
@@ -41,11 +55,12 @@ export function presetFormAddField(containerId: string, ruleType: DDPRuleType | 
     // Create a copy instead of passing a reference
     let field = {...getPresetField(initFieldName)} as DDPPresetField;
     if (field) {
+        changes = true;
         let form = createCommonWrapper(createPresetFormField(field, presetFormContext.maxId, initValue), presetFormContext.maxId, initFieldName)
         field.formId = presetFormContext.maxId;
         presetFormContext.activeFields.push(field);
         presetFormContext.maxId++;
-        attachHtmlTo(stringToHtml(form), containerId);
+        createChild(form, containerId);
         checkForDuplicates(field.formId, initFieldName);
         return field.formId;
     }
@@ -53,14 +68,16 @@ export function presetFormAddField(containerId: string, ruleType: DDPRuleType | 
 }
 
 export function updatePresetFormField(keySelect: HTMLSelectElement, id: number) {
-    // Create a copy instead of passing a reference
     const idx = getFieldIndexById(id);
     const prevName = presetFormContext.activeFields[idx].name;
+    // Create a copy instead of passing a reference
     const field = {...getPresetField(keySelect.value)} as DDPPresetField;
     const container = document.getElementById(`fieldValueContainer${id}`);
     removeInvalidSelectOptions(keySelect, id);
     clearInvalidDuplicateWarnings(id, prevName);
+    // checkRequirements(keySelect.value)
     if (field) {
+        changes = true;
         field.formId = id;
         if (container) {
             container.innerHTML = createPresetFormField(field, id);
@@ -78,6 +95,7 @@ export function updatePresetFormField(keySelect: HTMLSelectElement, id: number) 
 export function removeField(id: number) {
     const container = document.getElementById(`fieldContainer${id}`);
     if (container) {
+        changes = true;
         container.parentElement?.removeChild(container);
         const index = presetFormContext.activeFields.findIndex(p => p.formId === id);
         if (index !== -1) {
@@ -88,7 +106,7 @@ export function removeField(id: number) {
     }
 }
 
-export function rebuildDropdowns(ruleType: DDPRuleType) {
+export function onRuleTypeChange(ruleType: DDPRuleType) {
     const fieldCache = getPresetFieldsByRuleType(ruleType);
     for (let i = 0; i < presetFormContext.maxId; i++) {
         const field = document.getElementById('fieldSelect' + i) as HTMLSelectElement;
@@ -98,9 +116,9 @@ export function rebuildDropdowns(ruleType: DDPRuleType) {
             if (!fieldExistsInCache(fieldCache, field)) {
                 wrongOpt = `<option value=${field.value} selected invalid>${field.options[field.selectedIndex].text}</option>`;
                 field.classList.add('is-invalid');
-                setErrorMessage(i, 'Invalid field for selected rule type');
+                setKeyErrorMessage(i, 'Invalid field for selected rule type');
             } else {
-                setErrorMessage(i, '');
+                setKeyErrorMessage(i, '');
             }
             field.innerHTML = createFieldSelectionDropdownOptions(ruleType, field.value, fieldCache) + wrongOpt;
         }
@@ -109,6 +127,7 @@ export function rebuildDropdowns(ruleType: DDPRuleType) {
 
 export function onPresetNameChange(elem: HTMLInputElement, errorMessageId: string) {
     const msg = document.getElementById(errorMessageId);
+    changes = true;
     if (elem.value !== '') {
         if (msg) {
             msg.innerText = '';
@@ -128,10 +147,12 @@ export function savePreset(presetNameInputId: string,
                            callbackUrl: string,
                            saveBtnId: string,
                            successRedirectUrl: string) {
+    checkFieldRequirements(presetFormContext.activeFields, presetFormContext.selectedRuleType);
     if (formHasErrors()) {
         alert('Preset has errors! Fix them before saving.');
         return;
     }
+    changes = false;
     let data = new FormData;
     let editable = '';
     const presetName = getPresetName(presetNameInputId);
@@ -155,7 +176,11 @@ export function savePreset(presetNameInputId: string,
             } else {
                 let c = currentField as HTMLInputElement;
                 if (field.type === PresetFieldType.RANGE && field.options) {
-                    const val = logarithmicValueFromPos(c.valueAsNumber, (field.options as RangePresetFieldOpts).low, (field.options as RangePresetFieldOpts).high)
+                    const opts = field.options as RangePresetFieldOpts;
+                    let val = c.valueAsNumber;
+                    if (opts.type === SliderType.LOGARITHMIC) {
+                        val = logarithmicValueFromPos(c.valueAsNumber, opts.low, opts.high)
+                    }
                     data.append(currentKey.value, val.toString());
                 } else {
                     data.append(currentKey.value, c.value.toString());
@@ -172,15 +197,27 @@ export function savePreset(presetNameInputId: string,
   Saving...`;
     }
 
-    sendToBackend(data, callbackUrl, "POST",
-        (response: Response) => {
-            if (btn) {
-                btn.innerHTML = 'Saved';
-                btn.removeAttribute('disabled');
-            }
-            window.location.href = successRedirectUrl;
-
-        }, (error: string) => {
+    sendFormDataToBackend(data, callbackUrl, "POST")
+        .then(
+            (response: Response) => {
+                if (response.status == 200 || response.status == 201) {
+                    if (btn) {
+                        btn.innerHTML = 'Saved';
+                        btn.removeAttribute('disabled');
+                    }
+                    window.location.href = successRedirectUrl;
+                } else {
+                    response.text().then(text => {
+                        alert('Server returned error status ' + response.status + '. Check the console for more details');
+                        console.error(text);
+                        if (btn) {
+                            btn.innerHTML = 'Errored';
+                            btn.removeAttribute('disabled');
+                        }
+                    });
+                }
+            })
+        .catch((error: string) => {
             console.log(error)
             if (btn) {
                 btn.innerHTML = originalBtnContent;
@@ -190,6 +227,7 @@ export function savePreset(presetNameInputId: string,
         });
 }
 
+
 function getPresetName(presetNameInputId: string): string | null {
 
     const presetNameInput = document.getElementById(presetNameInputId) as HTMLInputElement;
@@ -198,7 +236,7 @@ function getPresetName(presetNameInputId: string): string | null {
         return null;
     }
     if (!presetNameInput.value) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({top: 0, behavior: 'smooth'});
         presetNameInput.classList.add('is-invalid');
         presetNameInput.focus();
         const presetNameError = document.getElementById('presetNameError');
@@ -208,97 +246,6 @@ function getPresetName(presetNameInputId: string): string | null {
         return null;
     }
     return presetNameInput.value;
-}
-
-function checkboxesToStr(parent: HTMLElement): string {
-    let val = '';
-    for (let child of parent.children) {
-        for (let grandchild of child.children) {
-            if (grandchild.tagName.toLowerCase() === 'input' && grandchild.getAttribute('type') === 'checkbox') {
-                const c = grandchild as HTMLInputElement
-                if (c.checked) {
-                    val += c.value + ','
-                }
-            }
-        }
-    }
-    return val;
-}
-
-function createRangePresetFormField(field: DDPPresetField, id: number, initValue?: number) {
-    const opts = field.options as RangePresetFieldOpts;
-    if (!initValue) {
-        initValue = 50
-    } else {
-        initValue = posFromLogarithmicValue(initValue, opts.low, opts.high);
-    }
-    return `
-<div class="row form-text">
-<div class="col-4">Restrictive</div>
-<div class="col-4 text-center" id="rangeVal${id}">${formatSIUnitNumber(logarithmicValueFromPos(initValue, opts.low, opts.high), 2, opts.unit)}</div>
-<div class="col-4 text-end">Permissive</div>
-</div>
-<input class="form-range" type="range" value="${initValue}" id="presetInput${id}" min=0 max=100 step=1
-onChange="ExaFS.updateRangeValText(this, 'rangeVal${id}', ${opts.low}, ${opts.high}, '${opts.unit}')"
-onInput="ExaFS.updateRangeValText(this, 'rangeVal${id}', ${opts.low}, ${opts.high}, '${opts.unit}')">`;
-}
-
-function creteBoolPresetFormField(initValue: any, id: number) {
-    return `<div class="form-check form-switch">
-<input class="form-check-input" type="checkbox" value="${initValue}" id="presetInput${id}"></div>`;
-}
-
-function creteEnumPresetFormField(field: DDPPresetField, initValue: any, id: number) {
-    let opts = field.options as EnumPresetFieldOpts;
-    let values = '';
-
-    if (opts.multi) {
-        const selected = (initValue as string).split(',');
-        for (const val of opts.values) {
-            values += `<div class="form-check form-check-inline">
-                      <input class="form-check-input" 
-                          type="checkbox" 
-                          id="${val}Check${id}" 
-                          value="${val}"
-                          ${selected.includes(val as string) ? 'checked="checked"' : ''}>
-                      <label class="form-check-label" for="${val}Check${id}">${val}</label>
-                    </div>`;
-        }
-        return `<div class="form-check form-check-inline" id="presetInput${id}">${values}</div>`;
-    } else {
-        for (const val of opts.values) {
-            values += `<option value=${val} ${val === initValue ? 'selected' : ''}>${val}</option>`
-        }
-        return `<select class="form-select" id="presetInput${id}">${values}</select>`;
-    }
-}
-
-function createPresetFormField(field: DDPPresetField, id: number, initValue?: any): string {
-    let val = '<div class="fade-in-fwd">';
-    if (!initValue) {
-        initValue = field.defaultValue;
-    }
-    switch (field.type) {
-        case PresetFieldType.TEXT:
-            val += `<input class="form-control" type="text" value="${initValue}" id="presetInput${id}">`;
-            break;
-        case PresetFieldType.NUMBER:
-            val += `<input class="form-control" type="number" value="${initValue}" id="presetInput${id}">`;
-            break;
-        case PresetFieldType.RANGE:
-            val += createRangePresetFormField(field, id, initValue);
-            break;
-        case PresetFieldType.BOOL:
-            val += creteBoolPresetFormField(initValue, id);
-            break;
-        case PresetFieldType.ENUM:
-            val += creteEnumPresetFormField(field, initValue, id);
-            break;
-    }
-    if (field.description) {
-        val += `<div class="form-text">${field.description}</div></div>`
-    }
-    return val;
 }
 
 function createCommonWrapper(elem: string, id: number, initKey?: string): string {
@@ -342,13 +289,6 @@ function fieldExistsInCache(fieldCache: DDPPresetField[], field: HTMLSelectEleme
     });
 }
 
-function setErrorMessage(id: number, message: string) {
-    const errorElem = document.getElementById('form-error-msg' + id);
-    if (errorElem) {
-        errorElem.innerText = message;
-    }
-}
-
 /***
  * Returns index from the activeFields array from presetFormContext by
  * form ID. Returns -1 if given ID is not in activeFields.
@@ -366,7 +306,7 @@ function removeInvalidSelectOptions(select: HTMLSelectElement, id: number) {
             select.removeChild(children[i]);
         }
     }
-    setErrorMessage(id, '');
+    setKeyErrorMessage(id, '');
     select.classList.remove('is-invalid');
 }
 
@@ -379,7 +319,7 @@ function findDuplicateKeys(sourceId: number, name: string): DDPPresetField[] {
 function setFieldAsDuplicate(id: number) {
     const field = document.getElementById('fieldSelect' + id);
     field?.classList.add('is-invalid');
-    setErrorMessage(id, 'Duplicate rule field');
+    setKeyErrorMessage(id, 'Duplicate rule field');
 }
 
 function clearInvalidDuplicateWarnings(id: number, name: string) {
@@ -387,7 +327,7 @@ function clearInvalidDuplicateWarnings(id: number, name: string) {
     if (duplicates.length === 1 && duplicates[0].formId !== undefined) {
         const select = document.getElementById('fieldSelect' + duplicates[0].formId);
         select?.classList.remove('is-invalid');
-        setErrorMessage(duplicates[0].formId, '');
+        setKeyErrorMessage(duplicates[0].formId, '');
     }
 }
 
@@ -407,3 +347,98 @@ function formHasErrors(): boolean {
     const errorFields = document.querySelectorAll('.is-invalid');
     return errorFields.length > 0;
 }
+
+function setKeyErrorMessage(id: number, message: string) {
+    const errorElem = document.getElementById('form-error-msg' + id);
+    const selectElem = document.getElementById('fieldSelect' + id)
+    if (errorElem && selectElem) {
+        errorElem.innerText = message;
+        if (message == '') {
+            selectElem.classList.remove('is-invalid');
+        } else {
+            selectElem.classList.add('is-invalid');
+        }
+    }
+}
+
+
+function checkFieldRequirements(fields: DDPPresetField[], rule_type: DDPRuleType) {
+    console.log('Checking field requirements');
+    for (const f of fields) {
+        if (f.requires_fields && f.formId !== undefined) {
+            const reqs = findUnsatisfiedRequirements(f, fields, rule_type);
+            console.log(reqs);
+            if (reqs.length !== 0) {
+                let msg = '';
+                for (let r of reqs) {
+                    msg += ', ' + r;
+                }
+                msg = msg.slice(2)
+                setKeyErrorMessage(f.formId, "Requirements not satisfied: " + msg)
+            } else {
+                setKeyErrorMessage(f.formId, '');
+            }
+        }
+    }
+}
+
+
+function findUnsatisfiedRequirements(checkedField: DDPPresetField, allFields: DDPPresetField[], rule_type: DDPRuleType) {
+    let notSatisfied: string[] = []
+    const field = document.getElementById('presetInput' + checkedField?.formId) as HTMLInputElement;
+    if (checkedField.requires_fields) {
+        for (const r of checkedField.requires_fields) {
+            if (r.rule_types.includes((rule_type))) {
+                const idx = allFields.findIndex((field) => {
+                    return field.name == r.name;
+                });
+                if (idx == -1 && r.relationship != PresetFieldRequirementRelationship.IsNotSet) {
+                    notSatisfied.push(r.name + ' has to be set');
+                } else {
+                    const val = document.getElementById('presetInput' + allFields[idx].formId) as HTMLInputElement;
+                    if (val && field) {
+                        const value = val.value;
+                        switch (r.relationship) {
+                            case PresetFieldRequirementRelationship.IsNotSet:
+                                notSatisfied.push(r.name + ' can not be set with this field');
+                                break;
+                            case PresetFieldRequirementRelationship.IsGreater:
+                                if (value <= field.value) {
+                                    notSatisfied.push(r.name + ' has to be greater than this field');
+                                }
+                                break;
+                            case PresetFieldRequirementRelationship.IsLower:
+                                if (value >= field.value) {
+                                    notSatisfied.push(r.name + ' has to be lower than this field');
+                                }
+                                break;
+                            case PresetFieldRequirementRelationship.IsGreaterOrEqual:
+                                if (value < field.value) {
+                                    notSatisfied.push(r.name + ' has to be greater or equal to this field');
+                                }
+                                break;
+                            case PresetFieldRequirementRelationship.IsLowerOrEqual:
+                                if (value > field.value) {
+                                    notSatisfied.push(r.name + ' has to be lower or equal to this field');
+                                }
+                                break;
+                            case PresetFieldRequirementRelationship.IsEqual:
+                                if (value != field.value) {
+                                    notSatisfied.push(r.name + ' has to be equal to this field');
+                                }
+                                break;
+                            case PresetFieldRequirementRelationship.IsNotEqual:
+                                if (value == field.value) {
+                                    notSatisfied.push(r.name + ' has to be different from this field');
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return notSatisfied;
+}
+
+
