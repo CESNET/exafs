@@ -1,5 +1,6 @@
 import {Modal} from "bootstrap";
 import {formatSIUnitNumber} from "../utils";
+import {NonZeroValidator, NumberRangeValidator, RegexPatternValidator, Validator} from './validators'
 
 export type DDPPreset = {
     name: string;
@@ -23,6 +24,11 @@ export type DDPPreset = {
     }
 }
 
+export enum SliderType {
+    LINEAR,
+    LOGARITHMIC
+}
+
 export enum DDPRuleType {
     AMPLIFICATION = 'amplification',
     SYN_DROP = 'syn_drop',
@@ -38,6 +44,17 @@ export enum PresetFieldType {
     ENUM = 'enum'
 }
 
+export enum PresetFieldRequirementRelationship {
+    IsSet,
+    IsNotSet,
+    IsGreater,
+    IsLower,
+    IsGreaterOrEqual,
+    IsLowerOrEqual,
+    IsEqual,
+    IsNotEqual,
+}
+
 export type EnumPresetFieldOpts = {
     values: string[] | { value: any, display: string }[];
     multi: boolean;
@@ -46,8 +63,8 @@ export type EnumPresetFieldOpts = {
 export type RangePresetFieldOpts = {
     low: number;
     high: number;
-    step: number;
     unit: string;
+    type: SliderType;
 }
 
 export type DDPPresetField = {
@@ -57,8 +74,10 @@ export type DDPPresetField = {
     formId?: number;
     defaultValue: any;
     type: PresetFieldType;
+    rule_types: DDPRuleType[];
     options?: EnumPresetFieldOpts | RangePresetFieldOpts;
-    rule_types?: DDPRuleType[];
+    validators?: Validator[];
+    requires_fields?: [{ name: string, relationship: PresetFieldRequirementRelationship, rule_types: DDPRuleType[] }]
 }
 
 export const AVAILABLE_PRESET_FIELDS: DDPPresetField[] = [
@@ -68,8 +87,13 @@ export const AVAILABLE_PRESET_FIELDS: DDPPresetField[] = [
         type: PresetFieldType.RANGE,
         defaultValue: 0,
         description: 'Activate rule when traffic reaches the given threshold defined by bits per second. Bits per second are calculated on L2 without Ethernet FCS field (4B).',
-        options: {low: 100000000, high: 100000000000, step: 100000000, unit: 'b/s'},
-        rule_types: [DDPRuleType.AMPLIFICATION, DDPRuleType.FILTER, DDPRuleType.SYN_DROP, DDPRuleType.TCP_AUTHENTICATOR]
+        options: {low: 100000000, high: 100000000000, unit: 'b/s', type: SliderType.LOGARITHMIC},
+        rule_types: [DDPRuleType.AMPLIFICATION, DDPRuleType.FILTER, DDPRuleType.SYN_DROP, DDPRuleType.TCP_AUTHENTICATOR],
+        requires_fields: [{
+            name: 'limit_bps',
+            relationship: PresetFieldRequirementRelationship.IsLowerOrEqual,
+            rule_types: [DDPRuleType.AMPLIFICATION]
+        }]
     },
     {
         name: 'threshold_pps',
@@ -77,14 +101,19 @@ export const AVAILABLE_PRESET_FIELDS: DDPPresetField[] = [
         type: PresetFieldType.RANGE,
         defaultValue: 0,
         description: 'Activate rule when traffic reaches the given threshold defined by packets per second.',
-        options: {low: 10000, high: 1000000000, step: 10000, unit: ' packet/s'},
-        rule_types: [DDPRuleType.AMPLIFICATION, DDPRuleType.FILTER, DDPRuleType.SYN_DROP, DDPRuleType.TCP_AUTHENTICATOR]
+        options: {low: 10000, high: 1000000000, unit: ' packet/s', type: SliderType.LOGARITHMIC},
+        rule_types: [DDPRuleType.AMPLIFICATION, DDPRuleType.FILTER, DDPRuleType.SYN_DROP, DDPRuleType.TCP_AUTHENTICATOR],
+        requires_fields: [{
+            name: 'limit_pps',
+            relationship: PresetFieldRequirementRelationship.IsLowerOrEqual,
+            rule_types: [DDPRuleType.AMPLIFICATION]
+        }]
     },
     {
         name: 'protocol',
         printName: 'Protocol',
         type: PresetFieldType.ENUM,
-        defaultValue: [],
+        defaultValue: '',
         description: 'List of L4 protocols. If not set, apply to all.',
         rule_types: [DDPRuleType.FILTER, DDPRuleType.AMPLIFICATION],
         options: {values: ['TCP', 'UDP', 'ICMP', 'SCTP'], multi: true},
@@ -106,6 +135,10 @@ export const AVAILABLE_PRESET_FIELDS: DDPPresetField[] = [
             'Using these a packet is accepted only if the corresponding flag is set. If a letter is negated using ‘!’ a packet is accepted only if the corresponding flag is not set. Otherwise a value of a flag does not matter.' +
             '<br>Example for SYN and SYN+ACK packets only: !C!E!U!P!RS!F',
         rule_types: [DDPRuleType.AMPLIFICATION],
+        // Regex: "(?!.*?([CEUAPRSF]).*\1)" (first part): Use a lookahead to check, if there is only one of each character
+        // "(!?[CEUAPRSF]){1,8}" (second part):  Match any of the valid letters (CEUAPRSF), with an optional exclamation mark in front of it.
+        validators: [new RegexPatternValidator(/^(?!.*?([CEUAPRSF]).*\1)(!?[CEUAPRSF]){1,8}$/gm, 'TCP Flags',
+            'value can only contain letters C, E, U, A, P, R, S and F, optionally prefixed by exclamation mark (!C), each letter only once. Check the description for an example.')]
     },
     {
         name: 'vlan', printName: 'VLAN ID', type: PresetFieldType.NUMBER, defaultValue: 0,
@@ -116,35 +149,51 @@ export const AVAILABLE_PRESET_FIELDS: DDPPresetField[] = [
         name: 'threshold_syn_soft',
         printName: 'Soft SYN threshold',
         type: PresetFieldType.RANGE,
-        defaultValue: 5000000000,
-        description: 'Number of SYN-only packets that are allowed without receiving any ACK-only packet.',
-        options: {low: 100000000, high: 100000000000, step: 100000000, unit: 'b/s'},
-        rule_types: [DDPRuleType.SYN_DROP, DDPRuleType.TCP_AUTHENTICATOR]
+        defaultValue: 5,
+        description: 'Number of SYN-only packets (per client) that are allowed without receiving any ACK-only packet.',
+        options: {low: 2, high: 10, unit: 'packets', type: SliderType.LINEAR},
+        rule_types: [DDPRuleType.SYN_DROP]
     },
     {
         name: 'threshold_syn_hard',
         printName: 'Hard SYN threshold',
         type: PresetFieldType.RANGE,
-        defaultValue: 5000000000,
-        description: 'Number of packets after which all consequent SYN-only packets are dropped regardless of received ACK packets.',
-        options: {low: 100000000, high: 100000000000, step: 100000000, unit: 'b/s'},
+        defaultValue: 20,
+        description: 'Number of packets (per client) after which all consequent SYN-only packets are dropped regardless of received ACK packets.',
+        options: {low: 2, high: 100, unit: 'packets', type: SliderType.LINEAR},
         rule_types: [DDPRuleType.SYN_DROP, DDPRuleType.TCP_AUTHENTICATOR]
     },
     {
         name: 'limit_bps',
         printName: 'Limit [bits/s]',
         defaultValue: 0,
-        description: 'Traffic volume defined as bits per second. Defines how much traffic will be allowed to the protected network during an attack. Traffic from N biggest contributors is blocked until traffic volume is limited to or below this target value. Bits per second are calculated on L2 without Ethernet FCS field (4B).',
+        description: 'Traffic volume defined as bits per second. Defines how much traffic will be allowed to the protected network during an attack.' +
+            ' Traffic from N biggest contributors is blocked until traffic volume is limited to or below this target value. Bits per second are calculated on L2 without Ethernet FCS field (4B).' +
+            ' A limit value has to be lower or equal to corresponding threshold value.',
         rule_types: [DDPRuleType.AMPLIFICATION],
-        type: PresetFieldType.NUMBER
+        type: PresetFieldType.RANGE,
+        options: {low: 100000000, high: 100000000000, unit: 'b/s', type: SliderType.LOGARITHMIC},
+        validators: [new NonZeroValidator()],
+        requires_fields: [{
+            name: 'threshold_bps',
+            relationship: PresetFieldRequirementRelationship.IsGreaterOrEqual,
+            rule_types: [DDPRuleType.AMPLIFICATION]
+        }]
     },
     {
         name: 'limit_pps',
         printName: 'Limit [packets/s]',
-        defaultValue: 0,
+        defaultValue: 1000000,
         description: 'Traffic volume amount defined as packets per second. Says how much traffic will be limited during an attack. N biggest contributors are blocked until traffic volume is limited to this value.',
         rule_types: [DDPRuleType.AMPLIFICATION],
-        type: PresetFieldType.NUMBER
+        type: PresetFieldType.RANGE,
+        options: {low: 10000, high: 1000000000, unit: ' packet/s', type: SliderType.LOGARITHMIC},
+        validators: [new NonZeroValidator()],
+        requires_fields: [{
+            name: 'threshold_pps',
+            relationship: PresetFieldRequirementRelationship.IsGreaterOrEqual,
+            rule_types: [DDPRuleType.AMPLIFICATION]
+        }]
     },
     {
         name: 'fragmentation',
@@ -171,7 +220,7 @@ export const AVAILABLE_PRESET_FIELDS: DDPPresetField[] = [
         type: PresetFieldType.RANGE,
         defaultValue: 1,
         description: 'Maximum validity interval of host (i.e. source IP address) authentication. If a host tries to establish another TCP connection after the timeout has elapsed, it must be authenticated again.',
-        options: {low: 1, high: 600, step: 1, unit: 's'}
+        options: {low: 1, high: 600, unit: 's', type: SliderType.LINEAR}
     },
     {
         name: 'algorithm_type',
@@ -190,9 +239,19 @@ export const AVAILABLE_PRESET_FIELDS: DDPPresetField[] = [
         type: PresetFieldType.NUMBER,
         defaultValue: 18,
         description: 'Size exponent (i.e. 2^x) of the record table. It corresponds to maximum number of unique source IP addresses.',
-        rule_types: [DDPRuleType.SYN_DROP, DDPRuleType.AMPLIFICATION, DDPRuleType.TCP_AUTHENTICATOR]
+        rule_types: [DDPRuleType.SYN_DROP, DDPRuleType.AMPLIFICATION, DDPRuleType.TCP_AUTHENTICATOR],
+        validators: [new NumberRangeValidator(10, 30)]
     }
 ];
+
+type FieldsRequiredByRuleType = {[key in DDPRuleType]: string[]}
+
+export const REQUIRED_FIELDS_BY_RULE_TYPE: FieldsRequiredByRuleType = {
+    [DDPRuleType.AMPLIFICATION]: [],
+    [DDPRuleType.SYN_DROP]: ['threshold_syn_soft', 'threshold_syn_hard'],
+    [DDPRuleType.FILTER]: [],
+    [DDPRuleType.TCP_AUTHENTICATOR]: ['validity_timeout', 'algorithm_type']
+}
 
 /***
  * Get field information based on the rule field name from database
@@ -228,7 +287,6 @@ export function showPreset(title: string, fields: any[], editable: string[]) {
     if (titleElem && bodyElem && modalElem) {
         titleElem.innerHTML = title;
         bodyElem.innerHTML = '';
-        let i = 0;
         for (let key in fields) {
             let row = bodyElem.insertRow(bodyElem.rows.length);
             let keyCell = row.insertCell();
@@ -237,16 +295,22 @@ export function showPreset(title: string, fields: any[], editable: string[]) {
             keyCell.innerHTML = key;
             if (typeof fields[key] === 'number') {
                 valCell.innerHTML = formatSIUnitNumber(fields[key] as number, 2, '');
-            }
-            else {
+            } else {
                 valCell.innerHTML = fields[key].toString();
             }
-            if (key !== 'rule_type') {
-                editableCell.innerHTML = editable.includes(key) ? 'Yes' : 'No';
-                i++;
-            }
+            editableCell.innerHTML = editable.includes(key) ? 'Yes' : 'No';
         }
         let modal = new Modal(modalElem, {backdrop: true, keyboard: true});
         modal.show();
     }
+}
+
+export function getValidatorsByType(key: string): Validator[] | undefined {
+    const field = getPresetField(key);
+    if (field) {
+        return field.validators;
+    } else {
+        return undefined;
+    }
+
 }
