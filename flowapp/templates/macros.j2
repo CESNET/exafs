@@ -1,16 +1,18 @@
-
 {% macro build_ip_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
-<tbody>
+    <tbody>
     {% for rule in rules %}
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
             <td>
-                <span class="task">{{ rule.source }}</span>{% if rule.source_mask %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
+                <span class="task">{{ rule.source }}</span>{% if rule.source_mask %}
+                {{ '/' if rule.source_mask >= 0 else '' }}
+                {{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.source_port }}
             </td>
             <td>
-                <span class="task">{{ rule.dest }}</span>{% if rule.dest_mask %}{{ '/' if rule.dest_mask >= 0 else '' }}{{ rule.dest_mask if rule.dest_mask >= 0 else '' }}{% endif %}
+                <span class="task">{{ rule.dest }}</span>{% if rule.dest_mask %}{{ '/' if rule.dest_mask >= 0 else '' }}
+                {{ rule.dest_mask if rule.dest_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.dest_port }}
@@ -30,32 +32,47 @@
             </td>
             <td>
                 {{ rule.action.name }}
+                {% if rule.ddp_rule_extras_id %}
+                    <span class="mx-1 text-success fs-5" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="Linked to a DDoS Protector rule (DDoS Protector rule ID: {{ rule.ddp_rule_extras.ddp_rule_id }})">
+                    <i class="bi bi-shield-fill-check"></i>
+                </span>
+                {% else %}
+                    {% if rule.action.name == 'Redirect to DDoS Protector' %}
+                        <span class="mx-1 text-warning fs-5" data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="Redirecting to DDoS Protector without any DDoS Protector rules linked to the flowspec rule. DDoS Protector will mitigate the traffic based on existing rules.">
+                    <i class="bi bi-shield-fill-exclamation"></i></span>
+                    {% endif %}
+                {% endif %}
             </td>
             <td>
-                {{ rule.flags}}
+                {{ rule.flags }}
             </td>
             <td>
                 {{ rule.user.name }}
             </td>
             <td>
-            {% if editable %}
-                <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button">
-                    <i class="bi bi-clock table-icon"></i>
-                </a>
-                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button">
-                    <i class="bi bi-x"></i>
-                </a>
-            {% endif %}
-            {% if rule.comment %}
-                <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                {% if editable %}
+                    <a class="btn btn-primary btn-sm"
+                       href="{{ url_for('rules.reactivate_rule', rule_type=rtype_int, rule_id=rule.id) }}"
+                       role="button">
+                        <i class="bi bi-clock"></i>
+                    </a>
+                    <a class="btn btn-danger btn-sm"
+                       href="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+                {% if rule.comment %}
+                    <span class="mx-1 fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
                     <i class="bi bi-chat-left-text-fill"></i>
-                </button>
-            {% endif %}
+                </span>
+                {% endif %}
             </td>
 
             {% if editable and group_op %}
                 <td class="text-center">
-                    <input type="checkbox" name="delete-id" value="{{rule.id}}" />
+                    <input type="checkbox" name="delete-id" value="{{ rule.id }}"/>
                 </td>
             {% endif %}
 
@@ -63,82 +80,87 @@
 
 
     {% endfor %}
-</tbody>
+    </tbody>
 {% endmacro %}
 
 
 {% macro build_rtbh_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
     <tbody>
-{% for rule in rules %}
-    <tr {% if rule.expires < today %} class="warning"  {% endif %}>
-    <td>
-    {% if rule.ipv4 %}
-        <span class="task">{{ rule.ipv4 }}</span>{{ '/' if rule.ipv4_mask else '' }}{{rule.ipv4_mask|default("", True)}}
-    {% endif %}
-    {% if rule.ipv6 %}
-        <span class="task">{{ rule.ipv6 }}</span>{{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
-    {% endif %}
-    </td>
-     <td>
-        {{ rule.community.name }}
-    </td>
-
-     <td>
-        {{ rule.expires|strftime }}
-    </td>
-    <td>
-        {{ rule.user.name }}
-    </td>
-    <td>
-        {% if editable %}
-        <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
-            <i class="bi bi-clock table-icon"></i>
-        </a>
-        <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
-            <i class="bi bi-x"></i>
-        </a>
-        {% endif %}
-        {% if rule.comment %}
-           <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
-              <i class="bi bi-chat-left-text-fill"></i>
-           </button>
-         {% endif %}
-    </td>
-     {% if editable and group_op %}
-            <td class="text-center">
-                <input type="checkbox" name="delete-id" value="{{rule.id}}" />
+    {% for rule in rules %}
+        <tr {% if rule.expires < today %} class="warning"  {% endif %}>
+            <td>
+                {% if rule.ipv4 %}
+                    <span class="task">{{ rule.ipv4 }}</span>
+                    {{ '/' if rule.ipv4_mask else '' }}{{ rule.ipv4_mask|default("", True) }}
+                {% endif %}
+                {% if rule.ipv6 %}
+                    <span class="task">{{ rule.ipv6 }}</span>{{ '/' if rule.ipv6_mask else '' }}
+                    {{ rule.ipv6_mask|default("", True) }}
+                {% endif %}
             </td>
-    {% endif %}
+            <td>
+                {{ rule.community.name }}
+            </td>
 
-    </tr>
-{% endfor %}
-</tbody>
+            <td>
+                {{ rule.expires|strftime }}
+            </td>
+            <td>
+                {{ rule.user.name }}
+            </td>
+            <td>
+                {% if editable %}
+                    <a class="btn btn-info btn-sm"
+                       href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+                        <i class="bi bi-clock table-icon"></i>
+                    </a>
+                    <a class="btn btn-danger btn-sm"
+                       href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+                        <i class="bi bi-x"></i>
+                    </a>
+                {% endif %}
+                {% if rule.comment %}
+                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="{{ rule.comment }}">
+                        <i class="bi bi-chat-left-text-fill"></i>
+                    </button>
+                {% endif %}
+            </td>
+            {% if editable and group_op %}
+                <td class="text-center">
+                    <input type="checkbox" name="delete-id" value="{{ rule.id }}"/>
+                </td>
+            {% endif %}
+
+        </tr>
+    {% endfor %}
+    </tbody>
 {% endmacro %}
 
 
 {% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query='', group_op=True) %}
-<thead>
+    <thead>
     <tr class="table-sorter">
-    {% for sort_key, col_name in rules_columns %}
-    <th>
-        {% if search_query %}
-            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link', squery=search_query) }}" >
-        {% else %}
-            <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link') }}" >
+        {% for sort_key, col_name in rules_columns %}
+            <th>
+                {% if search_query %}
+                    <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link', squery=search_query) }}">
+                {% else %}
+                    <a href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order, ordsrc='link') }}">
+                {% endif %}
+                {{ col_name }}
+                </a>
+                <span class="sort-direction {{ sort_order }}"></span>
+            </th>
+        {% endfor %}
+        <th>Edit</th>
+        {% if group_op %}
+            <th class="text-center">
+                <input id="check-all" type="checkbox" onchange="ExaFS.changeAllCheckboxes(this.checked)">
+            </th>
         {% endif %}
-        {{ col_name }}
-        </a>
-        <span class="sort-direction {{ sort_order }}"></span>
-    </th>
-    {% endfor %}
-    <th>Edit</th>
-    {% if group_op %}
-        <th class="text-center">
-            <input id="check-all" type="checkbox" onchange="ExaFS.changeAllCheckboxes(this.checked)">
-        </th>
-    {% endif %}
     </tr>
-</thead>
+    </thead>
 {% endmacro %}
 
 {% macro nav_link(name, endpoint) %}
