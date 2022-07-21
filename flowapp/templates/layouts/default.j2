@@ -27,12 +27,12 @@
 </head>
 
 <body>
-<nav class="navbar fixed-top navbar-expand-lg navbar-light menu-bg">
+<nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
         <a class="navbar-brand" href="/">{{ config['APP_NAME'] }} /
             ExaFS_{{ session['app_version'] }}</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown"
+                data-bs-target="#navbar" aria-controls="navbarNavDropdown"
                 aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -68,7 +68,7 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.actions') }}">Action</a>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.actions') }}">Actions</a>
                             </li>
                             <li><a class="dropdown-item" href="{{ url_for('admin.action') }}">Add
                                 action</a></li>
@@ -79,33 +79,39 @@
                         </ul>
                     </li>
                 {% endif %}
-                {% if True %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDDP"
-                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            DDoS Protector
-                        </a>
-                        <ul class="dropdown-menu scale-in-top" aria-labelledby="navbarDropdownDDP">
-                            <li>
-                                <a class="dropdown-item"
-                                   href="{{ url_for('ddos-protector.presets') }}">Rule presets</a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item"
-                                   href="{{ url_for('ddos-protector.edit_preset') }}">Add a rule
-                                    preset</a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a target="_blank" class="dropdown-item"
-                                   href="https://www.liberouter.org/technologies/ddos-protector/">About
-                                    DDoS Protector <i class="bi bi-link-45deg"></i></a>
-                            </li>
-                        </ul>
-                    </li>
-                {% endif %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDDP"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        DDoS Protector
+                    </a>
+                    <ul class="dropdown-menu scale-in-top" aria-labelledby="navbarDropdownDDP">
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ url_for('ddos-protector.presets') }}">Rule presets</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ url_for('ddos-protector.edit_preset') }}">Add a rule
+                                preset</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ url_for('ddos-protector.devices') }}">Devices</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ url_for('ddos-protector.edit_devices') }}">Add device</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a target="_blank" class="dropdown-item"
+                               href="https://www.liberouter.org/technologies/ddos-protector/">About
+                                DDoS Protector <i class="bi bi-link-45deg"></i></a>
+                        </li>
+                    </ul>
+                </li>
             </ul>
             <span class="navbar-text">
                 {{ session['user_name'] }} &lt;{{ session['user_email'] }}&gt;,
@@ -118,7 +124,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-dismissible fade show {{ category }}" role="alert">
+                <div class="alert alert-dismissible fade show scale-in-top {{ category }}" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"
                             aria-label="Close"></button>
