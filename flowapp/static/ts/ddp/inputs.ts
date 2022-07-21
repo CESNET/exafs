@@ -40,12 +40,12 @@ onChange="ExaFS.updateRangeValText(this, ${id}, ${opts.low}, ${opts.high}, ${opt
 onInput="ExaFS.updateRangeValText(this, ${id}, ${opts.low}, ${opts.high}, ${opts.type}, '${opts.unit}')">`;
 }
 
-export function creteEnumPresetFormField(field: DDPPresetField, id: number, initValue: string, disabled: boolean = false) {
+export function creteEnumPresetFormField(field: DDPPresetField, id: number, initValue?: string, disabled: boolean = false) {
     let opts = field.options as EnumPresetFieldOpts;
     let values = '';
 
     if (opts.multi) {
-        const selected = initValue.split(',');
+        const selected = initValue?.split(',');
         for (const val of opts.values) {
             values += `<div class="form-check form-check-inline">
                       <input class="form-check-input" 
@@ -54,7 +54,7 @@ export function creteEnumPresetFormField(field: DDPPresetField, id: number, init
                           id="${val}Check${id}" 
                           value="${val}"
                           ${boolToDisabledAttr(disabled)}
-                          ${selected.includes(val as string) ? 'checked="checked"' : ''}>
+                          ${selected?.includes(val as string) ? 'checked="checked"' : ''}>
                       <label class="form-check-label" for="${val}Check${id}">${val}</label>
                     </div>`;
         }
