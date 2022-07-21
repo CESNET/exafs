@@ -1,9 +1,12 @@
+import requests
+from flask import flash
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 # models and tables
+from flowapp.ddp import remove_rule_from_ddos_protector
 
 user_role = db.Table('user_role',
                      db.Column('user_id', db.Integer, db.ForeignKey(
@@ -323,6 +326,7 @@ class Flowspec4(db.Model):
     user = db.relationship('User', backref='flowspec4')
     rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'), nullable=False)
     rstate = db.relationship('Rstate', backref='flowspec4')
+    ddp_extras = db.relationship("DDPRuleExtras", back_populates="flowspec4")
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol,
                  flags, packet_len, fragment, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
@@ -466,6 +470,7 @@ class Flowspec6(db.Model):
     user = db.relationship('User', backref='flowspec6')
     rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'), nullable=False)
     rstate = db.relationship('Rstate', backref='flowspec6')
+    ddp_extras = db.relationship("DDPRuleExtras", back_populates="flowspec6")
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header,
                  flags, packet_len, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
@@ -579,7 +584,6 @@ class Log(db.Model):
     rule_type = db.Column(db.Integer)
     rule_id = db.Column(db.Integer)
     user_id = db.Column(db.Integer)
-    
 
     def __init__(self, time, task, user_id, rule_type, rule_id, author):
         self.time = time
@@ -589,46 +593,52 @@ class Log(db.Model):
         self.user_id = user_id
         self.author = author
 
-class DDPApiKey(db.Model):
+
+class DDPDevice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.String(1000), nullable=False)
     key = db.Column(db.String(1000), nullable=False)
-    user_id = db.Column(db.Integer, nullable=False)
+    redirect_command = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, nullable=False)
+    key_header = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(255), nullable=True)
+    rules = db.relationship("DDPRuleExtras", back_populates="device", viewonly=True)
 
-    def __init__(self, url, key, user_id, active):
+    def __init__(self, url, key, redirect_command, active, key_header='x-api-key', name=None):
         self.url = url
         self.key = key
-        self.user_id = user_id
+        self.redirect_command = redirect_command
         self.active = active
+        self.key_header = key_header
+        self.name = name
 
 
 class DDPRulePreset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(1000), nullable=False)
-    rule_type = db.Column(db.String(1000), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    rule_type = db.Column(db.String(255), nullable=False)
     threshold_bps = db.Column(db.BigInteger, nullable=True)
     threshold_pps = db.Column(db.BigInteger, nullable=True)
     vlan = db.Column(db.Integer, nullable=True)
 
     # Filter rule
-    protocol = db.Column(db.String(1000), nullable=True)
+    protocol = db.Column(db.String(255), nullable=True)
 
     # SynDrop rule
     threshold_syn_soft = db.Column(db.BigInteger, nullable=True)
     threshold_syn_hard = db.Column(db.BigInteger, nullable=True)
 
     # Amplification rule
-    fragmentation = db.Column(db.String(1000), nullable=True)
-    packet_lengths = db.Column(db.String(1000), nullable=True)
+    fragmentation = db.Column(db.String(255), nullable=True)
+    packet_lengths = db.Column(db.String(255), nullable=True)
     limit_bps = db.Column(db.BigInteger, nullable=True)
     limit_pps = db.Column(db.BigInteger, nullable=True)
     tcp_flags = db.Column(db.String(1000), nullable=True)
 
     # TCPAuth
-    validity_timeout = db.Column(db.String(200), nullable=True)
+    validity_timeout = db.Column(db.String(255), nullable=True)
     # threshold_hard
-    algorithm_type = db.Column(db.String(200), nullable=True)
+    algorithm_type = db.Column(db.String(255), nullable=True)
 
     # SynDrop, Amplification or TCPAuth
     table_exponent = db.Column(db.Integer, nullable=True)
@@ -637,7 +647,8 @@ class DDPRulePreset(db.Model):
 
     def __init__(self, name, rule_type, threshold_bps=None, threshold_pps=None, vlan=None, protocol=None,
                  threshold_syn_soft=None, threshold_syn_hard=None, fragmentation=None, limit_bps=None, limit_pps=None,
-                 validity_timeout=None, algorithm_type=None, table_exponent=None, editable=''):
+                 validity_timeout=None, algorithm_type=None, table_exponent=None, tcp_flags=None, packet_lengths=None,
+                 editable=None):
         self.name = name
         self.rule_type = rule_type
         self.threshold_bps = threshold_bps
@@ -652,7 +663,32 @@ class DDPRulePreset(db.Model):
         self.validity_timeout = validity_timeout
         self.algorithm_type = algorithm_type
         self.table_exponent = table_exponent
+        self.tcp_flags = tcp_flags
+        self.packet_lengths = packet_lengths
         self.editable = editable
+
+
+class DDPRuleExtras(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    flowspec4_id = db.Column(db.Integer, db.ForeignKey("flowspec4.id"), nullable=True)
+    flowspec4 = db.relationship("Flowspec4", back_populates="ddp_extras")
+    flowspec6_id = db.Column(db.Integer, db.ForeignKey("flowspec6.id"), nullable=True)
+    flowspec6 = db.relationship("Flowspec6", back_populates="ddp_extras")
+    preset_id = db.Column(db.Integer, db.ForeignKey('ddp_rule_preset.id'), nullable=False)
+    preset = db.relationship('DDPRulePreset', backref='ddp_rule_extras')
+    modifications = db.Column(db.Text, nullable=True)
+    ddp_rule_id = db.Column(db.Integer, nullable=True)
+    device_id = db.Column(db.Integer, db.ForeignKey('ddp_device.id'), nullable=True)
+    device = db.relationship('DDPDevice', backref='ddp_rule_extras')
+
+    def __init__(self, preset_id, flowspec4_id=None, flowspec6_id=None, modifications=None, ddp_rule_id=None, device_id=None):
+        self.preset_id = preset_id
+        self.flowspec4_id = flowspec4_id
+        self.flowspec6_id = flowspec6_id
+        self.modifications = modifications
+        self.ddp_rule_id = ddp_rule_id
+        self.device_id = device_id
+
 
 
 # DDL
