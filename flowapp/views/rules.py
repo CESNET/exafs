@@ -1,4 +1,5 @@
 # flowapp/views/admin.py
+import json
 from datetime import datetime, timedelta
 from operator import ge, lt
 from typing import Any, Set
@@ -10,16 +11,20 @@ from flask import (Blueprint, flash, redirect, render_template, request,
 from flowapp import app, constants, db, messages
 from flowapp.auth import (admin_required, auth_required, localhost_only,
                           user_or_admin_required)
-from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
+from flowapp.forms import IPv4Form, IPv6Form, RTBHForm, DDPPresetForm
 from flowapp.models import (RTBH, Action, Community, Flowspec4, Flowspec6,
                             get_ipv4_model_if_exists, get_ipv6_model_if_exists,
                             get_rtbh_model_if_exists, get_user_actions,
                             get_user_communities, get_user_nets,
-                            insert_initial_communities)
+                            insert_initial_communities, get_presets, DDPRuleExtras, get_ddp_extras_model_if_exists,
+                            remove_ddp_rules_by_flowspec_rule_id)
 from flowapp.output import (ROUTE_MODELS, RULE_TYPES, announce_route,
                             log_route, log_withdraw)
+from flowapp.ddp import send_rule_to_ddos_protector
 from flowapp.utils import (flash_errors, get_state_by_time, quote_to_ent,
                            round_to_ten_minutes)
+from flowapp.views.ddos_protector import get_ddp_data_from_preset_form, create_ddp_rule_from_preset_form, \
+    handle_ddp_preset_form, create_ddp_extras, create_ddp_rule_from_extras, get_available_ddos_protector_device
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
@@ -41,6 +46,7 @@ def reactivate_rule(rule_type, rule_id):
     :param rule_type: string - type of rule
     :param rule_id: integer - id of the rule
     """
+    # TODO: Send rule back to DDoS Protector, if it does not exist anymore
     model_name = DATA_MODELS[rule_type]
     form_name = DATA_FORMS[rule_type]
 
@@ -77,10 +83,15 @@ def reactivate_rule(rule_type, rule_id):
 
         if model.rstate_id == 1:
             # announce route
+            if (rule_type == 4 or rule_type == 6) and model.action.command == 'ddp' and len(model.ddp_extras) > 0:
+                device = get_available_ddos_protector_device()
+                for e in model.ddp_extras:
+                    create_ddp_rule_from_extras(e, device, rule_type)
             route = route_model(model, constants.ANNOUNCE)
             announce_route(route)
             # log changes
             log_route(session['user_id'], model, rule_type, "{} / {}".format(session['user_email'], session['user_orgs']))
+
         else:
             # withdraw route
             route = route_model(model, constants.WITHDRAW)
@@ -103,8 +114,16 @@ def reactivate_rule(rule_type, rule_id):
             field.render_kw = {'disabled': 'disabled'}
 
     action_url = url_for('rules.reactivate_rule', rule_type=rule_type, rule_id=rule_id)
+    presets = get_presets()
 
-    return render_template(DATA_TEMPLATES[rule_type], form=form, action_url=action_url, editing=True, title="Update")
+    return render_template(DATA_TEMPLATES[rule_type],
+                           form=form,
+                           action_url=action_url,
+                           editing=True,
+                           title="Update",
+                           presets=presets,
+                           reactivate=True
+                           )
 
 
 @rules.route('/delete/<int:rule_type>/<int:rule_id>', methods=['GET'])
@@ -131,6 +150,9 @@ def delete_rule(rule_type, rule_id):
         announce_route(route)
 
         log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
+
+        # remove DDoS Protector rules linked to this rule (if any exist)
+        remove_ddp_rules_by_flowspec_rule_id(model.id, rule_type, remove_local_copy=True)
 
         # delete from db
         db.session.delete(model)
@@ -330,11 +352,19 @@ def ipv4_rule():
     form.action.choices = user_actions
     form.action.default = 0
     form.net_ranges = net_ranges
+    presets = get_presets()
 
     if request.method == 'POST' and form.validate():
-
         model = get_ipv4_model_if_exists(form.data, 1)
-
+        if model:
+            data, success = create_ddp_extras(model.id, 4, form)
+        else:
+            data, success = create_ddp_extras(-1, 4, form)
+        if not success:
+            return render_template('forms/ipv4_rule.j2', form=data, presets=presets,
+                                       action_url=url_for('rules.ipv4_rule'))
+        else:
+            ddp_model = data
         if model:
             model.expires = round_to_ten_minutes(form.expires.data)
             flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
@@ -360,6 +390,10 @@ def ipv4_rule():
             db.session.add(model)
 
         db.session.commit()
+        if ddp_model is not None:
+            ddp_model.flowspec4_id = model.id
+            db.session.add(ddp_model)
+            db.session.commit()
         flash(flash_message, 'alert-success')
 
         # announce route if model is in active state
@@ -382,7 +416,7 @@ def ipv4_rule():
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
 
-    return render_template('forms/ipv4_rule.j2', form=form, action_url=url_for('rules.ipv4_rule'))
+    return render_template('forms/ipv4_rule.j2', form=form, presets=presets, action_url=url_for('rules.ipv4_rule'))
 
 
 @rules.route('/add_ipv6_rule', methods=['GET', 'POST'])
@@ -398,10 +432,20 @@ def ipv6_rule():
     form.action.choices = user_actions
     form.action.default = 0
     form.net_ranges = net_ranges
+    presets = get_presets()
     
     if request.method == 'POST' and form.validate():
 
         model = get_ipv6_model_if_exists(form.data, 1)
+        if model:
+            data, success = create_ddp_extras(model.id, 6, form)
+        else:
+            data, success = create_ddp_extras(-1, 6, form)
+        if not success:
+            return render_template('forms/ipv6_rule.j2', form=data, presets=presets,
+                                       action_url=url_for('rules.ipv6_rule'))
+        else:
+            ddp_model = data
 
         if model:
             model.expires = round_to_ten_minutes(form.expires.data)
@@ -428,6 +472,10 @@ def ipv6_rule():
             db.session.add(model)
 
         db.session.commit()
+        if ddp_model is not None:
+            ddp_model.flowspec6_id = model.id
+            db.session.add(ddp_model)
+            db.session.commit()
         flash(flash_message, 'alert-success')
 
         # announce routes
@@ -450,7 +498,7 @@ def ipv6_rule():
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
     
-    return render_template('forms/ipv6_rule.j2', form=form, action_url=url_for('rules.ipv6_rule'))
+    return render_template('forms/ipv6_rule.j2', form=form, presets=presets, action_url=url_for('rules.ipv6_rule'))
 
 
 @rules.route('/add_rtbh_rule', methods=['GET', 'POST'])
