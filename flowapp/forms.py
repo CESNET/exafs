@@ -1,11 +1,12 @@
 from flask import current_app
 from flask_wtf import FlaskForm
-from wtforms import widgets
+from wtforms import widgets, PasswordField
 from wtforms import (BooleanField, DateTimeField, DateTimeLocalField, HiddenField,
                      IntegerField, SelectField, SelectMultipleField,
                      StringField, TextAreaField)
 from wtforms.validators import (DataRequired, Email, InputRequired, IPAddress,
                                 Length, NumberRange, Optional)
+from wtforms.widgets import PasswordInput
 
 from flowapp.constants import (IPV4_FRAGMENT, IPV4_PROTOCOL, IPV6_NEXT_HEADER,
                                TCP_FLAGS, FORM_TIME_PATTERN)
@@ -273,7 +274,46 @@ class RTBHForm(FlaskForm):
         return result
 
 
-class IPForm(FlaskForm):
+class DDPPresetForm(FlaskForm):
+    """
+    Base class for storing DDoS protector preset values.
+    Fields are only used to hold values, but are not rendered in templates from
+    WTForms. Fields are instead rendered from typescript code to be more dynamic.
+    This class contains _all possible_ fields, that can appear in presets and users
+    can change.
+    All the fields are optional, so this class can be included in any other form
+    without interference.
+    """
+    # ID of the preset
+    preset = IntegerField('Mitigation strategy', validators=[Optional()])
+    ddp_threshold_bps = IntegerField('Threshold [bps]', validators=[Optional()])
+    ddp_threshold_pps = IntegerField('Threshold [pps]', validators=[Optional()])
+    ddp_vlan = IntegerField('Vlan ID', validators=[Optional()])
+
+    # Filter rule
+    ddp_protocol = StringField('Protocol', validators=[Optional()])
+
+    # SynDrop rule
+    ddp_threshold_syn_soft = IntegerField('Soft SYN threshold', validators=[Optional()])
+    ddp_threshold_syn_hard = IntegerField('Hard SYN threshold', validators=[Optional()])
+
+    # Amplification rule
+    ddp_fragmentation = StringField('Fragmentation', validators=[Optional()])
+    ddp_packet_lengths = StringField('Packet lengths', validators=[Optional()])
+    ddp_limit_bps = IntegerField('Limit [bps]', validators=[Optional()])
+    ddp_limit_pps = IntegerField('Limit [pps]', validators=[Optional()])
+    ddp_tcp_flags = StringField('TCP Flags', validators=[Optional()])
+
+    # TCPAuth
+    ddp_validity_timeout = StringField('Validity timeout', validators=[Optional()])
+    # threshold_hard
+    ddp_algorithm_type = StringField('Algorithm type', validators=[Optional()])
+
+    # SynDrop, Amplification or TCPAuth
+    ddp_table_exponent = IntegerField('Table exponent', validators=[Optional()])
+
+
+class IPForm(DDPPresetForm):
     """
     Base class for IPv4 and IPv6 rules
     """
@@ -311,7 +351,6 @@ class IPForm(FlaskForm):
                          validators=[DataRequired(message="Please select an action for the rule.")])
 
     expires = MultiFormatDateTimeLocalField('Expires',  format='%Y-%m-%dT%H:%M', validators=[InputRequired()])
-
 
     comment = arange = TextAreaField('Comments')
 
@@ -467,8 +506,19 @@ class IPv6Form(IPForm):
         :return: boolean validation result
         """
         if len(self.flags.data) > 0 and self.next_header.data != 'tcp':
-            self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.protocol.data.upper()))
+            self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.next_header.data.upper()))
             return False
 
         return True
 
+
+class DDPDeviceForm(FlaskForm):
+    """
+    Settings for a specific DDoS Protector device
+    """
+    name = StringField('Device name (optional)', validators=[Optional()])
+    url = StringField('Device\'s REST API URL')
+    key = StringField('API key for the device\'s REST API', widget=PasswordInput(hide_value=False))
+    key_header = StringField('Key HTTP header', default='x-api-key')
+    redirect_command = StringField('ExaBGP command (redirect)', validators=[DataRequired()])
+    active = BooleanField('Send rules to this device')
