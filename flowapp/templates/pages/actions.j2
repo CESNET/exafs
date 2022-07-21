@@ -14,7 +14,7 @@
         <tr>
         <td>{{ action.id }}</td>
         <td>{{ action.name }}</td>
-        <td>{{ action.command }}</td>
+        <td><code>{{ action.command }}</code></td>
         <td>
             {{ action.description }}
         </td>
@@ -22,11 +22,11 @@
             {{ action.role }}
         </td>
         <td>
-        <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_action', action_id=action.id) }}" role="button">
-            <i class="bi bi-pen"></i>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('admin.edit_action', action_id=action.id) }}" role="button">
+            <i class="bi bi-pencil-fill"></i>
         </a>
         <a class="btn btn-danger btn-sm" href="{{ url_for('admin.delete_action', action_id=action.id) }}" role="button">
-            <i class="bi bi-x"></i>
+            <i class="bi bi-x-lg"></i>
         </a>
         </td>
         </tr>
