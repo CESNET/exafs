@@ -1,13 +1,14 @@
-from sys import prefix
+from typing import List
+
 from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MAX_PACKET, IPV4_PROTOCOL, \
     IPV6_NEXT_HEADER
 from flowapp.flowspec import translate_sequence as trps
 from flask import current_app
-from flowapp.models import ASPath
+from flowapp.models import ASPath, Flowspec6, Flowspec4, DDPRuleExtras, remove_ddp_rules_by_flowspec_rule_id
 from flowapp import db
 
 
-def create_ipv4(rule, message_type=ANNOUNCE):
+def create_ipv4(rule: Flowspec4, message_type=ANNOUNCE):
     """
     create ExaBpg text message for IPv4 rule
     @param rule models.Flowspec4
@@ -25,18 +26,18 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     fragment_string = rule.fragment.replace(";", " ") if rule.fragment else ''
     fragment = 'fragment [ {} ];'.format(fragment_string) if rule.fragment else ''
 
-
     spec = {
         'protocol': protocol,
         'flags': flags,
         'fragment': fragment,
-        'mask': IPV4_DEFMASK
+        'mask': IPV4_DEFMASK,
+        'ddp_rules': rule.ddp_extras
     }
 
     return create_message(rule, spec, message_type)
 
 
-def create_ipv6(rule, message_type=ANNOUNCE):
+def create_ipv6(rule: Flowspec6, message_type=ANNOUNCE):
     """
     create ExaBpg text message for IPv6 rule
     @param rule models.Flowspec6
@@ -53,7 +54,8 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     spec = {
         'protocol': protocol,
         'mask': IPV6_DEFMASK,
-        'flags': flags
+        'flags': flags,
+        'ddp_rules': rule.ddp_extras
     }
 
     return create_message(rule, spec, message_type)
@@ -173,7 +175,20 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
         flags=flags,
         packet_len=packet_len)
 
-    command = '{};'.format(rule.action.command)
+    command = ';'
+
+    if rule.action.command == 'ddp' and 'ddp_rules' in ipv_specific:
+        cmds = get_unique_commands_from_extras(ipv_specific['ddp_rules'])
+        if len(cmds) > 0:
+            command = cmds.pop() + ';'
+    else:
+        command = '{};'.format(rule.action.command)
+
+    if message_type == WITHDRAW:
+        if isinstance(rule, Flowspec4):
+            remove_ddp_rules_by_flowspec_rule_id(rule.id, 4, remove_local_copy=False)
+        if isinstance(rule, Flowspec6):
+            remove_ddp_rules_by_flowspec_rule_id(rule.id, 6, remove_local_copy=False)
 
     try:
         if current_app.config['USE_RD']:
@@ -222,3 +237,8 @@ def sanitize_mask(rule_mask, default_mask =IPV4_DEFMASK):
         return rule_mask
     else:
         return default_mask
+
+
+def get_unique_commands_from_extras(extras: List[DDPRuleExtras]):
+    cmds = [e.device.redirect_command for e in extras if e.device is not None]
+    return set(cmds)
