@@ -3,7 +3,8 @@
 {% block title %}Add IPv6 rule{% endblock %}
 {% block content %}
     <h2>{{ title or 'New' }} IPv6 rule</h2>
-    <form action="{{ action_url }}" method="POST" onsubmit="ExaFS.beforeIPFormSend(this, '{{ form.dest.id }}', '{{ form.next_header.id }}')" id="ipv6-form">
+    <form action="{{ action_url }}" method="POST" onsubmit="ExaFS.beforeIPFormSend(this, '{{ form.dest.id }}', '{{ form.next_header.id }}')" id="ipv6-form"
+    onload="ExaFS.hideFieldIfNot(document.getElementById({{ form.next_header.id }}).value, 'tcp', 'tcpFlagContainer');">
         {{ form.hidden_tag() if form.hidden_tag }}
         <div class="row">
             <div class="col-sm-12 col-md-6">
