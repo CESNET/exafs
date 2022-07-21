@@ -32,9 +32,13 @@
             </td>
             <td>
                 {{ rule.action.name }}
-                {% if rule.ddp_rule_extras_id %}
+                {% if rule.ddp_extras %}
                     <span class="mx-1 text-success fs-5" data-bs-toggle="tooltip" data-bs-placement="top"
-                          title="Linked to a DDoS Protector rule (DDoS Protector rule ID: {{ rule.ddp_rule_extras.ddp_rule_id }})">
+                          title="Linked to a DDoS Protector rule (DDoS Protector rule ID:
+                          {% for extras in rule.ddp_extras %}
+                            {{ extras.ddp_rule_id }},
+                          {% endfor %}
+                          )">
                     <i class="bi bi-shield-fill-check"></i>
                 </span>
                 {% else %}
