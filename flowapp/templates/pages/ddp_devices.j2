@@ -1,0 +1,69 @@
+{% extends 'layouts/default.j2' %}
+{% block title %}DDoS Protector rule presets{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <h1>DDoS Protector devices</h1>
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="col">
+        {% if devices|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="ddp-table-header">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">URL</th>
+                        <th scope="col">Command</th>
+                        <th scope="col">Key header</th>
+                        <th scope="col">Rules linked to this device</th>
+                        <th scope="col">Device active</th>
+                        <th scope="col">Edit</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for device in devices %}
+                        <tr {% if loop.index > 1 %} class="table-danger"{% endif %}>
+                            <th scope="row">{{ device['id'] }}</th>
+                            <td>{{ device['name'] }}</td>
+                            <td>{{ device['url'] }}</td>
+                            <td><code>{{ device['redirect_command'] }}</code></td>
+                            <td>{{ device['key_header'] }}</td>
+                            <td>
+                                <a href="#" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                                title="{% for rule in device['rules'] %}{{ rule['ddp_rule_id']}} ({{ rule['preset']['name'] }})<br> {% endfor %}">
+                                    {{ device['rules'] | length}}
+                                </a>
+                            </td>
+                            <td>{{ device['active'] }}</td>
+                            <td>
+                                <a class="btn btn-primary btn-sm" href="{{ url_for('ddos-protector.edit_devices', device_id=device['id']) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="Edit device">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <a class="btn btn-danger btn-sm" href="{{ url_for('ddos-protector.delete_ddp_device', device_id=device['id']) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="Remove device">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
+                                 {% if loop.index > 1 %}
+                                <span class=" mx-2 text-danger"><i class="bi bi-exclamation-triangle-fill"></i>
+ This version of ExaFS only supports one device.</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+        <div class="text-center">
+        <a class="btn btn-lg btn-primary ping" href="{{ url_for('ddos-protector.edit_devices') }}">Add a device</a>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+
+{% endblock %}
