@@ -1,7 +1,11 @@
+import requests
+from flask import flash
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
 from typing import Dict, List, Optional
+
+from flowapp.ddp_api import remove_rule_from_ddos_protector
 
 # models and tables
 
@@ -1008,3 +1012,39 @@ def get_ddp_extras_by_rule_id(flowspec4_id: int, flowspec6_id: int) -> List[DDPR
         data.extend(db.session.query(DDPRuleExtras)
                     .filter(DDPRuleExtras.flowspec6_id == flowspec6_id).all())
     return data
+
+
+def remove_ddp_rules_by_flowspec_rule_id(
+    flowspec_id,
+    flowspec_version,
+    remove_local_copy=False,
+):
+    models = []
+    cnt = 0
+    if flowspec_version == 6:
+        models = get_ddp_extras_by_rule_id(None, flowspec_id)
+    elif flowspec_version == 4:
+        models = get_ddp_extras_by_rule_id(flowspec_id, None)
+    else:
+        return
+    for m in models:
+        if m.id is not None:
+            try:
+                if m.device_id is not None and m.ddp_rule_id is not None:
+                    remove_rule_from_ddos_protector(m.ddp_rule_id, m.device.url, m.device.key)
+                    cnt += 1
+                if remove_local_copy:
+                    db.session.delete(m)
+                else:
+                    m.ddp_rule_id = None
+                    m.device_id = None
+            except requests.exceptions.ConnectionError as exc:
+                flash(
+                    "Could not remove DDoS Protector rule "
+                    + str(m.id)
+                    + " :"
+                    + str(exc.response),
+                    "alert-danger",
+                )
+    db.session.commit()
+    return cnt
