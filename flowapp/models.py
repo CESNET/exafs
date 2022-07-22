@@ -996,3 +996,15 @@ def get_presets() -> List[DDPRulePreset]:
     for preset in presets:
         data.append(format_preset(preset))
     return data
+
+
+def get_ddp_extras_by_rule_id(flowspec4_id: int, flowspec6_id: int) -> List[DDPRuleExtras]:
+    """Returns a list of DDPRuleExtras that match given flowspec rule IDs"""
+    data = []
+    if flowspec4_id is not None:
+        data.extend(db.session.query(DDPRuleExtras)
+                    .filter(DDPRuleExtras.flowspec4_id == flowspec4_id).all())
+    if flowspec6_id is not None:
+        data.extend(db.session.query(DDPRuleExtras)
+                    .filter(DDPRuleExtras.flowspec6_id == flowspec6_id).all())
+    return data
