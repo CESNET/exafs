@@ -51,9 +51,10 @@
         {{ macros.render_checkbox_field(form.remember_me) }}
  #}
 {% macro render_checkbox_field(field) -%}
-    <div class="checkbox">
-        <label>
-            {{ field(type='checkbox', **kwargs) }} {{ field.label }}
+    <div class="form-check">
+        {{ field(type='checkbox', class_='form-check-input', **kwargs) }}
+        <label class="form-check-label" for="{{ field.id }}">
+             {{ field.label }}
         </label>
     </div>
 {%- endmacro %}
@@ -69,9 +70,10 @@
  #}
 {% macro render_radio_field(field) -%}
     {% for value, label, _ in field.iter_choices() %}
-        <div class="radio">
-            <label>
-                <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">{{ label }}
+        <div class="form-check">
+            <input type="radio" class="form-check-input" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">
+            <label class="form-check-label" for="{{ field.id }}">
+                {{ label }}
             </label>
         </div>
     {% endfor %}
