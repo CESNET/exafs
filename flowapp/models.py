@@ -607,6 +607,63 @@ class DDPDevice(db.Model):
         self.name = name
 
 
+class DDPRulePreset(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    rule_type = db.Column(db.String(255), nullable=False)
+    threshold_bps = db.Column(db.BigInteger, nullable=True)
+    threshold_pps = db.Column(db.BigInteger, nullable=True)
+    vlan = db.Column(db.Integer, nullable=True)
+
+    # Filter rule
+    protocol = db.Column(db.String(255), nullable=True)
+    bpf = db.Column(db.Text, nullable=True)
+
+    # SynDrop rule
+    threshold_syn_soft = db.Column(db.BigInteger, nullable=True)
+    threshold_syn_hard = db.Column(db.BigInteger, nullable=True)
+
+    # Amplification rule
+    fragmentation = db.Column(db.String(255), nullable=True)
+    packet_lengths = db.Column(db.String(255), nullable=True)
+    limit_bps = db.Column(db.BigInteger, nullable=True)
+    limit_pps = db.Column(db.BigInteger, nullable=True)
+    tcp_flags = db.Column(db.String(255), nullable=True)
+
+    # TCPAuth
+    validity_timeout = db.Column(db.String(255), nullable=True)
+    # threshold_hard
+    algorithm_type = db.Column(db.String(255), nullable=True)
+
+    # SynDrop, Amplification or TCPAuth
+    table_exponent = db.Column(db.Integer, nullable=True)
+
+    editable = db.Column(db.String(1000))
+
+    def __init__(self, name, rule_type, threshold_bps=None, threshold_pps=None, vlan=None, protocol=None, bpf=None,
+                 threshold_syn_soft=None, threshold_syn_hard=None, fragmentation=None, limit_bps=None, limit_pps=None,
+                 validity_timeout=None, algorithm_type=None, table_exponent=None, tcp_flags=None, packet_lengths=None,
+                 editable=None):
+        self.name = name
+        self.rule_type = rule_type
+        self.threshold_bps = threshold_bps
+        self.threshold_pps = threshold_pps
+        self.vlan = vlan
+        self.protocol = protocol
+        self.bpf = bpf
+        self.threshold_syn_soft = threshold_syn_soft
+        self.threshold_syn_hard = threshold_syn_hard
+        self.fragmentation = fragmentation
+        self.limit_bps = limit_bps
+        self.limit_pps = limit_pps
+        self.validity_timeout = validity_timeout
+        self.algorithm_type = algorithm_type
+        self.table_exponent = table_exponent
+        self.tcp_flags = tcp_flags
+        self.packet_lengths = packet_lengths
+        self.editable = editable
+
+
 # DDL
 # default values for tables inserted after create
 
