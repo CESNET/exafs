@@ -314,3 +314,40 @@ def validate_ip_form_for_ddp_rule(
             )
             return form, False
     return form, True
+
+
+def try_to_send_ddp_rule(rule: dict,
+                         preset_id: int,
+                         modifications: dict,
+                         device: DDPDevice) -> Tuple[Union[DDPRuleExtras, str], bool]:
+    """
+    Try to send a rule to the DDoS Protector device. If successful, create a DDPRuleExtras model
+    and save it to the database.
+
+    :param rule: DDoS Protector rule to send to the device
+    :param preset_id: ID of the preset the rule is based on
+    :param modifications: Users modifications used to create the rule
+    :param device: Device to send the rule to
+    :returns: Tuple, where the first item is the newly created DDPRuleExtrasModel on success,
+    error message string on failure, the second item is True on success, False on failure.
+    :raises: requests.exceptions.ConnectionError - If connection to the device failed
+    """
+    response = send_rule_to_ddos_protector(rule, device.url, device.key, device.key_header)
+    if response.status_code == 201:
+        new_rule = response.json()
+        ddp_model = DDPRuleExtras(
+            preset_id=preset_id,
+            ddp_rule_id=new_rule["id"],
+            modifications=json.dumps(modifications),
+            device_id=device.id,
+        )
+        db.session.add(ddp_model)
+        db.session.commit()
+        return ddp_model, True
+    else:
+        if response.status_code == 422:
+            print("Invalid format response from DDoS Protector: ")
+            print(json.dumps(response.json()))
+            return "Could not save DDoS Protector rule: invalid rule format", False
+        else:
+            return "Could not save DDoS Protector rule:" + json.dumps(response.json()), False
