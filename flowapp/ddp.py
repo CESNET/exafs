@@ -7,7 +7,7 @@ from flask import flash
 from flowapp import db
 from flowapp.ddp_api import send_rule_to_ddos_protector
 from flowapp.forms import IPv4Form, IPv6Form
-from flowapp.models import DDPDevice, DDPRulePreset, DDPRuleExtras
+from flowapp.models import DDPDevice, DDPRulePreset, DDPRuleExtras, get_ddp_extras_model_if_exists
 
 
 def get_available_ddos_protector_device() -> DDPDevice:
@@ -351,3 +351,94 @@ def try_to_send_ddp_rule(rule: dict,
             return "Could not save DDoS Protector rule: invalid rule format", False
         else:
             return "Could not save DDoS Protector rule:" + json.dumps(response.json()), False
+
+
+def handle_ddp_preset_form(
+        form: Union[IPv6Form, IPv4Form]) -> Tuple[Union[DDPRuleExtras, Union[IPv6Form, IPv4Form]], bool]:
+    """
+    Extract parameters relevant to a DDoS Protector rule extras,
+    create a DDoS Protector rule and try to send it to a DDoS Protector device.
+    Validates the form and adds errors, if error occurs.
+
+    :param form: The IP form to extract the DDoS Protector rule from
+    :returns: Tuple, where the first item is the newly created DDPRuleExtras on success,
+    the form from the _form_ param with added error messages on error. The second items
+    is True on success, False if errors were found.
+    """
+    extra_opts = {"preset": form.preset.data}
+    mods = filter_ddp_data_from_preset_form(form.data)
+    extra_opts["preset_modifications"] = mods
+    rule = create_ddp_rule_from_preset_form(form.preset.data, mods, form.data)
+    print(json.dumps(rule))
+    form, model_valid = validate_ip_form_for_ddp_rule(form, rule)
+    if model_valid:
+        device = get_available_ddos_protector_device()
+        try:
+            data, success = try_to_send_ddp_rule(rule, form.preset.data, mods, device)
+            if success:
+                flash(
+                    "DDoS Protector configuration added successfully.", "alert-success"
+                )
+                return data, success
+            else:
+                flash(data, "alert-danger")
+                form.action.errors.append("DDoS Protector rejected the rule")
+                return form, False
+        except requests.exceptions.ConnectionError as exc:
+            flash("Could not save DDoS Protector rule:" + str(exc), "alert-danger")
+            form.action.errors.append("Error sending the rule to DDoS Protector")
+            return form, False
+    else:
+        return form, False
+
+
+def create_ddp_extras_from_flowspec_form(
+        flowspec_model_id: int,
+        rule_type: int,
+        form: Union[IPv6Form, IPv4Form]) -> Tuple[Union[DDPRuleExtras, Union[IPv6Form, IPv4Form], None], bool]:
+    """
+    Check if DDoS Protector rule should be created from an IP rule form,
+    if yes, check if the DDoS Protector rule already exists in DB.
+    If not, create it.
+
+    :param flowspec_model_id: ID of the flowspec model that existed before sending this form.
+    Set to -1 if the flowspec model is new.
+    :param rule_type: 4 for IPv4 form, 6 for IPv6 form. For other numbers the function
+    returns (None, True)
+    :param form: The form to create the DDPExtras model from
+    :returns: Tuple, where the first item can be:
+        - None, if the given form did not contain any information about DDoS Protector rules
+        - DDPRuleExtras on success, either newly created or read from database, if the rule that
+        would be created is the same as a rule that already exists
+        - Form with additional error messages on failure - either wrong rule format or connections
+        error when connecting to the DDoS Protector
+        The second item in the tuple is False, when an error occurred and a form is returned in the
+        first item in the tuple, True on success or if the form did not contain DDoS Protector rules.
+    """
+    extras_model = None
+    if form.preset.data is not None and form.preset.data != -1:
+        if flowspec_model_id != -1:
+            if rule_type == 4:
+                extras_model = get_ddp_extras_model_if_exists(
+                    flowspec_model_id,
+                    None,
+                    form.preset.data,
+                    json.dumps(filter_ddp_data_from_preset_form(form.data)),
+                )
+            elif rule_type == 6:
+                extras_model = get_ddp_extras_model_if_exists(
+                    None,
+                    flowspec_model_id,
+                    form.preset.data,
+                    json.dumps(filter_ddp_data_from_preset_form(form.data)),
+                )
+            if extras_model is not None:
+                flash(
+                    "The same DDoS Protector rule already linked to this Flowspec rule, "
+                    "no new DDoS Protector rules added.",
+                    "alert-info",
+                )
+                return extras_model, True
+        if extras_model is None:
+            return handle_ddp_preset_form(form)
+    return None, True
