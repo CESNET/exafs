@@ -16,7 +16,7 @@ from flowapp.models import (RTBH, Action, Community, Flowspec4, Flowspec6,
                             get_ipv4_model_if_exists, get_ipv6_model_if_exists,
                             get_rtbh_model_if_exists, get_user_actions,
                             get_user_communities, get_user_nets,
-                            insert_initial_communities)
+                            insert_initial_communities, remove_ddp_rules_by_flowspec_rule_id)
 from flowapp.output import (ROUTE_MODELS, RULE_TYPES, announce_route,
                             log_route, log_withdraw)
 from flowapp.utils import (flash_errors, get_state_by_time, quote_to_ent,
@@ -137,6 +137,9 @@ def delete_rule(rule_type, rule_id):
 
         log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
 
+        # remove DDoS Protector rules linked to this rule (if any exist)
+        remove_ddp_rules_by_flowspec_rule_id(model.id, rule_type, remove_local_copy=True)
+
         # delete from db
         db.session.delete(model)
         db.session.commit()
@@ -201,6 +204,7 @@ def group_delete():
             announce_route(route)
 
             log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
+            remove_ddp_rules_by_flowspec_rule_id(rule_id, rule_type_int, remove_local_copy=True)
 
         db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
         db.session.commit()
