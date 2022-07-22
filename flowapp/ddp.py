@@ -1,7 +1,12 @@
+import json
 from typing import List
 
+import requests
+from flask import flash
+
 from flowapp import db
-from flowapp.models import DDPDevice, DDPRulePreset
+from flowapp.ddp_api import send_rule_to_ddos_protector
+from flowapp.models import DDPDevice, DDPRulePreset, DDPRuleExtras
 
 
 def get_available_ddos_protector_device() -> DDPDevice:
@@ -225,3 +230,27 @@ def create_ddp_rule_from_preset_form(preset_id, user_modifications: dict, form_d
         if value is None and key != "protocol":
             del rule[key]
     return rule
+
+
+def create_ddp_rule_from_extras(model: DDPRuleExtras, rule_type: int) -> dict:
+    """
+    Create a DDoS Protector rule from saved information about the rule.
+
+    :param model:
+    :param rule_type: Type of the flowspec rule (4 for IPv4, 6 for IPv6)
+    :returns: DDoS Protector rule based on the model as a dict
+    """
+    data = None
+    if rule_type == 4:
+        data = create_ddp_rule_from_preset_form(
+            model.preset_id,
+            json.loads(model.modifications),
+            model.flowspec4.__dict__
+        )
+    elif rule_type == 6:
+        data = create_ddp_rule_from_preset_form(
+            model.preset_id,
+            json.loads(model.modifications),
+            model.flowspec6.__dict__
+        )
+    return data
