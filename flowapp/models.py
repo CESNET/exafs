@@ -1051,3 +1051,52 @@ def remove_ddp_rules_by_flowspec_rule_id(
                 )
     db.session.commit()
     return cnt
+
+
+def get_ddp_extras_model_if_exists(
+        flowspec4_id: Optional[int],
+        flowspec6_id: Optional[int],
+        preset_id: int,
+        modifications: str) -> Optional[DDPRuleExtras]:
+    """
+    Check if DDPExtras model identified by parameters exists.
+    If yes, return it, otherwise return None.
+    At least one of the flowspec IDs have to be filled,
+    either flowspec4_id or flowspec6_id (or both),
+    otherwise returns None.
+
+    :param flowspec4_id: ID of a flowspec4 model
+    :param flowspec6_id: ID of a flowspec6 model
+    :param preset_id: ID of a DDPRulePreset
+    :param modifications: User modifications as stringified JSON
+    :returns: DDPRuleExtras model if model based on given parameters exists,
+     None otherwise
+    """
+    if flowspec4_id is None and flowspec4_id is None:
+        return None
+    if flowspec6_id is None:
+        record = db.session.query(DDPRuleExtras)\
+            .filter(DDPRuleExtras.flowspec4_id == flowspec4_id,
+                    DDPRuleExtras.preset_id == preset_id,
+                    DDPRuleExtras.modifications == modifications
+                    )\
+            .first()
+    elif flowspec4_id is None:
+        record = db.session.query(DDPRuleExtras)\
+            .filter(DDPRuleExtras.flowspec6_id == flowspec6_id,
+                    DDPRuleExtras.preset_id == preset_id,
+                    DDPRuleExtras.modifications == modifications
+                    )\
+            .first()
+    else:
+        record = db.session.query(DDPRuleExtras)\
+            .filter(DDPRuleExtras.flowspec4_id == flowspec4_id,
+                    DDPRuleExtras.flowspec4_id == flowspec6_id,
+                    DDPRuleExtras.preset_id == preset_id,
+                    DDPRuleExtras.modifications == modifications
+                    )\
+            .first()
+    if record:
+        return record
+    else:
+        return None
