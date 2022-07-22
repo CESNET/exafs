@@ -1,7 +1,7 @@
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
-from typing import Optional, Dict
+from typing import Dict, List, Optional
 
 # models and tables
 
@@ -987,3 +987,12 @@ def format_preset(preset: Optional[DDPRulePreset]) -> Optional[Dict[str, any]]:
     fields.pop('id')
     fields.pop('editable')
     return {'name': name, 'id': id, 'editable': editable, 'fields': fields}
+
+
+def get_presets() -> List[DDPRulePreset]:
+    """Returns all saved DDoS Protector presets"""
+    presets = db.session.query(DDPRulePreset).all()
+    data = []
+    for preset in presets:
+        data.append(format_preset(preset))
+    return data
