@@ -322,6 +322,7 @@ class Flowspec4(db.Model):
     user = db.relationship('User', backref='flowspec4')
     rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'), nullable=False)
     rstate = db.relationship('Rstate', backref='flowspec4')
+    ddp_extras = db.relationship("DDPRuleExtras", back_populates="flowspec4")
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, protocol,
                  flags, packet_len, fragment, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
@@ -465,6 +466,7 @@ class Flowspec6(db.Model):
     user = db.relationship('User', backref='flowspec6')
     rstate_id = db.Column(db.Integer, db.ForeignKey('rstate.id'), nullable=False)
     rstate = db.relationship('Rstate', backref='flowspec6')
+    ddp_extras = db.relationship("DDPRuleExtras", back_populates="flowspec6")
 
     def __init__(self, source, source_mask, source_port, destination, destination_mask, destination_port, next_header,
                  flags, packet_len, expires, user_id, action_id, created=None, comment=None, rstate_id=1):
@@ -597,6 +599,7 @@ class DDPDevice(db.Model):
     active = db.Column(db.Boolean, nullable=False)
     key_header = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=True)
+    rules = db.relationship("DDPRuleExtras", back_populates="device", viewonly=True)
 
     def __init__(self, url, key, redirect_command, active, key_header='x-api-key', name=None):
         self.url = url
@@ -662,6 +665,28 @@ class DDPRulePreset(db.Model):
         self.tcp_flags = tcp_flags
         self.packet_lengths = packet_lengths
         self.editable = editable
+
+
+class DDPRuleExtras(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    flowspec4_id = db.Column(db.Integer, db.ForeignKey("flowspec4.id"), nullable=True)
+    flowspec4 = db.relationship("Flowspec4", back_populates="ddp_extras")
+    flowspec6_id = db.Column(db.Integer, db.ForeignKey("flowspec6.id"), nullable=True)
+    flowspec6 = db.relationship("Flowspec6", back_populates="ddp_extras")
+    preset_id = db.Column(db.Integer, db.ForeignKey('ddp_rule_preset.id'), nullable=False)
+    preset = db.relationship('DDPRulePreset', backref='ddp_rule_extras')
+    modifications = db.Column(db.Text, nullable=True)
+    ddp_rule_id = db.Column(db.Integer, nullable=True)
+    device_id = db.Column(db.Integer, db.ForeignKey('ddp_device.id'), nullable=True)
+    device = db.relationship('DDPDevice', backref='ddp_rule_extras')
+
+    def __init__(self, preset_id, flowspec4_id=None, flowspec6_id=None, modifications=None, ddp_rule_id=None, device_id=None):
+        self.preset_id = preset_id
+        self.flowspec4_id = flowspec4_id
+        self.flowspec6_id = flowspec6_id
+        self.modifications = modifications
+        self.ddp_rule_id = ddp_rule_id
+        self.device_id = device_id
 
 
 # DDL
