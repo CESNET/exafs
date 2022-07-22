@@ -5,7 +5,7 @@ from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MA
     IPV6_NEXT_HEADER
 from flowapp.flowspec import translate_sequence as trps
 from flask import current_app
-from flowapp.models import ASPath, DDPRuleExtras
+from flowapp.models import ASPath, DDPRuleExtras, Flowspec4, remove_ddp_rules_by_flowspec_rule_id, Flowspec6
 from flowapp import db
 
 
@@ -184,6 +184,12 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
             command = cmds.pop() + ';'
     else:
         command = '{};'.format(rule.action.command)
+
+    if message_type == WITHDRAW:
+        if isinstance(rule, Flowspec4):
+            remove_ddp_rules_by_flowspec_rule_id(rule.id, 4, remove_local_copy=False)
+        if isinstance(rule, Flowspec6):
+            remove_ddp_rules_by_flowspec_rule_id(rule.id, 6, remove_local_copy=False)
 
     try:
         if current_app.config['USE_RD']:
