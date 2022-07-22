@@ -10,7 +10,8 @@ from flask import (Blueprint, flash, redirect, render_template, request,
 from flowapp import app, constants, db, messages
 from flowapp.auth import (admin_required, auth_required, localhost_only,
                           user_or_admin_required)
-from flowapp.ddp import get_available_ddos_protector_device, create_ddp_rule_from_extras
+from flowapp.ddp import get_available_ddos_protector_device, create_ddp_rule_from_extras, \
+    create_ddp_extras_from_flowspec_form
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
 from flowapp.models import (RTBH, Action, Community, Flowspec4, Flowspec6,
                             get_ipv4_model_if_exists, get_ipv6_model_if_exists,
@@ -343,6 +344,12 @@ def ipv4_rule():
     if request.method == 'POST' and form.validate():
 
         model = get_ipv4_model_if_exists(form.data, 1)
+        data, success = create_ddp_extras_from_flowspec_form(model.id if model else -1, 4, form)
+        if success:
+            ddp_model = data
+        else:
+            return render_template('forms/ipv4_rule.j2', form=data,
+                                   action_url=url_for('rules.ipv4_rule'))
 
         if model:
             model.expires = round_to_ten_minutes(form.expires.data)
@@ -369,6 +376,9 @@ def ipv4_rule():
             db.session.add(model)
 
         db.session.commit()
+        if ddp_model is not None:
+            ddp_model.flowspec4_id = model.id
+            db.session.commit()
         flash(flash_message, 'alert-success')
 
         # announce route if model is in active state
@@ -411,6 +421,12 @@ def ipv6_rule():
     if request.method == 'POST' and form.validate():
 
         model = get_ipv6_model_if_exists(form.data, 1)
+        data, success = create_ddp_extras_from_flowspec_form(model.id if model else -1, 6, form)
+        if success:
+            ddp_model = data
+        else:
+            return render_template('forms/ipv6_rule.j2', form=data,
+                                   action_url=url_for('rules.ipv6_rule'))
 
         if model:
             model.expires = round_to_ten_minutes(form.expires.data)
@@ -437,6 +453,10 @@ def ipv6_rule():
             db.session.add(model)
 
         db.session.commit()
+        if ddp_model is not None:
+            ddp_model.flowspec6_id = model.id
+            db.session.add(ddp_model)
+            db.session.commit()
         flash(flash_message, 'alert-success')
 
         # announce routes
