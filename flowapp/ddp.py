@@ -1,7 +1,7 @@
 from typing import List
 
 from flowapp import db
-from flowapp.models import DDPDevice
+from flowapp.models import DDPDevice, DDPRulePreset
 
 
 def get_available_ddos_protector_device() -> DDPDevice:
@@ -163,3 +163,65 @@ def create_addr_from_ip_and_mask(ip, mask):
         return ip + "/" + str(mask)
     else:
         return ip
+
+
+def create_ddp_rule_from_preset_form(preset_id, user_modifications: dict, form_data: dict) -> dict:
+    """
+    Create a DDoS Protector rule based on preset, user's modifications and flowspec IP form data.
+    Most of the values are read from the DDoS Protector rule preset.
+    Before applying modifications, this function checks whether modified fields are allowed to
+    be modified in the preset.
+
+    :param preset_id: ID of the preset to use
+    :param user_modifications: Dict of modifications to the preset (should only contain keys
+    corresponding to user editable fields in the preset, other keys are skipped)
+    :param form_data: Dict of values from the Flowspec IP rule form.
+    :returns: DDoS Protector rule as a dict
+    """
+    preset = db.session.get(DDPRulePreset, preset_id)
+    rule = preset.__dict__.copy()
+    del rule["_sa_instance_state"]
+    for key, value in user_modifications.items():
+        if key in rule["editable"] and value is not None:
+            rule[key] = value
+    if form_data["source"] is not None and form_data["source"] != "":
+        rule["ip_src"] = [
+            create_addr_from_ip_and_mask(form_data["source"], form_data["source_mask"])
+        ]
+    if form_data["dest"] is not None and form_data["dest"] != "":
+        rule["ip_dst"] = [
+            create_addr_from_ip_and_mask(form_data["dest"], form_data["dest_mask"])
+        ]
+    if form_data["source_port"] is not None and form_data["source_port"] != "":
+        try:
+            rule["port_src"] = parse_ports_for_ddp(form_data["source_port"])
+        except ValueError:
+            # Should never happen, form validation will not let invalid data pass here
+            pass
+    if "dest_port" in form_data and form_data["dest_port"] is not None and form_data["dest_port"] != "":
+        try:
+            rule["port_dst"] = parse_ports_for_ddp(form_data["dest_port"])
+        except ValueError:
+            # Should never happen, form validation will not let invalid data pass here
+            pass
+    if "protocol" in rule and rule["protocol"] is not None:
+        if "," in rule["protocol"]:
+            rule["protocol"] = [f.upper() for f in rule["protocol"].split(",") if f != ""]
+    elif "protocol" in form_data and form_data["protocol"] is not None:
+        if form_data["protocol"].upper() != "ALL" and rule["rule_type"] == "filter":
+            # In DDoS Protector, empty protocol means all
+            rule["protocol"] = [form_data["protocol"].upper()]
+    if "tcp_flags" in rule and rule["tcp_flags"] is not None and rule["tcp_flags"] != "":
+        rule["tcp_flags"] = parse_ddp_tcp_flags(rule["tcp_flags"])
+    rule["enabled"] = True
+    rule["description"] = 'Generated using ExaFS from the "' + preset.name + '" preset.'
+    del rule["editable"]
+    if "name" in rule:
+        del rule["name"]
+    if "id" in rule:
+        del rule["id"]
+    for key, value in preset.__dict__.items():
+        # Filter and amplification rules can specify protocol different from the rule
+        if value is None and key != "protocol":
+            del rule[key]
+    return rule
