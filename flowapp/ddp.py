@@ -1,11 +1,12 @@
 import json
-from typing import List
+from typing import List, Union, Tuple
 
 import requests
 from flask import flash
 
 from flowapp import db
 from flowapp.ddp_api import send_rule_to_ddos_protector
+from flowapp.forms import IPv4Form, IPv6Form
 from flowapp.models import DDPDevice, DDPRulePreset, DDPRuleExtras
 
 
@@ -284,3 +285,32 @@ def reactivate_ddp_rule(model: DDPRuleExtras, rule: dict, device: DDPDevice) -> 
         except requests.exceptions.ConnectionError as exc:
             flash('Could not reactivate the DDoS Protector rule: ' + str(exc.response), 'alert-danger')
             return False
+
+
+def validate_ip_form_for_ddp_rule(
+        form: Union[IPv6Form, IPv4Form],
+        rule: dict) -> Tuple[Union[IPv6Form, IPv4Form], bool]:
+    """
+    Check if IP form is valid from the DDoS Protector point of view.
+    Returns edited form with errors included, if errors are found.
+
+    :param form: IP form object to check
+    :param rule: DDoS Protector rule to check against
+    :returns: Tuple where the first item is the form, the second item is bool
+    signifying whether the form was valid (True if it was, False if not)
+    """
+    if "ip_dst" not in rule:
+        form.dest.errors.append("Destination IP is required with DDoS Protector rules")
+        return form, False
+    if rule["rule_type"] == "syn_drop" or rule["rule_type"] == "tcp_authenticator":
+        if isinstance(form, IPv4Form) and (form.protocol.data != "tcp" and form.protocol.data != "all"):
+            form.protocol.errors.append(
+                "Selected mitigation strategy requires the protocol to be TCP or ALL"
+            )
+            return form, False
+        elif isinstance(form, IPv6Form) and (form.next_header.data != "tcp" and form.next_header.data != "all"):
+            form.next_header.errors.append(
+                "Selected mitigation strategy requires the protocol to be TCP or ALL"
+            )
+            return form, False
+    return form, True
