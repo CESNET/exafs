@@ -124,3 +124,35 @@ def parse_ddp_tcp_flags(val):
         neg_flag = False
 
     return [[values, mask]]
+
+
+def filter_ddp_data_from_preset_form(form_data: dict) -> dict:
+    """
+    Filter fields related to DDoS Protector rules from any form.
+    Removes the "ddp_" prefix.
+    """
+    ddp_keys = [
+        "ddp_threshold_bps",
+        "ddp_threshold_pps",
+        "ddp_vlan",
+        "ddp_protocol",
+        "ddp_bpf",
+        "ddp_threshold_syn_soft",
+        "ddp_threshold_syn_hard",
+        "ddp_fragmentation",
+        "ddp_packet_lengths",
+        "ddp_limit_bps",
+        "ddp_limit_pps",
+        "ddp_tcp_flags",
+        "ddp_validity_timeout",
+        "ddp_algorithm_type",
+        "ddp_table_exponent",
+    ]
+    result = {}
+    for key, value in form_data.items():
+        if value is None:
+            continue
+        if key in ddp_keys:
+            # Remove 'ddp_' from the key
+            result[key[4:]] = value
+    return result
