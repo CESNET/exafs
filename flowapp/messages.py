@@ -1,9 +1,11 @@
 from sys import prefix
+from typing import List
+
 from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MAX_PACKET, IPV4_PROTOCOL, \
     IPV6_NEXT_HEADER
 from flowapp.flowspec import translate_sequence as trps
 from flask import current_app
-from flowapp.models import ASPath
+from flowapp.models import ASPath, DDPRuleExtras
 from flowapp import db
 
 
@@ -30,7 +32,8 @@ def create_ipv4(rule, message_type=ANNOUNCE):
         'protocol': protocol,
         'flags': flags,
         'fragment': fragment,
-        'mask': IPV4_DEFMASK
+        'mask': IPV4_DEFMASK,
+        'ddp_rules': rule.ddp_extras
     }
 
     return create_message(rule, spec, message_type)
@@ -53,7 +56,8 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     spec = {
         'protocol': protocol,
         'mask': IPV6_DEFMASK,
-        'flags': flags
+        'flags': flags,
+        'ddp_rules': rule.ddp_extras
     }
 
     return create_message(rule, spec, message_type)
@@ -172,7 +176,14 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
         flags=flags,
         packet_len=packet_len)
 
-    command = '{};'.format(rule.action.command)
+    command = ';'
+
+    if rule.action.command == 'ddp' and 'ddp_rules' in ipv_specific:
+        cmds = get_unique_commands_from_extras(ipv_specific['ddp_rules'])
+        if len(cmds) > 0:
+            command = cmds.pop() + ';'
+    else:
+        command = '{};'.format(rule.action.command)
 
     try:
         if current_app.config['USE_RD']:
@@ -227,3 +238,8 @@ def prepare_multi_neighbor(targets):
     """
     neigbors = ['neighbor {}'.format(tgt) for tgt in targets]
     return ', '.join(neigbors) + ' '
+
+
+def get_unique_commands_from_extras(extras: List[DDPRuleExtras]):
+    cmds = [e.device.redirect_command for e in extras if e.device is not None]
+    return set(cmds)
