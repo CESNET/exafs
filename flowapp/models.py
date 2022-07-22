@@ -705,6 +705,9 @@ def insert_initial_actions(*args, **kwargs):
     db.session.add(Action(name='QoS 100 kbps', command='rate-limit 12800', description='QoS'))
     db.session.add(Action(name='QoS 1Mbps', command='rate-limit 13107200', description='QoS'))
     db.session.add(Action(name='QoS 10Mbps', command='rate-limit 131072000', description='QoS'))
+    db.session.add(Action(name='Redirect to DDoS Protector',
+                          command='ddp',
+                          description='Redirect to the DDoS Protector device'))
     db.session.add(Action(name='Discard', command='discard', description='Discard'))
     db.session.commit()
 
