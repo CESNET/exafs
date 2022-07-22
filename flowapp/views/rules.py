@@ -10,6 +10,7 @@ from flask import (Blueprint, flash, redirect, render_template, request,
 from flowapp import app, constants, db, messages
 from flowapp.auth import (admin_required, auth_required, localhost_only,
                           user_or_admin_required)
+from flowapp.ddp import get_available_ddos_protector_device, create_ddp_rule_from_extras
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
 from flowapp.models import (RTBH, Action, Community, Flowspec4, Flowspec6,
                             get_ipv4_model_if_exists, get_ipv6_model_if_exists,
@@ -76,6 +77,10 @@ def reactivate_rule(rule_type, rule_id):
         route_model = ROUTE_MODELS[rule_type]
 
         if model.rstate_id == 1:
+            # Resend DDoS Protector rules
+            if (rule_type == 4 or rule_type == 6) and model.action.command == 'ddp' and len(model.ddp_extras) > 0:
+                for e in model.ddp_extras:
+                    create_ddp_rule_from_extras(e, rule_type)
             # announce route
             route = route_model(model, constants.ANNOUNCE)
             announce_route(route)
