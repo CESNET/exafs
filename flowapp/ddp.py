@@ -156,3 +156,10 @@ def filter_ddp_data_from_preset_form(form_data: dict) -> dict:
             # Remove 'ddp_' from the key
             result[key[4:]] = value
     return result
+
+
+def create_addr_from_ip_and_mask(ip, mask):
+    if mask is not None:
+        return ip + "/" + str(mask)
+    else:
+        return ip
