@@ -254,3 +254,33 @@ def create_ddp_rule_from_extras(model: DDPRuleExtras, rule_type: int) -> dict:
             model.flowspec6.__dict__
         )
     return data
+
+
+def reactivate_ddp_rule(model: DDPRuleExtras, rule: dict, device: DDPDevice) -> bool:
+    """
+    Send a DDoS protector rule to a given DDoS protector device and
+    verify the response. Updates the DDPRuleExtras model to include
+    the correct ddp_rule_id and device_id.
+
+    :param model: DDPRuleExtras model to update after the rule is created
+    :param rule: DDoS Protector rule to send
+    :param device: DDoS protector device to send the rule to
+    :returns: True if sending the rule was successful, False if error occurred
+    """
+    if rule is not None:
+        try:
+            response = send_rule_to_ddos_protector(rule, device.url, device.key, device.key_header)
+            if response.status_code == 201:
+                flash(
+                    "DDoS Protector configuration added successfully.", "alert-success"
+                )
+                new_rule = response.json()
+                model.device_id = device.id
+                model.ddp_rule_id = new_rule["id"]
+                db.session.commit()
+                return True
+            else:
+                return False
+        except requests.exceptions.ConnectionError as exc:
+            flash('Could not reactivate the DDoS Protector rule: ' + str(exc.response), 'alert-danger')
+            return False
