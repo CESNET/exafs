@@ -1,6 +1,7 @@
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
+from typing import Optional, Dict
 
 # models and tables
 
@@ -666,6 +667,9 @@ class DDPRulePreset(db.Model):
         self.packet_lengths = packet_lengths
         self.editable = editable
 
+    def as_dict(self):
+        return format_preset(self)
+
 
 class DDPRuleExtras(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -954,3 +958,32 @@ def get_ip_rules(rule_type, rule_state, sort='expires', order='desc'):
             rules_rtbh = db.session.query(RTBH).order_by(sorting_rtbh()).all()
 
         return rules_rtbh
+
+
+def format_preset(preset: Optional[DDPRulePreset]) -> Optional[Dict[str, any]]:
+    """
+    Convert DDPRulePreset to a dict for easier handling.
+
+    :param preset: DDPRulePreset to convert to a dict
+    :returns: None if preset is None. If preset is not None, the resulting dict contains
+    keys name, id, editable and fields:
+    - name is the preset name
+    - id is the preset ID
+    - editable is an array of strings, containing names of fields that the user can edit
+    - fields contains the rest of the model fields. Fields with None value are removed.
+    """
+    if preset is None:
+        return None
+    fields = preset.__dict__.copy()
+    for key in preset.__dict__:
+        if fields[key] is None:
+            fields.pop(key)
+
+    fields.pop('_sa_instance_state')
+    name = fields['name']
+    id = fields['id']
+    editable = fields['editable'].split(';')
+    fields.pop('name')
+    fields.pop('id')
+    fields.pop('editable')
+    return {'name': name, 'id': id, 'editable': editable, 'fields': fields}
