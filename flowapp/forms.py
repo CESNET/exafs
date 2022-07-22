@@ -273,6 +273,45 @@ class RTBHForm(FlaskForm):
         return result
 
 
+class DDPPresetForm(FlaskForm):
+    """
+    Base class for storing DDoS protector preset values.
+    Fields are only used to hold values, but are not rendered in templates from
+    WTForms. Fields are instead rendered from typescript code to be more dynamic.
+    This class contains _all possible_ fields, that can appear in presets and users
+    can change.
+    All the fields are optional, so this class can be included in any other form
+    without interference.
+    """
+    # ID of the preset
+    preset = IntegerField('Mitigation strategy', validators=[Optional()])
+    ddp_threshold_bps = IntegerField('Threshold [bps]', validators=[Optional()])
+    ddp_threshold_pps = IntegerField('Threshold [pps]', validators=[Optional()])
+    ddp_vlan = IntegerField('Vlan ID', validators=[Optional()])
+
+    # Filter rule
+    ddp_protocol = StringField('Protocol', validators=[Optional()])
+
+    # SynDrop rule
+    ddp_threshold_syn_soft = IntegerField('Soft SYN threshold', validators=[Optional()])
+    ddp_threshold_syn_hard = IntegerField('Hard SYN threshold', validators=[Optional()])
+
+    # Amplification rule
+    ddp_fragmentation = StringField('Fragmentation', validators=[Optional()])
+    ddp_packet_lengths = StringField('Packet lengths', validators=[Optional()])
+    ddp_limit_bps = IntegerField('Limit [bps]', validators=[Optional()])
+    ddp_limit_pps = IntegerField('Limit [pps]', validators=[Optional()])
+    ddp_tcp_flags = StringField('TCP Flags', validators=[Optional()])
+
+    # TCPAuth
+    ddp_validity_timeout = StringField('Validity timeout', validators=[Optional()])
+    # threshold_hard
+    ddp_algorithm_type = StringField('Algorithm type', validators=[Optional()])
+
+    # SynDrop, Amplification or TCPAuth
+    ddp_table_exponent = IntegerField('Table exponent', validators=[Optional()])
+
+
 class IPForm(FlaskForm):
     """
     Base class for IPv4 and IPv6 rules
