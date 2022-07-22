@@ -6,6 +6,7 @@ from wtforms import (BooleanField, DateTimeField, DateTimeLocalField, HiddenFiel
                      StringField, TextAreaField)
 from wtforms.validators import (DataRequired, Email, InputRequired, IPAddress,
                                 Length, NumberRange, Optional)
+from wtforms.widgets import PasswordInput
 
 from flowapp.constants import (IPV4_FRAGMENT, IPV4_PROTOCOL, IPV6_NEXT_HEADER,
                                TCP_FLAGS, FORM_TIME_PATTERN)
@@ -511,3 +512,14 @@ class IPv6Form(IPForm):
 
         return True
 
+
+class DDPDeviceForm(FlaskForm):
+    """
+    Settings for a specific DDoS Protector device
+    """
+    name = StringField('Device name (optional)', validators=[Optional()])
+    url = StringField('Device\'s REST API URL')
+    key = StringField('API key for the device\'s REST API', widget=PasswordInput(hide_value=False))
+    key_header = StringField('Key HTTP header', default='x-api-key')
+    redirect_command = StringField('ExaBGP command (redirect)', validators=[DataRequired()])
+    active = BooleanField('Send rules to this device')
