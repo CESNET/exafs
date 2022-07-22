@@ -312,7 +312,7 @@ class DDPPresetForm(FlaskForm):
     ddp_table_exponent = IntegerField('Table exponent', validators=[Optional()])
 
 
-class IPForm(FlaskForm):
+class IPForm(DDPPresetForm):
     """
     Base class for IPv4 and IPv6 rules
     """
