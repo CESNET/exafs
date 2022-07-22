@@ -589,6 +589,24 @@ class Log(db.Model):
         self.author = author
 
 
+class DDPDevice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(1000), nullable=False)
+    key = db.Column(db.String(1000), nullable=False)
+    redirect_command = db.Column(db.Text, nullable=False)
+    active = db.Column(db.Boolean, nullable=False)
+    key_header = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(255), nullable=True)
+
+    def __init__(self, url, key, redirect_command, active, key_header='x-api-key', name=None):
+        self.url = url
+        self.key = key
+        self.redirect_command = redirect_command
+        self.active = active
+        self.key_header = key_header
+        self.name = name
+
+
 # DDL
 # default values for tables inserted after create
 
