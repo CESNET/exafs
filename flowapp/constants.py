@@ -82,6 +82,13 @@ IPV4_PROTOCOL = {
     'all': ''
 }
 
+IPV4_FRAGMENT = {
+    'dont' : 'dont-fragment',
+    'first' : 'first-fragment',
+    'is' : 'is-fragment',
+    'last' : 'last-fragment'
+}
+
 
 
 RULE_TYPE_DISPATCH = {
@@ -125,3 +132,5 @@ TCP_FLAGS = [
     ('PUSH', 'PSH'),
     ('URGENT', 'URG')
     ]
+
+FORM_TIME_PATTERN = '%Y-%m-%dT%H:%M'   

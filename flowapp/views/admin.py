@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, flash, request, url_for
 from sqlalchemy.exc import IntegrityError
 
-from ..forms import UserForm, ActionForm, OrganizationForm, CommunityForm
-from ..models import User, Action, Organization, Role, insert_user, get_existing_action, Community, \
+from ..forms import ASPathForm, UserForm, ActionForm, OrganizationForm, CommunityForm
+from ..models import ASPath, User, Action, Organization, Role, insert_user, get_existing_action, Community, \
     get_existing_community, Log
 from ..auth import auth_required, admin_required
 from flowapp import db
@@ -183,6 +183,73 @@ def delete_organization(org_id):
     return redirect(url_for('admin.organizations'))
 
 
+@admin.route('/as-paths')
+@auth_required
+@admin_required
+def as_paths():
+    mpaths = db.session.query(ASPath).all()
+    return render_template('pages/as_paths.j2', paths=mpaths)
+
+
+@admin.route('/as-path', methods=['GET', 'POST'])
+@auth_required
+@admin_required
+def as_path():
+    form = ASPathForm(request.form)
+
+    if request.method == 'POST' and form.validate():
+        # test if user is unique
+        exist = db.session.query(ASPath).filter_by(prefix=form.prefix.data).first()
+        if not exist:
+            print(form.as_path.data)
+            pth = ASPath(prefix=form.prefix.data, as_path=form.as_path.data)
+            print(pth)
+            db.session.add(pth)
+            db.session.commit()
+            flash('AS-path saved')
+            return redirect(url_for('admin.as_paths'))
+        else:
+            flash(u'Prefix {} already taken'.format(
+                form.prefix.data), 'alert-danger')
+
+    action_url = url_for('admin.as_path')
+    return render_template('forms/simple_form.j2', title="Add new AS-path to Flowspec", form=form,
+                           action_url=action_url)
+
+
+@admin.route('/as-path/edit/<int:path_id>', methods=['GET', 'POST'])
+@auth_required
+@admin_required
+def edit_as_path(path_id):
+    pth = db.session.query(ASPath).get(path_id)
+    form = ASPathForm(request.form, obj=pth)
+
+    if request.method == 'POST' and form.validate():
+        form.populate_obj(pth)
+        db.session.commit()
+        flash('AS-path updated')
+        return redirect(url_for('admin.as_paths'))
+
+    action_url = url_for('admin.edit_as_path', path_id=pth.id)
+    return render_template('forms/simple_form.j2', title=u"Editing {}".format(pth.prefix), form=form,
+                           action_url=action_url)
+
+
+@admin.route('/as-path/delete/<int:path_id>', methods=['GET'])
+@auth_required
+@admin_required
+def delete_as_path(path_id):
+    pth = db.session.query(ASPath).get(path_id)
+    db.session.delete(pth)
+    message = f'AS path {pth.prefix} : {pth.as_path} deleted'
+    alert_type = 'alert-success'
+    
+    flash(message, alert_type)
+    db.session.commit()
+
+    return redirect(url_for('admin.as_paths'))
+
+
 @admin.route('/actions')
 @auth_required
 @admin_required
@@ -278,6 +345,7 @@ def community():
                                   larcomm=form.larcomm.data,
                                   extcomm=form.extcomm.data,
                                   description=form.description.data,
+                                  as_path=form.as_path.data,
                                   role_id=form.role_id.data)
             db.session.add(community)
             db.session.commit()

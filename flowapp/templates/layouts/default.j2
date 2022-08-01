@@ -14,78 +14,71 @@
     <title>{% block title %}{% endblock %}</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Bootstrap theme -->
-    <link href="/static/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
-  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <!-- Custom styles for this template -->
     <link href="/static/mystyle.css" rel="stylesheet">
+    
 
-    <script type="text/javascript" src="/static/jquery/jquery.min.js"></script>
-    <script type="text/javascript" src="/static/moment/moment.min.js"></script>
-    <script type="text/javascript" src="/static/bootstrap/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/static/datepicker/js/bootstrap-datetimepicker.min.js"></script>
-    
-    
-    <link rel="stylesheet" href="/static/datepicker/css/bootstrap-datetimepicker.min.css" />
 
   </head>
 
   <body>
 
-    <!-- Fixed navbar -->
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
+    <div class="container">
+      <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
           <a class="navbar-brand" href="/">{{ config['APP_NAME'] }} / ExaFS_{{ session['app_version'] }}</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              {% if session['can_edit'] %}
+                  <li class="nav-item"><a class="nav-link" href="{{ url_for('rules.ipv4_rule') }}">Add IPv4</a></li>
+                  <li class="nav-item"><a class="nav-link" href="{{ url_for('rules.ipv6_rule') }}">Add IPv6</a></li>
+                  <li class="nav-item"><a class="nav-link" href="{{ url_for('rules.rtbh_rule') }}">Add RTBH</a></li>
+                  <li class="nav-item"><a class="nav-link" href="{{ url_for('api_keys.all') }}">API Key</a></li>
+              {% endif %}
+              {% if 3 in session['user_role_ids'] %}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Admin
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <li><a class="dropdown-item" href="{{ url_for('admin.log') }}">Commands Log</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">Users</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.user') }}">Add User</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.organizations') }}">Organizations</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.organization') }}">Add Org.</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.actions') }}">Action</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.action') }}">Add action</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.communities') }}">RTBH Communities</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('admin.community') }}">Add RTBH Comm.</a></li>
+                </ul>
+              </li>
+              {% endif %}
+            </ul>
+            <span class="navbar-text">
+              {{ session['user_name']}} &lt;{{ session['user_email'] }}&gt;, 
+              role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_orgs'] }}</span>
+          </div>    
+        
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-
-            {% if session['can_edit'] %}
-              <li><a href="{{ url_for('rules.ipv4_rule') }}">Add IPv4</a></li>
-              <li><a href="{{ url_for('rules.ipv6_rule') }}">Add IPv6</a></li>
-              <li><a href="{{ url_for('rules.rtbh_rule') }}">Add RTBH</a></li>
-              <li><a href="{{ url_for('api_keys.all') }}">API Key</a></li>
-            {% endif %}
-
-            {% if 3 in session['user_role_ids'] %}
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Admin <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="{{ url_for('admin.log') }}">Commands Log</a></li>
-                <li><a href="{{ url_for('admin.users') }}">Users</a></li>
-                <li><a href="{{ url_for('admin.user') }}">Add User</a></li>
-                <li><a href="{{ url_for('admin.organizations') }}">Organizations</a></li>
-                <li><a href="{{ url_for('admin.organization') }}">Add Org.</a></li>
-                <li><a href="{{ url_for('admin.actions') }}">Action</a></li>
-                <li><a href="{{ url_for('admin.action') }}">Add action</a></li>
-                <li><a href="{{ url_for('admin.communities') }}">RTBH Communities</a></li>
-                <li><a href="{{ url_for('admin.community') }}">Add RTBH Comm.</a></li>
-              </ul>
-            </li>
-            {% endif %}
-
-          </ul>
-          <p class="navbar-text">{{ session['user_name']}} &lt;{{ session['user_email'] }}&gt;, role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_orgs'] }}</p>
-        </div><!--/.nav-collapse -->
-      </div>
-    </nav>
+      </nav>
+    </div>  
     <div class="container theme-showcase" role="main">
 
       {% with messages = get_flashed_messages(with_categories=true)  %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert {{category}}" role="alert">
-              <a class="close" data-dismiss="alert">&times;</a>
+            <div class="alert alert-dismissible fade show {{category}}" role="alert">
               {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"
+                            aria-label="Close"></button>
             </div>
           {% endfor %}
         {% endif %}
@@ -105,6 +98,6 @@
     </nav>
 
     <script type="text/javascript" src="/static/js/ip_context.js"></script>  
-
+    <script type="text/javascript" src="/static/js/enable_tooltips.js"></script>
   </body>
 </html>

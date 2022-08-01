@@ -1,7 +1,7 @@
 from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
-from flowapp.constants import COMP_FUNCS, TIME_YEAR, TIME_US, TIME_STMP, TIME_FORMAT_ARG, RULE_TYPES
+from flowapp.constants import COMP_FUNCS, TIME_YEAR, TIME_US, TIME_STMP, TIME_FORMAT_ARG, RULE_TYPES, FORM_TIME_PATTERN
 
 
 def other_rtypes(rtype):
@@ -41,6 +41,11 @@ def parse_api_time(apitime):
     apitime = str(apitime)
 
     try:
+        return round_to_ten_minutes(datetime.strptime(apitime, FORM_TIME_PATTERN)), TIME_US
+    except ValueError:
+        mytime = False
+
+    try:
         return round_to_ten_minutes(webpicker_to_datetime(apitime)), TIME_YEAR
     except ValueError:
         mytime = False
@@ -67,7 +72,8 @@ def quote_to_ent(comment):
     :param comment: string to be sanitized
     :return: string
     """
-    return comment.replace('"', '&quot;')
+    if comment:
+        return comment.replace('"', '&quot;')
 
 
 def webpicker_to_datetime(webtime, format=TIME_YEAR):

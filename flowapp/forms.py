@@ -1,13 +1,55 @@
-from flask_wtf import FlaskForm
-from wtforms import StringField, SelectMultipleField, TextAreaField, IntegerField, SelectField, HiddenField
-from wtforms.validators import DataRequired, Length, Email, NumberRange, Optional, IPAddress
-
-from flowapp.validators import IPv6Address, IPv4Address, NetRangeString, PortString, address_with_mask, address_in_range, \
-    whole_world_range, network_in_range, ipaddress
-
-from flowapp.constants import IPV4_PROTOCOL, IPV6_NEXT_HEADER, TCP_FLAGS
-
 from flask import current_app
+from flask_wtf import FlaskForm
+from wtforms import widgets
+from wtforms import (BooleanField, DateTimeField, DateTimeLocalField, HiddenField,
+                     IntegerField, SelectField, SelectMultipleField,
+                     StringField, TextAreaField)
+from wtforms.validators import (DataRequired, Email, InputRequired, IPAddress,
+                                Length, NumberRange, Optional)
+
+from flowapp.constants import (IPV4_FRAGMENT, IPV4_PROTOCOL, IPV6_NEXT_HEADER,
+                               TCP_FLAGS, FORM_TIME_PATTERN)
+from flowapp.validators import (IPv4Address, IPv6Address, NetRangeString,
+                                PortString, address_in_range,
+                                address_with_mask, ipaddress, network_in_range,
+                                whole_world_range)
+
+from flowapp.utils import parse_api_time
+
+
+
+class MultiFormatDateTimeLocalField(DateTimeField):
+    """
+    Same as :class:`~wtforms.fields.DateTimeField`, but represents an
+    ``<input type="datetime-local">``.
+
+    Custom implementation uses default HTML5 format for parsing the field.
+    It's possible to use multiple formats - used in API.
+
+    """
+
+    widget = widgets.DateTimeLocalInput()
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("format", "%Y-%m-%dT%H:%M")
+        self.pref_format = None
+        super().__init__(*args, **kwargs)
+
+    def process_formdata(self, valuelist):
+        if not valuelist:
+            return
+
+        date_str = " ".join(valuelist)
+        result, pref_format = parse_api_time(date_str)
+        if result:
+            print("TEST", result)
+            self.data = result
+            self.pref_format = pref_format
+        else:
+            self.data = None
+            self.pref_format = None
+            raise ValueError(self.gettext("Not a valid datetime value."))
+
 
 
 class UserForm(FlaskForm):
@@ -16,7 +58,7 @@ class UserForm(FlaskForm):
     used in Admin
     """
     uuid = StringField(
-        'Unique User ID', validators=[DataRequired("Please provide UUID"),
+        'Unique User ID', validators=[InputRequired("Please provide UUID"),
                                       Email("Please provide valid email")]
     )
 
@@ -95,6 +137,22 @@ class ActionForm(FlaskForm):
                           validators=[DataRequired()])
 
 
+class ASPathForm(FlaskForm):
+    """
+    AS Path form object
+    used in Admin
+    """
+    prefix = StringField(
+        'Prefix',
+        validators=[Length(max=120), DataRequired()]
+    )
+
+    as_path = StringField(
+        'as-path value',
+        validators=[Length(max=250), DataRequired()]
+    )
+
+
 class CommunityForm(FlaskForm):
     """
     Community form object
@@ -125,6 +183,8 @@ class CommunityForm(FlaskForm):
     role_id = SelectField('Minimal required role',
                           choices=[('2', 'user'), ('3', 'admin')],
                           validators=[DataRequired()])
+
+    as_path = BooleanField('add AS-path (checked = true)')                      
 
     def validate(self):
         """
@@ -175,7 +235,7 @@ class RTBHForm(FlaskForm):
                             coerce=int,
                             validators=[DataRequired(message="Please select a community for the rule."),])
 
-    expires = StringField('Expires')
+    expires = MultiFormatDateTimeLocalField('Expires',  format=FORM_TIME_PATTERN, validators=[DataRequired(), InputRequired()])
 
     comment = arange = TextAreaField('Comments'
                                      )
@@ -250,7 +310,8 @@ class IPForm(FlaskForm):
                          coerce=int,
                          validators=[DataRequired(message="Please select an action for the rule.")])
 
-    expires = StringField('Expires')
+    expires = MultiFormatDateTimeLocalField('Expires',  format='%Y-%m-%dT%H:%M', validators=[InputRequired()])
+
 
     comment = arange = TextAreaField('Comments')
 
@@ -354,13 +415,17 @@ class IPv4Form(IPForm):
                            choices=[(pr, pr.upper()) for pr in IPV4_PROTOCOL.keys()],
                            validators=[DataRequired()])
 
+    fragment = SelectMultipleField('Fragment',
+                           choices=[(frv, frk.upper()) for frk, frv in IPV4_FRAGMENT.items()],
+                           validators=[Optional()])                           
+
     def validate_ipv_specific(self):
         """
         validate protocol and flags, set error message if validation fails
         :return: boolean validation result
         """
 
-        if len(self.flags.data) > 0 and self.protocol.data != 'tcp':
+        if self.flags.data and self.protocol.data and len(self.flags.data) > 0 and self.protocol.data != 'tcp':
             self.flags.errors.append("Can not set TCP flags for protocol {} !".format(self.protocol.data.upper()))
             return False
         return True
@@ -406,3 +471,4 @@ class IPv6Form(IPForm):
             return False
 
         return True
+

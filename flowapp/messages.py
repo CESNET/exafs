@@ -1,7 +1,10 @@
+from sys import prefix
 from flowapp.constants import ANNOUNCE, WITHDRAW, IPV4_DEFMASK, IPV6_DEFMASK, MAX_PACKET, IPV4_PROTOCOL, \
     IPV6_NEXT_HEADER
 from flowapp.flowspec import translate_sequence as trps
 from flask import current_app
+from flowapp.models import ASPath
+from flowapp import db
 
 
 def create_ipv4(rule, message_type=ANNOUNCE):
@@ -13,13 +16,20 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     protocol = ''
     if rule.protocol and rule.protocol != 'all':
         protocol = 'protocol ={};'.format(IPV4_PROTOCOL[rule.protocol])
-    flagstring = rule.flags.replace(";", " ")
+
+    flagstring = rule.flags.replace(";", " ") if rule.flags else ''
+    
     flags = 'tcp-flags {};'.format(
         flagstring) if rule.flags and rule.protocol == 'tcp' else ''
+
+    fragment_string = rule.fragment.replace(";", " ") if rule.fragment else ''
+    fragment = 'fragment [ {} ];'.format(fragment_string) if rule.fragment else ''
+
 
     spec = {
         'protocol': protocol,
         'flags': flags,
+        'fragment': fragment,
         'mask': IPV4_DEFMASK
     }
 
@@ -80,7 +90,6 @@ def create_rtbh(rule, message_type=ANNOUNCE):
 
     try:
         if current_app.config['USE_MULTI_NEIGHBOR'] and rule.community.comm:
-            print("rule community", rule.community.comm)
             if rule.community.comm in current_app.config['MULTI_NEIGHBOR'].keys():
                 target = current_app.config['MULTI_NEIGHBOR'].get(rule.community.comm)
                 neighbor = 'neighbor {target} '.format(target=target)
@@ -93,16 +102,20 @@ def create_rtbh(rule, message_type=ANNOUNCE):
     except KeyError:
         neighbor = ''
 
-    print('generated neighbor', neighbor)
-
     community_string = "community [{}]".format(rule.community.comm) if rule.community.comm else ""
     large_community_string = "large-community [{}]".format(rule.community.larcomm) if rule.community.larcomm else ""
     extended_community_string = "extended-community [{}]".format(rule.community.extcomm) if rule.community.extcomm else ""
 
-    return "{neighbor}{action} route {source} next-hop {nexthop} {community} {large_community} {extended_community}{rd_string}".format(
+    as_path_string = ''
+    if rule.community.as_path:
+        match = db.session.query(ASPath).filter(ASPath.prefix == source).first()
+        as_path_string = f"as-path [ {match.as_path} ]" if match else ''
+        
+    return "{neighbor}{action} route {source} next-hop {nexthop} {as_path} {community} {large_community} {extended_community}{rd_string}".format(
         neighbor=neighbor,
         action=action,
         source=source,
+        as_path=as_path_string,
         community=community_string,
         large_community=large_community_string,
         extended_community=extended_community_string,
@@ -145,16 +158,18 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
 
     protocol = ipv_specific['protocol']
     flags = ipv_specific['flags']
+    fragment = ipv_specific.get("fragment", None)
 
     packet_len = 'packet-length {};'.format(
         trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ''
 
-    match_body = '{source} {source_port} {dest} {dest_port} {protocol} {flags} {packet_len}'.format(
+    match_body = '{source} {source_port} {dest} {dest_port} {protocol} {fragment} {flags} {packet_len}'.format(
         source=source,
         source_port=source_port,
         dest=dest,
         dest_port=dest_port,
         protocol=protocol,
+        fragment=fragment,
         flags=flags,
         packet_len=packet_len)
 
@@ -206,7 +221,6 @@ def sanitize_mask(rule_mask, default_mask =IPV4_DEFMASK):
         return rule_mask
     else:
         return default_mask
-
 
 def prepare_multi_neighbor(targets):
     """

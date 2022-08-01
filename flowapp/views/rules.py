@@ -18,9 +18,8 @@ from flowapp.models import (RTBH, Action, Community, Flowspec4, Flowspec6,
                             insert_initial_communities)
 from flowapp.output import (ROUTE_MODELS, RULE_TYPES, announce_route,
                             log_route, log_withdraw)
-from flowapp.utils import (datetime_to_webpicker, flash_errors,
-                           get_state_by_time, quote_to_ent,
-                           round_to_ten_minutes, webpicker_to_datetime)
+from flowapp.utils import (flash_errors, get_state_by_time, quote_to_ent,
+                           round_to_ten_minutes)
 
 rules = Blueprint('rules', __name__, template_folder='templates')
 
@@ -67,9 +66,9 @@ def reactivate_rule(rule_type, rule_id):
     # do not need to validate - all is readonly
     if request.method == 'POST':
         # set new expiration date
-        model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+        model.expires = round_to_ten_minutes(form.expires.data)
         # set again the active state
-        model.rstate_id = get_state_by_time(webpicker_to_datetime(form.expires.data))
+        model.rstate_id = get_state_by_time(form.expires.data)
         model.comment = form.comment.data
         db.session.commit()
         flash(u'Rule successfully updated', 'alert-success')
@@ -98,7 +97,7 @@ def reactivate_rule(rule_type, rule_id):
     else:
         flash_errors(form)
 
-    form.expires.data = datetime_to_webpicker(model.expires)
+    form.expires.data = model.expires
     for field in form:
         if field.name not in ['expires', 'csrf_token', 'comment']:
             field.render_kw = {'disabled': 'disabled'}
@@ -249,7 +248,7 @@ def group_update():
     if rule_type_int == 1:
         form.community.choices = get_user_communities(session['user_role_ids'])
 
-    form.expires.data = datetime_to_webpicker(datetime.now())
+    form.expires.data = datetime.now()
     for field in form:
         if field.name not in ['expires', 'csrf_token', 'comment']:
             field.render_kw = {'disabled': 'disabled'}
@@ -281,9 +280,9 @@ def group_update_save(rule_type):
     form = form_name(request.form)
 
     # set new expiration date
-    expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+    expires = round_to_ten_minutes(form.expires.data)
     # set state by time
-    rstate_id = get_state_by_time(webpicker_to_datetime(form.expires.data))
+    rstate_id = get_state_by_time(form.expires.data)
     comment = form.comment.data
     route_model = ROUTE_MODELS[rule_type]
 
@@ -337,7 +336,7 @@ def ipv4_rule():
         model = get_ipv4_model_if_exists(form.data, 1)
 
         if model:
-            model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+            model.expires = round_to_ten_minutes(form.expires.data)
             flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
         else:
             model = Flowspec4(
@@ -350,11 +349,12 @@ def ipv4_rule():
                 protocol=form.protocol.data,
                 flags=";".join(form.flags.data),
                 packet_len=form.packet_len.data,
-                expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+                fragment=";".join(form.fragment.data),
+                expires=round_to_ten_minutes(form.expires.data),
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session['user_id'],
-                rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
+                rstate_id=get_state_by_time(form.expires.data)
             )
             flash_message = u'IPv4 Rule saved'
             db.session.add(model)
@@ -380,7 +380,7 @@ def ipv4_rule():
                 ))
 
     default_expires = datetime.now() + timedelta(days=7)
-    form.expires.data = datetime_to_webpicker(default_expires)
+    form.expires.data = default_expires
 
     return render_template('forms/ipv4_rule.j2', form=form, action_url=url_for('rules.ipv4_rule'))
 
@@ -404,7 +404,7 @@ def ipv6_rule():
         model = get_ipv6_model_if_exists(form.data, 1)
 
         if model:
-            model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+            model.expires = round_to_ten_minutes(form.expires.data)
             flash_message = u'Existing IPv4 Rule found. Expiration time was updated to new value.'
         else:
 
@@ -418,11 +418,11 @@ def ipv6_rule():
                 next_header=form.next_header.data,
                 flags=";".join(form.flags.data),
                 packet_len=form.packet_len.data,
-                expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+                expires=round_to_ten_minutes(form.expires.data),
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session['user_id'],
-                rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
+                rstate_id=get_state_by_time(form.expires.data)
             )
             flash_message = u'IPv6 Rule saved'
             db.session.add(model)
@@ -448,8 +448,8 @@ def ipv6_rule():
                 ))
 
     default_expires = datetime.now() + timedelta(days=7)
-    form.expires.data = datetime_to_webpicker(default_expires)
-
+    form.expires.data = default_expires
+    
     return render_template('forms/ipv6_rule.j2', form=form, action_url=url_for('rules.ipv6_rule'))
 
 
@@ -474,7 +474,7 @@ def rtbh_rule():
         model = get_rtbh_model_if_exists(form.data, 1)
 
         if model:
-            model.expires = round_to_ten_minutes(webpicker_to_datetime(form.expires.data))
+            model.expires = round_to_ten_minutes(form.expires.data)
             flash_message = u'Existing RTBH Rule found. Expiration time was updated to new value.'
         else:
 
@@ -484,10 +484,10 @@ def rtbh_rule():
                 ipv6=form.ipv6.data,
                 ipv6_mask=form.ipv6_mask.data,
                 community_id=form.community.data,
-                expires=round_to_ten_minutes(webpicker_to_datetime(form.expires.data)),
+                expires=round_to_ten_minutes(form.expires.data),
                 comment=quote_to_ent(form.comment.data),
                 user_id=session['user_id'],
-                rstate_id=get_state_by_time(webpicker_to_datetime(form.expires.data))
+                rstate_id=get_state_by_time(form.expires.data)
             )
             db.session.add(model)
             db.session.commit()
@@ -511,8 +511,8 @@ def rtbh_rule():
                 ))
 
     default_expires = datetime.now() + timedelta(days=7)
-    form.expires.data = datetime_to_webpicker(default_expires)
-
+    form.expires.data = default_expires
+    
     return render_template('forms/rtbh_rule.j2', form=form, action_url=url_for('rules.rtbh_rule'))
 
 

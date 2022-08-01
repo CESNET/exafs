@@ -13,15 +13,20 @@
         {% if (field.type != 'HiddenField' and field.type !='CSRFTokenField') and label_visible %}
             <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
         {% endif %}
+        {% if field.type == 'SelectField' %}
+            {% set input_class = 'form-select' %}
+        {% else %}
+            {% set input_class = 'form-control' %}
+        {% endif %}
         {% if tooltip %}
             <div class="input-group">
-              {{ field(class_='form-control', **kwargs) }}
-               <span class="input-group-addon data-toggle="tooltip"  title="{{ tooltip }}">
-                    <span class="glyphicon glyphicon-question-sign"></span>
+                {{ field(class_=input_class, **kwargs) }}
+                <span class="input-group-text" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ tooltip }}">
+                    <i class="bi bi-question-square-fill"></i>
               </span>
-            </div>  
+            </div>
         {% else %}
-            {{ field(class_='form-control', **kwargs) }}
+            {{ field(class_=input_class, **kwargs) }}
         {% endif %}
         {% if field.errors %}
             {% for e in field.errors %}
@@ -46,9 +51,10 @@
         {{ macros.render_checkbox_field(form.remember_me) }}
  #}
 {% macro render_checkbox_field(field) -%}
-    <div class="checkbox">
-        <label>
-            {{ field(type='checkbox', **kwargs) }} {{ field.label }}
+    <div class="form-check">
+        {{ field(type='checkbox', class_='form-check-input', **kwargs) }}
+        <label class="form-check-label" for="{{ field.id }}">
+             {{ field.label }}
         </label>
     </div>
 {%- endmacro %}
@@ -64,9 +70,10 @@
  #}
 {% macro render_radio_field(field) -%}
     {% for value, label, _ in field.iter_choices() %}
-        <div class="radio">
-            <label>
-                <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">{{ label }}
+        <div class="form-check">
+            <input type="radio" class="form-check-input" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">
+            <label class="form-check-label" for="{{ field.id }}">
+                {{ label }}
             </label>
         </div>
     {% endfor %}
@@ -88,7 +95,7 @@
         action_text - text of submit button
         class_ - sets a class for form
     #}
-{% macro render_form(form, action_url='', action_text='Submit', class_='', btn_class='btn btn-default') -%}
+{% macro render_form(form, action_url='', action_text='Submit', class_='', btn_class='btn btn-primary') -%}
 
     <form method="POST" action="{{ action_url }}" role="form" class="{{ class_ }}">
         {{ form.hidden_tag() if form.hidden_tag }}
