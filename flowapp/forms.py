@@ -467,7 +467,7 @@ class IPv6Form(IPForm):
         :return: boolean validation result
         """
         if len(self.flags.data) > 0 and self.next_header.data != 'tcp':
-            self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.protocol.data.upper()))
+            self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.next_header.data.upper()))
             return False
 
         return True

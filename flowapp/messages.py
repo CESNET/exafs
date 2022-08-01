@@ -96,6 +96,7 @@ def create_rtbh(rule, message_type=ANNOUNCE):
             else:
                 targets = current_app.config['MULTI_NEIGHBOR'].get('primary')                
                 neighbor = prepare_multi_neighbor(targets)
+                
         else:
             neighbor = ''
     except KeyError:
@@ -226,4 +227,4 @@ def prepare_multi_neighbor(targets):
     prepare multi neighbor string
     """
     neigbors = ['neighbor {}'.format(tgt) for tgt in targets]
-    return ', '.join(neigbors) + ' '
+    return ', '.join(neigbors) + ' '        
