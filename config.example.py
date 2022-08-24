@@ -45,8 +45,8 @@ class Config(object):
     # Route Distinguisher for VRF
     # When True set your rd string and label to be used in messages 
     USE_RD = True 
-    RD_STRING = '2852:2505'
-    RD_LABEL = 'label 16' 
+    RD_STRING = '7654:3210'
+    RD_LABEL = 'label for RD' 
 
 
 

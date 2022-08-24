@@ -1,17 +1,18 @@
 # ExaFS tool
 ## Production install and config notes
 
-Example of ExaFS installation od RHEL/Centos 7 and deployment in production enviroment. 
+Example of ExaFS installation od RHEL/Centos 9 and deployment in production enviroment. 
 Includes: shibboleth auth, mariadb, uwsgi, supervisord
 
-The default Python for RHEL7 is Python 2, however the ExaFS is running on Python36 from version 0.4.0. 
-Virtualenv with Python36 is used by uWSGI server.
+The default Python for RHEL9 is Python 3.9
+Virtualenv with Python39 is used by uWSGI server to keep the packages for app separated from system.
 
 ## Prerequisites
 
 ExaFS is using Shibboleth auth and therefore we suggest to use Apache web server. 
-Install the Apache httpd as usual and then continue with this guide.  
+Install the Apache httpd as usual and then continue with this guide. 
 
+First configure Shibboleth
 
 ### shibboleth config:
 ```
@@ -23,8 +24,8 @@ Install the Apache httpd as usual and then continue with this guide.
 
 ```
 
-### httpd ssl.conf with shibboleth
-
+### httpd ssl.conf 
+We are using https only. It's important to configure proxy pass to uwsgi in httpd config.
 ```
 # Proxy everything to the WSGI server except /Shibboleth.sso and
 # /shibboleth-sp
@@ -34,31 +35,38 @@ ProxyPass /shibboleth-sp !
 ProxyPass / uwsgi://127.0.0.1:8000/
 ```
 
-### Flask app
+### Main app
+The ExaFS is using Flask Python Framework. We are using standard deployment for Flask and Apache
+as is described in the offical docs. 
 
-#### Install python runtime and other deps 
+#### Install python runtime and other dependencies 
 Install dependencies as root. 
 
 If you are using Debian or Ubuntu, you must of course use apt and sudo instead yum. 
 
-Be sure to enable mod_proxy_uwsgi module in your Apache config. 
+Don't forget to enable mod_proxy_uwsgi module in your Apache httpd config. 
+MariaDB is not a strict requirement, the app is using SQL-Alchemy and therefore you can use another RDBMS if needed.
+
+Install Python, UWSGI and MariaDB.
 ```
-yum install python-devel gcc python3 python3-devel
-yum install mod_proxy_uwsgi uwsgi-plugin-python2 uwsgi-plugin-python36  
+yum install gcc python3 python3-devel
+yum install mod_proxy_uwsgi uwsgi-plugin-python3
 yum install mariadb mariadb-server mariadb-devel
 ```
-Start db and secure instalation
+
+Start MariaDB and secure instalation
 ```
 systemctl start mariadb
 mysql_secure_installation
 systemctl enable mariadb
 ```
-Install VirtualEnv for Python
+
+Next step is to install VirtualEnv for Python
 ```
 pip install virtualenv
 ```
 
-#### Prepare the db
+#### Setup the database connection
 
 Now prepare user for the database. Start mysql client with
 ```
@@ -78,31 +86,40 @@ exit;
 ```
 
 #### App instalation
-As deploy user pull the source codes, create virtualenv and install required python dependencies.
+Create new user called **deploy** in the system.
+
+As deploy user pull the source codes from GH, create virtualenv and install required python dependencies.
 ```
-clone source from repository: git clone git@github.com:CESNET/exafs.git www
+su - deploy
+clone source from repository: git clone https://github.com/CESNET/exafs.git www
 cd www
-virtualenv --python=python3.6 venv
+virtualenv --python=python3.9 venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### make selinux happy - As root
+#### Next steps (as root)
 
-Allow httpd connection in SeLinux
+Now lets continue as root user once again. 
+
+First we need to allow httpd connection in SeLinux
 
 ```
 setsebool -P httpd_can_network_connect 1
 ``` 
 
-#### As root
-Prepare the log dir, start httpd if not already running.
+Prepare the log dir and start httpd if not already running.
+If you want to use different log dir name, don't forget to update it in the supervisord config.
+
 ```
-mkdir /var/log/flowspec/
+mkdir /var/log/exafs/
 systemctl start httpd
 ```
 
 #### Supervisord - install as root
+
+Supervisord is used to run and manage application.
+
 1. install:
    `pip install supervisor`
 2. configure:
@@ -113,16 +130,16 @@ systemctl start httpd
    
    
 3. setup as service:
-    1. download supervisord.service file from [this gist](https://gist.github.com/mozillazg/6cbdcccbf46fe96a4edd)
-    2. `wget supervisord.service -O /usr/lib/systemd/system/supervisord.service`
-4. start service
-   `systemctl start supervisord`
-5. view service status:
-   `systemctl status supervisord`
-6. auto start service on system startup: 
-   `systemctl enable supervisord`
-7. copy exafs.supervisord.conf to /etc/supervisord/
+    `cp supervisord.sample.service /usr/lib/systemd/system/supervisord.service`
+4. copy exafs.supervisord.conf to /etc/supervisord/
   `cp exafs.supervisord.conf /etc/supervisord/conf.d/`
+5. start service
+   `systemctl start supervisord`
+6. view service status:
+   `systemctl status supervisord`
+7. auto start service on system startup: 
+   `systemctl enable supervisord`
+
 
 #### Final steps - as deploy user
 
@@ -148,5 +165,4 @@ insert into user_organization (user_id,organization_id) values (1, 2);
 ``` 
 You can also modify the models.py for your own default values for db-init.
 
-
-You are ready to go ;-)
+The application is installed and should be working now. The next step is to configure ExaBGP and connect it to the ExaAPI application. We also provide simple service called guarda to reload all the rules in case of ExaBGP restart.
