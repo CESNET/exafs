@@ -12,7 +12,7 @@ app = Flask(__name__)
 #logovani
 logger = logging.getLogger(__name__)
 f_format = logging.Formatter('%(asctime)s:  %(message)s')
-f_handler = logging.FileHandler('/var/log/exabgp/exa_api.log')
+f_handler = logging.FileHandler('/var/log/exafs/exa_api.log')
 f_handler.setFormatter(f_format)
 logger.setLevel(logging.INFO)
 logger.addHandler(f_handler)
