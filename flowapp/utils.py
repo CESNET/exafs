@@ -38,8 +38,8 @@ def parse_api_time(apitime):
     :param apitime: string with date and time
     :returns: datetime, prefered format
     """
-    apitime = str(apitime)
 
+    apitime = str(apitime)
     try:
         return round_to_ten_minutes(datetime.strptime(apitime, FORM_TIME_PATTERN)), TIME_US
     except ValueError:

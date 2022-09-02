@@ -201,9 +201,7 @@ def as_path():
         # test if user is unique
         exist = db.session.query(ASPath).filter_by(prefix=form.prefix.data).first()
         if not exist:
-            print(form.as_path.data)
             pth = ASPath(prefix=form.prefix.data, as_path=form.as_path.data)
-            print(pth)
             db.session.add(pth)
             db.session.commit()
             flash('AS-path saved')
