@@ -53,6 +53,8 @@ Last part of the system is Guarda service. This systemctl service is running in 
 
 ## Change Log
 
+- 0.6.2 - External config for ExaAPI 
+- 0.6.0 - Bootstrap 5 in UI
 - 0.5.5 - API v3 - auth api key in cookie not in url
 - 0.5.4 - Right click menu on adress / Whois or Copy to clipboard
 - 0.5.3 - Dashboard update, forms with default action

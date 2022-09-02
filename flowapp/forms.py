@@ -38,11 +38,10 @@ class MultiFormatDateTimeLocalField(DateTimeField):
     def process_formdata(self, valuelist):
         if not valuelist:
             return
-
-        date_str = " ".join(valuelist)
+        
+        date_str = " ".join((str(val) for val in valuelist))
         result, pref_format = parse_api_time(date_str)
         if result:
-            print("TEST", result)
             self.data = result
             self.pref_format = pref_format
         else:

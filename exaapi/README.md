@@ -13,7 +13,9 @@ process flowspec {
 ```
 
 It can run on the development Flask server, however there is no security layer in this app. 
-You should limit the access only from the localhost. 
+You should limit the access only from the localhost.
+
+See [ExaBPG docs](https://github.com/Exa-Networks/exabgp/wiki/Controlling-ExaBGP-:-possible-options-for-process) for more information.
 
 Our plan is to relace this simple app with message queue in the future.
 

@@ -299,8 +299,6 @@ class IPv4Address(object):
         self.message = message
 
     def __call__(self, form, field):
-        print(field)
-        print(field.data)
         try:
             address = ipaddress.ip_address(field.data)
         except ValueError:

@@ -8,7 +8,8 @@ from flowapp import utils
 @pytest.mark.parametrize("apitime, preformat", [
     ("10/15/2015 14:46", "us"),
     ("2015/10/15 14:46", "yearfirst"),
-    ("1444913400", "timestamp")
+    ("1444913400", "timestamp"),
+    (1444913400, "timestamp")
 ])
 def test_parse_api_time(apitime, preformat):
     """
