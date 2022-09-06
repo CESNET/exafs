@@ -6,7 +6,7 @@ https://github.com/Exa-Networks/exabgp/wiki/Controlling-ExaBGP-:-possible-option
 Each command received in the POST request is send to stdout and captured by ExaBGP.
 """
 import logging
-from flask import Flask, request
+from flask import Flask, request, abort
 from sys import stdout
 
 import config

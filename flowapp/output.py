@@ -19,7 +19,14 @@ def announce_route(route):
     @TODO take the request away, use some kind of messaging (maybe celery?)
     """
     if not current_app.config['TESTING']:
-        requests.post('http://localhost:5000/', data={'command': route})
+        try:
+            resp = requests.post('http://localhost:5000/', data={'command': route})
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            print("ExaAPI HTTP Error: ", err)
+        except requests.exceptions.RequestException as ce:
+            print("Connection to ExaAPI failed: ", ce)
+            
 
 
 def log_route(user_id, route_model, rule_type, author):
