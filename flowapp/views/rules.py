@@ -568,17 +568,17 @@ def announce_all_routes(action=constants.ANNOUNCE):
     rules_rtbh = db.session.query(RTBH).filter(RTBH.rstate_id == 1).filter(comp_func(RTBH.expires, today)).order_by(
         RTBH.expires.desc()).all()
 
-    output4 = [messages.create_ipv4(rule, action) for rule in rules4]
-    output6 = [messages.create_ipv6(rule, action) for rule in rules6]
-    output_rtbh = [messages.create_rtbh(rule, action) for rule in rules_rtbh]
+    messages_v4 = [messages.create_ipv4(rule, action) for rule in rules4]
+    messages_v6 = [messages.create_ipv6(rule, action) for rule in rules6]
+    messages_rtbh = [messages.create_rtbh(rule, action) for rule in rules_rtbh]
 
-    output = []
-    output.extend(output4)
-    output.extend(output6)
-    output.extend(output_rtbh)
+    messages_all = []
+    messages_all.extend(messages_v4)
+    messages_all.extend(messages_v6)
+    messages_all.extend(messages_rtbh)
 
-    for message in output:
-        requests.post(app.config.get('EXA_API_URL'), data={'command': message})
+    for route in messages_all:
+        announce_route(route)
 
     if action == constants.WITHDRAW:
         _a = [set_withdraw_state(rule) for rule in rules4]
