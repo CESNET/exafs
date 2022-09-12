@@ -50,7 +50,7 @@ def announce_to_rabbitmq(route):
         credentials = pika.PlainCredentials(user, passwd)
         parameters = pika.ConnectionParameters(current_app.config['EXA_API_RABBIT_HOST'],
                                             current_app.config['EXA_API_RABBIT_PORT'],
-                                            '/',
+                                            current_app.config['EXA_API_RABBIT_VHOST'],
                                             credentials)
 
         connection = pika.BlockingConnection(parameters)

@@ -21,7 +21,7 @@ def main():
     credentials = pika.PlainCredentials(user, passwd)
     parameters = pika.ConnectionParameters(config.EXA_API_RABBIT_HOST,
                                         config.EXA_API_RABBIT_PORT,
-                                        '/',
+                                        config.EXA_API_RABBIT_VHOST,
                                         credentials)
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
