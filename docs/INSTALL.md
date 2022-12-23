@@ -130,7 +130,7 @@ Supervisord is used to run and manage application.
    
    
 3. setup as service:
-    `cp supervisord.sample.service /usr/lib/systemd/system/supervisord.service`
+    `cp supervisord.example.service /usr/lib/systemd/system/supervisord.service`
 4. copy exafs.supervisord.conf to /etc/supervisord/
   `cp exafs.supervisord.conf /etc/supervisord/conf.d/`
 5. start service

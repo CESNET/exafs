@@ -184,6 +184,8 @@ class Rstate(db.Model):
 
 
 class RTBH(db.Model):
+    __tablename__ = 'RTBH'
+
     id = db.Column(db.Integer, primary_key=True)
     ipv4 = db.Column(db.String(255))
     ipv4_mask = db.Column(db.Integer)
