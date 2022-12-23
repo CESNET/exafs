@@ -1,7 +1,0 @@
-Generic single-database configuration.
-
-In top dir run DB Migration script
-
-Usage:
-python manage.py db migrate - creates migration script
-python manage.py db upgrade - upgrades database with migration script
