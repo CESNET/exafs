@@ -17,6 +17,8 @@ channel = connection.channel()
 channel.queue_declare(queue=queue)    
 route = sys.argv[1]
 
+print("got :", route)
+
 channel.basic_publish(exchange='',
                 routing_key=queue,
                 body=route)
