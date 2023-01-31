@@ -40,6 +40,7 @@ from .views.dashboard import dashboard
 # no need for csrf on api because we use JWT
 csrf.exempt(api_v1)
 csrf.exempt(api_v2)
+csrf.exempt(api_v3)
 
 app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(rules, url_prefix='/rules')
