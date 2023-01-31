@@ -59,14 +59,15 @@ def test_create_v4rule(client, db, jwt_token):
                           "source": "147.230.17.17",
                           "source_mask": 32,
                           "source_port": "",
-                          "expires": "10/15/2050 14:46"
+                          "expires": "10/15/2050 14:46",
+                          "flags": ["SYN", "RST"]
                       }
                       )
 
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data['rule']
-    assert data['rule']['id'] == 1
+    assert data['rule']['id'] == 3
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
 
 
@@ -90,7 +91,7 @@ def test_delete_v4rule(client, db, jwt_token):
 
     assert req.status_code == 201
     data = json.loads(req.data)
-    assert data['rule']['id'] == 3
+    assert data['rule']['id'] == 4
     assert data['rule']['rstate'] == 'withdrawed rule'
 
     req2 = client.delete('/api/v2/rules/ipv4/{}'.format(data['rule']['id']),
@@ -244,7 +245,7 @@ def test_rules(client, db, jwt_token):
     assert req.status_code == 200
 
     data = json.loads(req.data)
-    assert len(data['flowspec_ipv4_rw']) == 2
+    assert len(data['flowspec_ipv4_rw']) == 3
     assert len(data['flowspec_ipv6_rw']) == 2
 
 
@@ -309,7 +310,7 @@ def test_create_v4rule_with_timestamp(client, db, jwt_token):
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data['rule']
-    assert data['rule']['id'] == 3
+    assert data['rule']['id'] == 4
     assert data['rule']['user'] == 'jiri.vrany@tul.cz'
     assert data['rule']['expires'] == 1444913400
 
