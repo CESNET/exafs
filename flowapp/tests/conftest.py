@@ -54,6 +54,8 @@ def app(request):
     """
 
     _app.config.update(
+        EXA_API = 'HTTP',
+        EXA_API_URL = 'http://localhost:5000/',
         TESTING=True,
         SQLALCHEMY_DATABASE_URI=TEST_DATABASE_URI,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,

@@ -5,12 +5,14 @@ from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
 
-__version__ = '0.6.2'
+__version__ = '0.7.0'
 
 app = Flask(__name__)
 
 db = SQLAlchemy()
+migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
 
 # Map SSO attributes from ADFS to session keys under session['user']
