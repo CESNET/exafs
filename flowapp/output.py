@@ -19,7 +19,7 @@ def announce_route(route):
     API must be set in app config.py 
     defaults to HTTP API
     """
-    if current_app.config['EXA_API'] == 'RABBIT':
+    if current_app.config.get('EXA_API') == 'RABBIT':
         announce_to_rabbitmq(route)
     else:
         announce_to_http(route)
