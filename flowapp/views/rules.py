@@ -195,7 +195,7 @@ def group_delete():
             route = route_model(model, constants.WITHDRAW)
             announce_route(route)
 
-            log_withdraw(session['user_id'], route, rule_type, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
+            log_withdraw(session['user_id'], route, rule_type_int, model.id, "{} / {}".format(session['user_email'], session['user_orgs']))
 
         db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
         db.session.commit()
