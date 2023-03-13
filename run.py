@@ -8,10 +8,7 @@ import config
 app = create_app()
 
 # Configurations
-try:
-    env = environ['EXAFS_ENV']
-except KeyError as e:
-    env = 'Production'
+env = environ.get('EXAFS_ENV', 'Production')
 
 if env == 'devel':
     app.config.from_object(config.DevelopmentConfig)
