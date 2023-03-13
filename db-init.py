@@ -1,6 +1,6 @@
 
 from flask import Flask
-from flowapp import app, db
+from flowapp import db
 from flowapp.models import *
 
 import config

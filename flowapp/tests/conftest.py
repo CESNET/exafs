@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from flowapp import app as _app
+from flowapp import create_app
 from flowapp import db as _db
 import flowapp.models
 
@@ -52,6 +52,8 @@ def app(request):
     """
     Create a Flask app, and override settings, for the whole test session.
     """
+
+    _app = create_app()
 
     _app.config.update(
         EXA_API = 'HTTP',
@@ -102,7 +104,7 @@ def db(app, request):
     """
     Create entire database for every test.
     """
-    engine = create_engine(_app.config['SQLALCHEMY_DATABASE_URI'], echo=True)
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], echo=True)
     session_factory = sessionmaker(bind=engine)
     print('\n----- CREATE TEST DB CONNECTION POOL\n')
     if os.path.exists(TESTDB_PATH):
