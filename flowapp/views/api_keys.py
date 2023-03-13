@@ -1,12 +1,12 @@
 import jwt
-from flask import Blueprint, render_template, redirect, flash, request, url_for, session, make_response
+from flask import Blueprint, render_template, redirect, flash, request, url_for, session, make_response, current_app
 import secrets
 
 from ..forms import ApiKeyForm
 from ..models import ApiKey
 from ..auth import auth_required
 
-from flowapp import db, app
+from flowapp import db
 
 COOKIE_KEY = 'keylist'
 
@@ -20,14 +20,14 @@ def all():
     Show user api keys
     :return: page with keys
     """
-    jwt_key = app.config.get('JWT_SECRET')
+    jwt_key = current_app.config.get('JWT_SECRET')
     keys = db.session.query(ApiKey).filter_by(user_id=session['user_id']).all()
     payload = {'keys': [key.id for key in keys]}
     encoded = jwt.encode(payload, jwt_key, algorithm='HS256')
 
     resp = make_response(render_template('pages/api_key.j2', keys=keys))
 
-    if app.config.get('DEVEL'):
+    if current_app.config.get('DEVEL'):
         resp.set_cookie(COOKIE_KEY, encoded, httponly=True, samesite='Lax')
     else:
         resp.set_cookie(COOKIE_KEY, encoded, secure=True, httponly=True, samesite='Lax')
@@ -76,7 +76,7 @@ def delete(key_id):
     :param key_id: integer
     """
     key_list = request.cookies.get(COOKIE_KEY)
-    key_list = jwt.decode(key_list, app.config.get('JWT_SECRET'), algorithms=['HS256'])
+    key_list = jwt.decode(key_list, current_app.config.get('JWT_SECRET'), algorithms=['HS256'])
 
     model = db.session.query(ApiKey).get(key_id)
     if model.id not in key_list['keys']:

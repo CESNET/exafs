@@ -2,7 +2,8 @@ import subprocess
 from datetime import datetime
 
 from flask import Blueprint, render_template, request, session, make_response, abort
-from flowapp import auth_required, constants, models, app, validators, flowspec
+from flowapp import constants, models, validators, flowspec
+from flowapp.auth import auth_required
 from flowapp.constants import RULE_TYPE_DISPATCH, SORT_ARG, ORDER_ARG, DEFAULT_ORDER, DEFAULT_SORT, RULE_TYPES, \
     SEARCH_ARG, RULE_ARG, TYPE_ARG, RULES_KEY, ORDSRC_ARG, COLSPANS, COMP_FUNCS, COUNT_MATCH
 from flowapp.utils import active_css_rstate, other_rtypes

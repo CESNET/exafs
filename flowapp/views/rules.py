@@ -7,7 +7,7 @@ import requests
 from flask import (Blueprint, flash, redirect, render_template, request,
                    session, url_for)
 
-from flowapp import app, constants, db, messages
+from flowapp import constants, db, messages
 from flowapp.auth import (admin_required, auth_required, localhost_only,
                           user_or_admin_required)
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm

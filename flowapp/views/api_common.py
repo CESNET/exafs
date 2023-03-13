@@ -1,7 +1,7 @@
 import jwt
 import ipaddress
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, timedelta
 
@@ -39,7 +39,7 @@ from flowapp.output import (
 )
 
 
-from flowapp import app, db, validators, flowspec, csrf, messages
+from flowapp import db, validators, flowspec, csrf, messages
 
 
 def token_required(f):
@@ -54,7 +54,7 @@ def token_required(f):
             return jsonify({"message": "auth token is missing"}), 401
 
         try:
-            data = jwt.decode(token, app.config.get("JWT_SECRET"), algorithms=["HS256"])
+            data = jwt.decode(token, current_app.config.get("JWT_SECRET"), algorithms=["HS256"])
             current_user = data["user"]
         except jwt.DecodeError:
             return jsonify({"message": "auth token is invalid"}), 403
@@ -71,7 +71,7 @@ def authorize(user_key):
     Generate API Key for the loged user using PyJWT
     :return: page with token
     """
-    jwt_key = app.config.get("JWT_SECRET")
+    jwt_key = current_app.config.get("JWT_SECRET")
 
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
     print("MODEL", model)
