@@ -1,0 +1,8 @@
+include flowapp/static/*
+include flowapp/static/js/*
+
+include flowapp/templates/*
+include flowapp/templates/errors/*
+include flowapp/templates/forms/*
+include flowapp/templates/layouts/*
+include flowapp/templates/pages/*
