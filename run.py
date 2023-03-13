@@ -1,7 +1,11 @@
 from os import environ
 
-from flowapp import app, db
+from flowapp import create_app, db
 import config
+
+
+# Call app factory
+app = create_app()
 
 # Configurations
 try:
