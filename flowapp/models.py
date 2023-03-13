@@ -605,11 +605,9 @@ def insert_initial_actions(table, conn, *args, **kwargs):
 @event.listens_for(Community.__table__, 'after_create')
 def insert_initial_communities(table, conn, *args, **kwargs):
     conn.execute(
-        table.insert().values(name='2852:666', comm='2852:666', larcomm='', extcomm='', description='', role_id=2))
+        table.insert().values(name='64496:64511', comm='64496:64511', larcomm='', extcomm='', description='', role_id=2))
     conn.execute(
-        table.insert().values(name='40965:666', comm='40965:666', larcomm='', extcomm='', description='', role_id=2))
-    conn.execute(
-        table.insert().values(name='xxxxx:666', comm='xxxxx:666', larcomm='', extcomm='', description='', role_id=2))
+        table.insert().values(name='64497:64510', comm='64497:64510', larcomm='', extcomm='', description='', role_id=2))
 
 
 @event.listens_for(Role.__table__, 'after_create')
