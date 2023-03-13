@@ -5,12 +5,14 @@ from flask import Flask, redirect, render_template, session, url_for
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
 
-__version__ = '0.6.2'
+__version__ = '0.7.0'
 
 app = Flask(__name__)
 
 db = SQLAlchemy()
+migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
 
 # Map SSO attributes from ADFS to session keys under session['user']
@@ -40,6 +42,7 @@ from .views.dashboard import dashboard
 # no need for csrf on api because we use JWT
 csrf.exempt(api_v1)
 csrf.exempt(api_v2)
+csrf.exempt(api_v3)
 
 app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(rules, url_prefix='/rules')

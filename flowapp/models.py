@@ -184,6 +184,8 @@ class Rstate(db.Model):
 
 
 class RTBH(db.Model):
+    __tablename__ = 'RTBH'
+
     id = db.Column(db.Integer, primary_key=True)
     ipv4 = db.Column(db.String(255))
     ipv4_mask = db.Column(db.Integer)
@@ -593,45 +595,42 @@ class Log(db.Model):
 # default values for tables inserted after create
 
 @event.listens_for(Action.__table__, 'after_create')
-def insert_initial_actions(*args, **kwargs):
-    db.session.add(Action(name='QoS 100 kbps', command='rate-limit 12800', description='QoS'))
-    db.session.add(Action(name='QoS 1Mbps', command='rate-limit 13107200', description='QoS'))
-    db.session.add(Action(name='QoS 10Mbps', command='rate-limit 131072000', description='QoS'))
-    db.session.add(Action(name='Discard', command='discard', description='Discard'))
-    db.session.commit()
+def insert_initial_actions(table, conn, *args, **kwargs):
+    conn.execute(table.insert().values(name='QoS 100 kbps', command='rate-limit 12800', description='QoS', role_id=2))
+    conn.execute(table.insert().values(name='QoS 1Mbps', command='rate-limit 13107200', description='QoS', role_id=2))
+    conn.execute(table.insert().values(name='QoS 10Mbps', command='rate-limit 131072000', description='QoS', role_id=2))
+    conn.execute(table.insert().values(name='Discard', command='discard', description='Discard', role_id=2))
 
 
 @event.listens_for(Community.__table__, 'after_create')
-def insert_initial_communities(*args, **kwargs):
-    db.session.add(Community(name='2852:666', comm='2852:666', larcomm='', extcomm='', description=''))
-    db.session.add(Community(name='40965:666', comm='40965:666', larcomm='', extcomm='', description=''))
-    db.session.add(Community(name='xxxxx:666', comm='xxxxx:666', larcomm='', extcomm='', description=''))
-    db.session.commit()
+def insert_initial_communities(table, conn, *args, **kwargs):
+    conn.execute(
+        table.insert().values(name='65535:65283', comm='65535:65283', larcomm='', extcomm='', description='local-as', role_id=2))
+    conn.execute(
+        table.insert().values(name='64496:64511', comm='64496:64511', larcomm='', extcomm='', description='', role_id=2))
+    conn.execute(
+        table.insert().values(name='64497:64510', comm='64497:64510', larcomm='', extcomm='', description='', role_id=2))
 
 
 @event.listens_for(Role.__table__, 'after_create')
-def insert_initial_roles(*args, **kwargs):
-    db.session.add(Role(name='view', description='just view, no edit'))
-    db.session.add(Role(name='user', description='can edit'))
-    db.session.add(Role(name='admin', description='admin'))
-    db.session.commit()
+def insert_initial_roles(table, conn, *args, **kwargs):
+    conn.execute(table.insert().values(name='view', description='just view, no edit'))
+    conn.execute(table.insert().values(name='user', description='can edit'))
+    conn.execute(table.insert().values(name='admin', description='admin'))
 
 
 @event.listens_for(Organization.__table__, 'after_create')
-def insert_initial_organizations(*args, **kwargs):
-    db.session.add(Organization(name='TU Liberec', arange='147.230.0.0/16\n2001:718:1c01::/48'))
-    db.session.add(Organization(name='Cesnet', arange='147.230.0.0/16\n2001:718:1c01::/48'))
-
-    db.session.commit()
+def insert_initial_organizations(table, conn, *args, **kwargs):
+    conn.execute(table.insert().values(name='TU Liberec', arange='147.230.0.0/16\n2001:718:1c01::/48'))
+    conn.execute(table.insert().values(name='Cesnet', arange='147.230.0.0/16\n2001:718:1c01::/48'))
 
 
 @event.listens_for(Rstate.__table__, 'after_create')
-def insert_initial_rulestates(*args, **kwargs):
-    db.session.add(Rstate(description='active rule'))
-    db.session.add(Rstate(description='withdrawed rule'))
-    db.session.add(Rstate(description='deleted rule'))
+def insert_initial_rulestates(table, conn, *args, **kwargs):
+    conn.execute(table.insert().values(description='active rule'))
+    conn.execute(table.insert().values(description='withdrawed rule'))
+    conn.execute(table.insert().values(description='deleted rule'))
 
-    db.session.commit()
 
 
 # Misc functions
