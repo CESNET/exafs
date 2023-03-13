@@ -36,10 +36,9 @@
           <div class="collapse navbar-collapse" id="navbar">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               {% if session['can_edit'] %}
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('rules.ipv4_rule') }}">Add IPv4</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('rules.ipv6_rule') }}">Add IPv6</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('rules.rtbh_rule') }}">Add RTBH</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url_for('api_keys.all') }}">API Key</a></li>
+                  {% for item in main_menu['edit'] %}
+                    <li class="nav-item"><a class="nav-link" href="{{ item.url }}">{{ item.name}}</a></li>
+                  {% endfor %}
               {% endif %}
               {% if 3 in session['user_role_ids'] %}
               <li class="nav-item dropdown">
@@ -47,17 +46,12 @@
                   Admin
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                  <li><a class="dropdown-item" href="{{ url_for('admin.log') }}">Commands Log</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">Users</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.user') }}">Add User</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.organizations') }}">Organizations</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.organization') }}">Add Org.</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.actions') }}">Action</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.action') }}">Add action</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.communities') }}">RTBH Communities</a></li>
-                  <li><a class="dropdown-item" href="{{ url_for('admin.community') }}">Add RTBH Comm.</a></li>
+                  {% for item in main_menu['admin'] %}
+                    <li><a class="dropdown-item" href="{{ item.url }}">{{ item.name }}</a></li>
+                    {% if item.divide_after %}
+                      <li><hr class="dropdown-divider"></li>
+                    {% endif %}
+                  {% endfor %}
                 </ul>
               </li>
               {% endif %}
