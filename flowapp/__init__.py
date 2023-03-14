@@ -31,7 +31,7 @@ def create_app():
     app.config.setdefault("VERSION", __version__)
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
     app.config.setdefault("SSO_LOGIN_URL", "/login")
-    
+
     # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
     ext = SSO(app=app)
 
@@ -61,22 +61,30 @@ def create_app():
     # menu items for the main menu
     with app.test_request_context():
         app.config["MAIN_MENU"] = {
-        "edit": [
-            {"name": "Add IPv4", "url": url_for('rules.ipv4_rule')},
-            {"name": "Add IPv6", "url": url_for('rules.ipv6_rule')},
-            {"name": "Add RTBH", "url": url_for('rules.rtbh_rule')},
-            {"name": "API Key", "url": url_for('api_keys.all')},
-        ],
-        "admin": [
-            {"name": "Commands Log", "url": url_for('admin.log'), "divide_after": True},
-            {"name": "Users", "url": url_for('admin.users')},
-            {"name": "Add User", "url": url_for('admin.user')},
-            {"name": "Organizations", "url": url_for('admin.organizations')},
-            {"name": "Add Org.", "url": url_for('admin.organization'), "divide_after": True},
-            {"name": "Action", "url": url_for('admin.actions')},
-            {"name": "Add action", "url": url_for('admin.action')},
-            {"name": "RTBH Communities", "url": url_for('admin.communities')},
-            {"name": "Add RTBH Comm.", "url": url_for('admin.community')},
+            "edit": [
+                {"name": "Add IPv4", "url": url_for("rules.ipv4_rule")},
+                {"name": "Add IPv6", "url": url_for("rules.ipv6_rule")},
+                {"name": "Add RTBH", "url": url_for("rules.rtbh_rule")},
+                {"name": "API Key", "url": url_for("api_keys.all")},
+            ],
+            "admin": [
+                {
+                    "name": "Commands Log",
+                    "url": url_for("admin.log"),
+                    "divide_after": True,
+                },
+                {"name": "Users", "url": url_for("admin.users")},
+                {"name": "Add User", "url": url_for("admin.user")},
+                {"name": "Organizations", "url": url_for("admin.organizations")},
+                {
+                    "name": "Add Org.",
+                    "url": url_for("admin.organization"),
+                    "divide_after": True,
+                },
+                {"name": "Action", "url": url_for("admin.actions")},
+                {"name": "Add action", "url": url_for("admin.action")},
+                {"name": "RTBH Communities", "url": url_for("admin.communities")},
+                {"name": "Add RTBH Comm.", "url": url_for("admin.community")},
             ],
         }
 
@@ -172,16 +180,15 @@ def create_app():
             return False
 
         return dict(editable_rule=editable_rule)
-    
+
     @app.context_processor
     def inject_main_menu():
-        return {'main_menu': app.config.get('MAIN_MENU')    }
-
+        return {"main_menu": app.config.get("MAIN_MENU")}
 
     @app.template_filter("strftime")
     def format_datetime(value):
         format = "y/MM/dd HH:mm"
 
         return babel.dates.format_datetime(value, format)
-  
+
     return app
