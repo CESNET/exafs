@@ -107,7 +107,9 @@ def create_app():
                 'url_handler': 'dashboard.index',
                 'macro_file': 'macros.j2',
                 'macro_tbody': 'build_rtbh_tbody',
-                'macro_thead': 'build_rules_thead'
+                'macro_thead': 'build_rules_thead',
+                'data_handler': models,
+                'data_handler_method': 'get_ip_rules'
             },
         }
 

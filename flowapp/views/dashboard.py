@@ -72,9 +72,23 @@ def index(rtype="ipv4", rstate="active"):
 
     # get the macros for the current rule type from config
     # warning no checks here, if the config is not set properly the app will crash
-    macro_file = current_app.config["DASHBOARD"].get(rtype)["macro_file"]
+    macro_file = (
+        current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.j2")
+    )
     macro_tbody = current_app.config["DASHBOARD"].get(rtype)["macro_tbody"]
-    macro_thead = current_app.config["DASHBOARD"].get(rtype)["macro_thead"]
+    macro_thead = (
+        current_app.config["DASHBOARD"]
+        .get(rtype)
+        .get("macro_thead", "build_rules_thead")
+    )
+    data_handler_module = (
+        current_app.config["DASHBOARD"].get(rtype).get("data_handler", models)
+    )
+    data_handler_method = (
+        current_app.config["DASHBOARD"]
+        .get(rtype)
+        .get("data_handler_method", "get_ip_rules")
+    )
 
     # get search query, sort order and sort key from request or session
     get_search_query = request.args.get(SEARCH_ARG, session.get(SEARCH_ARG, ""))
@@ -97,17 +111,18 @@ def index(rtype="ipv4", rstate="active"):
     except KeyError:
         get_sort_order = DEFAULT_ORDER
 
-    # get the data
-    print("DEBUG", rtype, rstate, get_sort_key, get_sort_order)
-    rules = models.get_ip_rules(rtype, rstate, get_sort_key, get_sort_order)
+    # get the handler and the data
+    handler = getattr(data_handler_module, data_handler_method)
+    rules = handler(rtype, rstate, get_sort_key, get_sort_order)
 
+    # search rules
     if get_search_query:
         count_match = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
         rules = filter_rules(rules, get_search_query)
         # extended search in for all rule types
         count_match[rtype] = len(rules)
         for other_rtype in other_rtypes(rtype):
-            other_rules = models.get_ip_rules(other_rtype, rstate)
+            other_rules = handler(other_rtype, rstate)
             other_rules = filter_rules(other_rules, get_search_query)
             count_match[other_rtype] = len(other_rules)
     else:
