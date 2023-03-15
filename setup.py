@@ -5,7 +5,7 @@ Setuptools configuration
 """
 
 import setuptools
-from flowapp import __version__
+from flowapp.__about__ import __version__
 
 setuptools.setup(
     name="exafs",
