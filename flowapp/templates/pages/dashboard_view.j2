@@ -11,7 +11,7 @@
     <h2>{{ rstate|capitalize }}  {{ table_title }}</h2>
         <p>You can see the rules for your information. However, you can not modify their expiration time or delete them.</p>
         <table class="table table-hover ip-table">
-        {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, group_op=False) }}
+        {{ dashboard_table_head }}
         {{ dashboard_table_body }}
 
         </table>

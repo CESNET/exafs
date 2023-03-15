@@ -14,7 +14,7 @@
     <form action="{{ url_for('rules.group_operation') }}" method="post">
          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
-        {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
+        {{ dashboard_table_editable_head }}
         {{ dashboard_table_editable }}
          <tr>
             <td colspan="{{ button_colspan }}">
@@ -40,7 +40,7 @@
     <h2>{{ rstate|capitalize }}  {{ table_title }} that are read-only for you</h2>
         <p>Those rules somehow including your network ranges. You can see them all for your information. However, you can not modify their expiration time or delete them.</p>
         <table class="table table-hover ip-table">
-        {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, group_op=False) }}
+        {{ dashboard_table_readonly_head }}
         {{ dashboard_table_readonly }}
         </table>
     {% else %}

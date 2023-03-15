@@ -92,19 +92,22 @@ def create_app():
                 'name': 'IPv4',
                 'url_handler': 'dashboard.index',
                 'macro_file': 'macros.j2',
-                'macro_name': 'build_ip_tbody'
+                'macro_tbody': 'build_ip_tbody',
+                'macro_thead': 'build_rules_thead'
             },
             'ipv6': {
                 'name': 'IPv6',
                 'url_handler': 'dashboard.index',
                 'macro_file': 'macros.j2',
-                'macro_name': 'build_ip_tbody'
+                'macro_tbody': 'build_ip_tbody',
+                'macro_thead': 'build_rules_thead'
             },
             'rtbh': {
                 'name': 'RTBH',
                 'url_handler': 'dashboard.index',
                 'macro_file': 'macros.j2',
-                'macro_name': 'build_rtbh_tbody'
+                'macro_tbody': 'build_rtbh_tbody',
+                'macro_thead': 'build_rules_thead'
             },
         }
 
@@ -208,7 +211,7 @@ def create_app():
         used in default template to create main menu
         """
         return {"main_menu": app.config.get("MAIN_MENU")}
-    
+
     @app.context_processor
     def inject_dashboard():
         """

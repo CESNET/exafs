@@ -1,7 +1,16 @@
 import subprocess
 from datetime import datetime
 
-from flask import Blueprint, current_app, render_template, render_template_string, request, session, make_response, abort
+from flask import (
+    Blueprint,
+    current_app,
+    render_template,
+    render_template_string,
+    request,
+    session,
+    make_response,
+    abort,
+)
 from flowapp import models, validators, flowspec
 from flowapp.auth import auth_required
 from flowapp.constants import (
@@ -60,12 +69,14 @@ def index(rtype="ipv4", rstate="active"):
         view_factory = create_user_response
     else:
         view_factory = create_view_response
-    
+
     # get the macros for the current rule type from config
     # warning no checks here, if the config is not set properly the app will crash
-    macro_name = current_app.config['DASHBOARD'].get(rtype)['macro_name']
-    macro_file = current_app.config['DASHBOARD'].get(rtype)['macro_file']
-    
+    macro_file = current_app.config["DASHBOARD"].get(rtype)["macro_file"]
+    macro_tbody = current_app.config["DASHBOARD"].get(rtype)["macro_tbody"]
+    macro_thead = current_app.config["DASHBOARD"].get(rtype)["macro_thead"]
+
+    # get search query, sort order and sort key from request or session
     get_search_query = request.args.get(SEARCH_ARG, session.get(SEARCH_ARG, ""))
     get_sort_key = request.args.get(SORT_ARG, session.get(SORT_ARG, DEFAULT_SORT))
     get_sort_order = request.args.get(ORDER_ARG, session.get(ORDER_ARG, DEFAULT_ORDER))
@@ -87,6 +98,7 @@ def index(rtype="ipv4", rstate="active"):
         get_sort_order = DEFAULT_ORDER
 
     # get the data
+    print("DEBUG", rtype, rstate, get_sort_key, get_sort_order)
     rules = models.get_ip_rules(rtype, rstate, get_sort_key, get_sort_order)
 
     if get_search_query:
@@ -102,22 +114,31 @@ def index(rtype="ipv4", rstate="active"):
         count_match = ""
 
     res, encoded = view_factory(
-            rtype,
-            rstate,
-            rules,
-            get_sort_key,
-            get_sort_order,
-            get_search_query,
-            count_match,
-            macro_file,
-            macro_name
+        rtype,
+        rstate,
+        rules,
+        get_sort_key,
+        get_sort_order,
+        get_search_query,
+        count_match,
+        macro_file,
+        macro_tbody,
+        macro_thead,
     )
-    
+
     session[RULES_KEY] = encoded
 
     return res
 
-def create_dashboard_table_body(rules, rtype, editable=True, group_op=True, macro_file="macros.j2", macro_name="build_ip_tbody"):
+
+def create_dashboard_table_body(
+    rules,
+    rtype,
+    editable=True,
+    group_op=True,
+    macro_file="macros.j2",
+    macro_name="build_ip_tbody",
+):
     """
     create the table body for the dashboard using a jinja2 macro
     :param rules:  list of rules
@@ -128,16 +149,78 @@ def create_dashboard_table_body(rules, rtype, editable=True, group_op=True, macr
     tstring = "{% "
     tstring = tstring + f"from '{macro_file}' import {macro_name}"
     tstring = tstring + " %} {{"
-    tstring = tstring + f" {macro_name}(rules, today, rtype_int, editable, group_op) " + "}}" 
+    tstring = (
+        tstring + f" {macro_name}(rules, today, rtype_int, editable, group_op) " + "}}"
+    )
 
     dashboard_table_body = render_template_string(
         tstring,
-        rules=rules, today=datetime.now(), rtype_int=RULE_TYPES[rtype], editable=editable, group_op=group_op)
+        rules=rules,
+        today=datetime.now(),
+        rtype_int=RULE_TYPES[rtype],
+        editable=editable,
+        group_op=group_op,
+    )
     return dashboard_table_body
 
 
+def create_dashboard_table_head(
+    rules_columns,
+    rtype,
+    rstate,
+    sort_key,
+    sort_order,
+    search_query="",
+    group_op=True,
+    macro_file="macros.j2",
+    macro_name="build_rules_thead",
+):
+    """
+    create the table head for the dashboard using a jinja2 macro
+    :param rules_columns:  list of columns
+    :param rtype:  ipv4, ipv6, rtbh
+    :param rstate:  active, inactive
+    :param sort_key:  the column to sort by
+    :param sort_order:  asc or desc
+    :param search_query:  the search query
+    :param group_op:  group operations allowed
+    :param macro_file:  the file where the macro is defined
+    :param macro_name:  the name of the macro
+    """
+    tstring = "{% "
+    tstring = tstring + f"from '{macro_file}' import {macro_name}"
+    tstring = tstring + " %} {{"
+    tstring = (
+        tstring
+        + f" {macro_name}(rules_columns, rtype, rstate, sort_key, sort_order, search_query, group_op) "
+        + "}}"
+    )
+
+    dashboard_table_head = render_template_string(
+        tstring,
+        rules_columns=rules_columns,
+        rtype=rtype,
+        rstate=rstate,
+        sort_key=sort_key,
+        sort_order=sort_order,
+        search_query=search_query,
+        group_op=group_op,
+    )
+
+    return dashboard_table_head
+
+
 def create_admin_response(
-    rtype, rstate, rules, sort_key, sort_order, search_query="", count_match=COUNT_MATCH, macro_file="macros.j2", macro_name="build_ip_tbody"
+    rtype,
+    rstate,
+    rules,
+    sort_key,
+    sort_order,
+    search_query="",
+    count_match=COUNT_MATCH,
+    macro_file="macros.j2",
+    macro_tbody="build_ip_tbody",
+    macro_thead="build_rules_thead",
 ):
     """
     Admin can see and edit any rules
@@ -147,24 +230,39 @@ def create_admin_response(
     :param all_actions:
     :param sort_order:
     :return:
-    """   
+    """
 
-    dashboard_table_body = create_dashboard_table_body(rules, rtype, macro_file=macro_file, macro_name=macro_name)
+    dashboard_table_body = create_dashboard_table_body(
+        rules, rtype, macro_file=macro_file, macro_name=macro_tbody
+    )
+
+    dashboard_table_head = create_dashboard_table_head(
+        rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+        rtype=rtype,
+        rstate=rstate,
+        sort_key=sort_key,
+        sort_order=sort_order,
+        search_query=search_query,
+        macro_file=macro_file,
+        macro_name=macro_thead,
+    )
+
     res = make_response(
         render_template(
             "pages/dashboard_admin.j2",
             display_rules=len(rules),
             button_colspan=COLSPANS[rtype],
             table_title=RULE_TYPE_DISPATCH[rtype]["title"],
-            rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
             css_classes=active_css_rstate(rtype, rstate),
-            sort_order=sort_order,
-            sort_key=sort_key,
-            search_query=search_query,
             count_match=count_match,
             dashboard_table_body=dashboard_table_body,
+            dashboard_table_head=dashboard_table_head,
+            rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+            rtype=rtype,
             rstate=rstate,
-            rtype=rtype
+            sort_key=sort_key,
+            sort_order=sort_order,
+            search_query=search_query,
         )
     )
 
@@ -174,7 +272,16 @@ def create_admin_response(
 
 
 def create_user_response(
-    rtype, rstate, rules, sort_key, sort_order, search_query="", count_match=COUNT_MATCH, macro_file="macros.j2", macro_name="build_ip_tbody"
+    rtype,
+    rstate,
+    rules,
+    sort_key,
+    sort_order,
+    search_query="",
+    count_match=COUNT_MATCH,
+    macro_file="macros.j2",
+    macro_tbody="build_ip_tbody",
+    macro_thead="build_rules_thead",
 ):
     """
     Filter out the rules for normal users
@@ -202,8 +309,39 @@ def create_user_response(
     if rstate != "active":
         read_only_rules = []
 
-    dashboard_table_readonly = create_dashboard_table_body(read_only_rules, rtype, editable=False, group_op=False, macro_file=macro_file, macro_name=macro_name)
-    dashboard_table_editable = create_dashboard_table_body(rules_editable, rtype, macro_file=macro_file, macro_name=macro_name)
+    dashboard_table_readonly = create_dashboard_table_body(
+        read_only_rules,
+        rtype,
+        editable=False,
+        group_op=False,
+        macro_file=macro_file,
+        macro_name=macro_tbody,
+    )
+    dashboard_table_editable = create_dashboard_table_body(
+        rules_editable, rtype, macro_file=macro_file, macro_name=macro_tbody
+    )
+    dashboard_table_editable_head = create_dashboard_table_head(
+        rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+        rtype=rtype,
+        rstate=rstate,
+        sort_key=sort_key,
+        sort_order=sort_order,
+        search_query=search_query,
+        group_op=True,
+        macro_file=macro_file,
+        macro_name=macro_thead,
+    )
+    dashboard_table_readonly_head = create_dashboard_table_head(
+        rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+        rtype=rtype,
+        rstate=rstate,
+        sort_key=sort_key,
+        sort_order=sort_order,
+        search_query=search_query,
+        group_op=False,
+        macro_file=macro_file,
+        macro_name=macro_thead,
+    )
     display_editable = len(rules_editable)
     display_readonly = len(read_only_rules)
 
@@ -218,12 +356,14 @@ def create_user_response(
             display_editable=display_editable,
             display_readonly=display_readonly,
             css_classes=active_css_rstate(rtype, rstate),
-            sort_order=sort_order,
+            dashboard_table_editable_head=dashboard_table_editable_head,
+            dashboard_table_readonly_head=dashboard_table_readonly_head,
+            rtype=rtype,
+            rstate=rstate,
             sort_key=sort_key,
+            sort_order=sort_order,
             search_query=search_query,
             count_match=count_match,
-            rstate=rstate,
-            rtype=rtype
         )
     )
 
@@ -233,7 +373,16 @@ def create_user_response(
 
 
 def create_view_response(
-    rtype, rstate, rules, sort_key, sort_order, search_query="", count_match=COUNT_MATCH, macro_file="macros.j2", macro_name="build_ip_tbody"
+    rtype,
+    rstate,
+    rules,
+    sort_key,
+    sort_order,
+    search_query="",
+    count_match=COUNT_MATCH,
+    macro_file="macros.j2",
+    macro_tbody="build_ip_tbody",
+    macro_thead="build_rules_thead",
 ):
     """
     Filter out the rules for normal users
@@ -241,7 +390,26 @@ def create_view_response(
     :param rstate:
     :return:
     """
-    dashboard_table_body = create_dashboard_table_body(rules, rtype, editable=False, group_op=False, macro_file=macro_file, macro_name=macro_name)
+    dashboard_table_body = create_dashboard_table_body(
+        rules,
+        rtype,
+        editable=False,
+        group_op=False,
+        macro_file=macro_file,
+        macro_name=macro_tbody,
+    )
+
+    dashboard_table_head = create_dashboard_table_head(
+        RULE_TYPE_DISPATCH[rtype]["columns"],
+        rtype,
+        rstate,
+        sort_key,
+        sort_order,
+        search_query,
+        group_op=False,
+        macro_file=macro_file,
+        macro_name=macro_thead,
+    )
 
     res = make_response(
         render_template(
@@ -251,13 +419,12 @@ def create_view_response(
             rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
             display_rules=len(rules),
             css_classes=active_css_rstate(rtype, rstate),
-            sort_order=sort_order,
-            sort_key=sort_key,
             search_query=search_query,
             count_match=count_match,
             rstate=rstate,
             rtype=rtype,
             dashboard_table_body=dashboard_table_body,
+            dashboard_table_head=dashboard_table_head,
         )
     )
 
