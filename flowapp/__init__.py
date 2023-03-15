@@ -87,6 +87,26 @@ def create_app():
                 {"name": "Add RTBH Comm.", "url": url_for("admin.community")},
             ],
         }
+        app.config['DASHBOARD'] = {
+            'ipv4': {
+                'name': 'IPv4',
+                'url_handler': 'dashboard.index',
+                'macro_file': 'macros.j2',
+                'macro_name': 'build_ip_tbody'
+            },
+            'ipv6': {
+                'name': 'IPv6',
+                'url_handler': 'dashboard.index',
+                'macro_file': 'macros.j2',
+                'macro_name': 'build_ip_tbody'
+            },
+            'rtbh': {
+                'name': 'RTBH',
+                'url_handler': 'dashboard.index',
+                'macro_file': 'macros.j2',
+                'macro_name': 'build_rtbh_tbody'
+            },
+        }
 
     @ext.login_handler
     def login(user_info):
@@ -183,7 +203,19 @@ def create_app():
 
     @app.context_processor
     def inject_main_menu():
+        """
+        inject main menu config to templates
+        used in default template to create main menu
+        """
         return {"main_menu": app.config.get("MAIN_MENU")}
+    
+    @app.context_processor
+    def inject_dashboard():
+        """
+        inject dashboard config to templates
+        used in submenu dashboard to create dashboard tables
+        """
+        return {"dashboard": app.config.get("DASHBOARD")}
 
     @app.template_filter("strftime")
     def format_datetime(value):

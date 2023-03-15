@@ -9,17 +9,13 @@
 
 
 
-    {% if rules_editable %}
+    {% if display_editable %}
     <h2>{{ rstate|capitalize }} {{ table_title }} that you can modify</h2>
     <form action="{{ url_for('rules.group_operation') }}" method="post">
          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
         {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order) }}
-        {% if rtype_int == 1 %}
-            {{ build_rtbh_tbody(rules_editable, today, rtype_int) }}
-        {% else %}
-            {{ build_ip_tbody(rules_editable, today, rtype_int) }}
-        {% endif %}
+        {{ dashboard_table_editable }}
          <tr>
             <td colspan="{{ button_colspan }}">
             </td>
@@ -40,16 +36,12 @@
         <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
     {% endif %}
 
-    {% if rules_visible %}
+    {% if display_readonly %}
     <h2>{{ rstate|capitalize }}  {{ table_title }} that are read-only for you</h2>
         <p>Those rules somehow including your network ranges. You can see them all for your information. However, you can not modify their expiration time or delete them.</p>
         <table class="table table-hover ip-table">
         {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, group_op=False) }}
-        {% if rtype_int == 1 %}
-            {{ build_rtbh_tbody(rules_visible, today, rtype_int, editable=False, group_op=False) }}
-        {% else %}
-            {{ build_ip_tbody(rules_visible, today, rtype_int, False) }}
-        {% endif %}
+        {{ dashboard_table_readonly }}
         </table>
     {% else %}
         <h2>There are no read only {{ rstate }}  {{ table_title }}.</h2>

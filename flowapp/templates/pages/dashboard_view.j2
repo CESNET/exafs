@@ -7,16 +7,13 @@
 
     {% include 'pages/submenu_dashboard_view.j2' %}
 
-    {% if rules %}
+    {% if display_rules %}
     <h2>{{ rstate|capitalize }}  {{ table_title }}</h2>
         <p>You can see the rules for your information. However, you can not modify their expiration time or delete them.</p>
         <table class="table table-hover ip-table">
         {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, group_op=False) }}
-        {% if rtype_int == 1 %}
-            {{ build_rtbh_tbody(rules, today, rtype_int, editable=False, group_op=False) }}
-        {% else %}
-            {{ build_ip_tbody(rules, today, rtype_int, editable=False, group_op=False) }}
-        {% endif %}
+        {{ dashboard_table_body }}
+
         </table>
     {% else %}
         <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
