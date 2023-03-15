@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 
-__version__ = "0.7.1"
+from .__about__ import __version__
 
 
 db = SQLAlchemy()
