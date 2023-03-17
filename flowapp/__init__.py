@@ -62,54 +62,54 @@ def create_app():
     with app.test_request_context():
         app.config["MAIN_MENU"] = {
             "edit": [
-                {"name": "Add IPv4", "url": url_for("rules.ipv4_rule")},
-                {"name": "Add IPv6", "url": url_for("rules.ipv6_rule")},
-                {"name": "Add RTBH", "url": url_for("rules.rtbh_rule")},
-                {"name": "API Key", "url": url_for("api_keys.all")},
+                {"name": "Add IPv4", "url": "rules.ipv4_rule"},
+                {"name": "Add IPv6", "url": "rules.ipv6_rule"},
+                {"name": "Add RTBH", "url": "rules.rtbh_rule"},
+                {"name": "API Key", "url": "api_keys.all"},
             ],
             "admin": [
+                {"name": "Commands Log","url": "admin.log"},
                 {
-                    "name": "Commands Log",
-                    "url": url_for("admin.log"),
-                    "divide_after": True,
+                    "name": "Users",
+                    "url": "admin.users",
+                    "divide_before": True,
                 },
-                {"name": "Users", "url": url_for("admin.users")},
-                {"name": "Add User", "url": url_for("admin.user")},
-                {"name": "Organizations", "url": url_for("admin.organizations")},
+                {"name": "Add User", "url": "admin.user"},
+                {"name": "Organizations", "url": "admin.organizations"},
+                {"name": "Add Org.","url": "admin.organization"},
                 {
-                    "name": "Add Org.",
-                    "url": url_for("admin.organization"),
-                    "divide_after": True,
+                    "name": "Action",
+                    "url": "admin.actions",
+                    "divide_before": True,
                 },
-                {"name": "Action", "url": url_for("admin.actions")},
-                {"name": "Add action", "url": url_for("admin.action")},
-                {"name": "RTBH Communities", "url": url_for("admin.communities")},
-                {"name": "Add RTBH Comm.", "url": url_for("admin.community")},
+                {"name": "Add action", "url": "admin.action"},
+                {"name": "RTBH Communities", "url": "admin.communities"},
+                {"name": "Add RTBH Comm.", "url": "admin.community"},
             ],
         }
-        app.config['DASHBOARD'] = {
-            'ipv4': {
-                'name': 'IPv4',
-                'url_handler': 'dashboard.index',
-                'macro_file': 'macros.j2',
-                'macro_tbody': 'build_ip_tbody',
-                'macro_thead': 'build_rules_thead'
+        app.config["DASHBOARD"] = {
+            "ipv4": {
+                "name": "IPv4",
+                "url_handler": "dashboard.index",
+                "macro_file": "macros.j2",
+                "macro_tbody": "build_ip_tbody",
+                "macro_thead": "build_rules_thead",
             },
-            'ipv6': {
-                'name': 'IPv6',
-                'url_handler': 'dashboard.index',
-                'macro_file': 'macros.j2',
-                'macro_tbody': 'build_ip_tbody',
-                'macro_thead': 'build_rules_thead'
+            "ipv6": {
+                "name": "IPv6",
+                "url_handler": "dashboard.index",
+                "macro_file": "macros.j2",
+                "macro_tbody": "build_ip_tbody",
+                "macro_thead": "build_rules_thead",
             },
-            'rtbh': {
-                'name': 'RTBH',
-                'url_handler': 'dashboard.index',
-                'macro_file': 'macros.j2',
-                'macro_tbody': 'build_rtbh_tbody',
-                'macro_thead': 'build_rules_thead',
-                'data_handler': models,
-                'data_handler_method': 'get_ip_rules'
+            "rtbh": {
+                "name": "RTBH",
+                "url_handler": "dashboard.index",
+                "macro_file": "macros.j2",
+                "macro_tbody": "build_rtbh_tbody",
+                "macro_thead": "build_rules_thead",
+                "data_handler": models,
+                "data_handler_method": "get_ip_rules",
             },
         }
 

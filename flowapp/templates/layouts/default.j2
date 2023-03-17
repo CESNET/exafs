@@ -47,10 +47,10 @@
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                   {% for item in main_menu['admin'] %}
-                    <li><a class="dropdown-item" href="{{ item.url }}">{{ item.name }}</a></li>
-                    {% if item.divide_after %}
+                    {% if item.divide_before %}
                       <li><hr class="dropdown-divider"></li>
                     {% endif %}
+                    <li><a class="dropdown-item" href="{{ url_for(item.url) }}">{{ item.name }}</a></li>
                   {% endfor %}
                 </ul>
               </li>
