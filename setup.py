@@ -5,11 +5,15 @@ Setuptools configuration
 """
 
 import setuptools
-from flowapp.__about__ import __version__
+
+# Import the __version__ variable without having to import the flowapp package.
+# This prevents missing dependency error in new virtual environments.
+with open("flowapp/__about__.py") as f:
+    exec(f.read())
 
 setuptools.setup(
     name="exafs",
-    version=__version__,
+    version=__version__, # noqa: F821
     author="CESNET / Jiri Vrany, Petr Adamec, Josef Verich, Jakub Man",
     description="Tool for creation, validation, and execution of ExaBGP messages.",
     url="https://github.com/CESNET/exafs",
