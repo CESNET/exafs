@@ -1,7 +1,4 @@
-from instance_config import InstanceConfig
-
-
-class Config(InstanceConfig):
+class Config():
     """
     Default config options
     """

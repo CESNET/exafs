@@ -8,6 +8,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 
 from .__about__ import __version__
+from .instance_config import InstanceConfig
 
 
 db = SQLAlchemy()
@@ -27,6 +28,9 @@ def create_app():
     # db.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+
+    # Load the default configuration for dashboard and main menu 
+    app.config.from_object(InstanceConfig)
 
     app.config.setdefault("VERSION", __version__)
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
