@@ -45,13 +45,13 @@ class InstanceConfig:
 
     Items in "edit" list are visible only for logged in users with edit role.
         - the names are visible in main menu
-        - they have "name" and "url" keys where "url" must be a valid 
+        - they have "name" and "url" keys where "url" must be a valid
         - endpoint handled by url_for in Jinja template
 
     Ttems in "admin" list are visible only for logged in users with admin role.
         - they are used to create dropdown menu
         - they have "name" and "url" keys with the same property as edit
-        - in addtion they have "divide_before" key which is boolean and adds a bs5 divider 
+        - in addtion they have "divide_before" key which is boolean and adds a bs5 divider
         during rendering of the menu
 
     If you need to add new dashboard item, add it to DASHBOARD dict with the following keys:
@@ -62,6 +62,8 @@ class InstanceConfig:
             "macro_thead": "macro for rendering table header",
             "table_colspan": "colspan for buttons under the table rows",
             "table_columns": "your table columnus",
+            'data_handler': "module where your data handler is defined, default is models",
+            'data_handler_method': "method to get data, must have same signature as models.get_ip_rules"
         },
 
     """
