@@ -18,14 +18,12 @@ from flowapp.constants import (
     ORDER_ARG,
     DEFAULT_ORDER,
     DEFAULT_SORT,
-    RULE_TYPES,
     SEARCH_ARG,
     RULE_ARG,
     TYPE_ARG,
-    RULES_KEY,
     ORDSRC_ARG,
     COMP_FUNCS,
-    DEFAULT_COUNT_MATCH
+    DEFAULT_COUNT_MATCH,
 )
 from flowapp.utils import active_css_rstate, other_rtypes
 
@@ -127,7 +125,7 @@ def index(rtype="ipv4", rstate="active"):
     else:
         count_match = ""
 
-    res, encoded = view_factory(
+    return view_factory(
         rtype=rtype,
         rstate=rstate,
         rules=rules,
@@ -135,16 +133,13 @@ def index(rtype="ipv4", rstate="active"):
         sort_order=get_sort_order,
         table_colspan=current_app.config["DASHBOARD"][rtype]["table_colspan"],
         table_columns=current_app.config["DASHBOARD"][rtype]["table_columns"],
+        table_title=f'{current_app.config["DASHBOARD"][rtype]["name"]} rules',
         search_query=get_search_query,
         count_match=count_match,
         macro_file=macro_file,
         macro_tbody=macro_tbody,
         macro_thead=macro_thead,
     )
-    print("ENCODED: ", encoded)
-    session[RULES_KEY] = encoded
-
-    return res
 
 
 def create_dashboard_table_body(
@@ -165,9 +160,7 @@ def create_dashboard_table_body(
     tstring = "{% "
     tstring = tstring + f"from '{macro_file}' import {macro_name}"
     tstring = tstring + " %} {{"
-    tstring = (
-        tstring + f" {macro_name}(rules, today, editable, group_op) " + "}}"
-    )
+    tstring = tstring + f" {macro_name}(rules, today, editable, group_op) " + "}}"
 
     dashboard_table_body = render_template_string(
         tstring,
@@ -233,6 +226,7 @@ def create_admin_response(
     sort_order,
     table_colspan,
     table_columns,
+    table_title,
     search_query="",
     count_match=DEFAULT_COUNT_MATCH,
     macro_file="macros.j2",
@@ -269,7 +263,7 @@ def create_admin_response(
             "pages/dashboard_admin.j2",
             display_rules=len(rules),
             button_colspan=table_colspan,
-            table_title=f"{rtype} rules",
+            table_title=table_title,
             css_classes=active_css_rstate(rtype, rstate),
             count_match=count_match,
             dashboard_table_body=dashboard_table_body,
@@ -283,9 +277,7 @@ def create_admin_response(
         )
     )
 
-    encoded = create_rules_payload(rules, rtype)
-
-    return res, encoded
+    return res
 
 
 def create_user_response(
@@ -296,6 +288,7 @@ def create_user_response(
     sort_order,
     table_colspan,
     table_columns,
+    table_title,
     search_query="",
     count_match=DEFAULT_COUNT_MATCH,
     macro_file="macros.j2",
@@ -367,7 +360,7 @@ def create_user_response(
     res = make_response(
         render_template(
             "pages/dashboard_user.j2",
-            table_title=f"{rtype} rules",
+            table_title=table_title,
             button_colspan=table_colspan,
             rules_columns=table_columns,
             dashboard_table_editable=dashboard_table_editable,
@@ -386,9 +379,7 @@ def create_user_response(
         )
     )
 
-    encoded = create_rules_payload(rules_editable, rtype)
-
-    return res, encoded
+    return res
 
 
 def create_view_response(
@@ -399,6 +390,7 @@ def create_view_response(
     sort_order,
     table_colspan,
     table_columns,
+    table_title,
     search_query="",
     count_match=DEFAULT_COUNT_MATCH,
     macro_file="macros.j2",
@@ -435,7 +427,7 @@ def create_view_response(
     res = make_response(
         render_template(
             "pages/dashboard_view.j2",
-            table_title=f"{rtype} rules",
+            table_title=table_title,
             button_colspan=table_colspan,
             rules_columns=table_columns,
             display_rules=len(rules),
@@ -449,15 +441,7 @@ def create_view_response(
         )
     )
 
-    encoded = create_rules_payload([], rtype)
-
-    return res, encoded
-
-
-def create_rules_payload(rules, rtype):
-    payload = {RULE_TYPES[rtype]: [rule.id for rule in rules]}
-    print(payload)
-    return payload
+    return res
 
 
 def filter_rules(rules, get_search_query):

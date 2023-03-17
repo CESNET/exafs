@@ -8,7 +8,7 @@
             <ul class="nav nav-pills">
             {% for key, item in dashboard.items() %}
                 <li class="nav-item">
-                    <a class="nav-link {{ css_classes[key] }}" href="{{ url_for(item.url_handler, rtype=key, rstate=rstate) }}" >
+                    <a class="nav-link {{ css_classes[key] }}" href="{{ url_for('dashboard.index', rtype=key, rstate=rstate) }}" >
                     {{ item.name }} 
                     {% if count_match %}
                         ({{ count_match[key] }})
