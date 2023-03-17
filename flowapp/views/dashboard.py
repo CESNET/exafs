@@ -445,7 +445,7 @@ def create_view_response(
 
 
 def filter_rules(rules, get_search_query):
-    rules_serialized = [rule.to_table_source() for rule in rules]
+    rules_serialized = [rule.dict() for rule in rules]
     result = []
     for idx, rule in enumerate(rules_serialized):
         full_text = " ".join("{}".format(c) for c in rule.values())

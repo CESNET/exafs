@@ -1,3 +1,4 @@
+import json
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
@@ -291,38 +292,23 @@ class RTBH(db.Model):
             "rstate": self.rstate.description,
         }
 
-    def to_table_source(self):
+    def dict(self, prefered_format="yearfirst"):
         """
-        Serialize to dict / user for rendering in React table
-        :return: dictionary
+        Serialize to dict
+        :param prefered_format: string with prefered time format
+        :returns: dictionary
         """
+        return self.to_dict(prefered_format)
+  
 
-        s_source = self.ipv4
-        s_slash = ""
-        d_slash = ""
-        s_mask = ""
-        d_mask = ""
+    def json(self, prefered_format="yearfirst"):
+        """
+        Serialize to json
+        :param prefered_format: string with prefered time format
+        :returns: json
+        """
+        return json.dumps(self.to_dict())
 
-        if self.ipv4_mask:
-            s_slash = "/" if self.ipv4_mask >= 0 else ""
-            s_mask = self.ipv4_mask if self.ipv4_mask >= 0 else ""
-
-        d_source = self.ipv6
-        if self.ipv6_mask:
-            d_slash = "/" if self.ipv6_mask >= 0 else ""
-            d_mask = self.ipv6_mask if self.ipv6_mask >= 0 else ""
-
-        return {
-            "id": "{}".format(self.id),
-            "ipv4": "{}{}{}".format(s_source, s_slash, s_mask),
-            "ipv6": "{}{}{}".format(d_source, d_slash, d_mask),
-            "community": self.community.name,
-            "comment": self.comment,
-            "expires": utils.datetime_to_webpicker(self.expires),
-            "created": utils.datetime_to_webpicker(self.created),
-            "user": "{}".format(self.user.name),
-            "rstate": self.rstate.description,
-        }
 
 
 class Flowspec4(db.Model):
@@ -463,45 +449,22 @@ class Flowspec4(db.Model):
             "rstate": self.rstate.description,
         }
 
-    def to_table_source(self):
+    def dict(self, prefered_format="yearfirst"):
         """
         Serialize to dict
-        :return: dictionary
-
+        :param prefered_format: string with prefered time format
+        :returns: dictionary
         """
+        return self.to_dict(prefered_format)
 
-        s_slash = ""
-        d_slash = ""
-        s_mask = ""
-        d_mask = ""
 
-        s_source = self.source
-        if self.source_mask:
-            s_slash = "/" if self.source_mask >= 0 else ""
-            s_mask = self.source_mask if self.source_mask >= 0 else ""
-
-        d_source = self.dest
-        if self.dest_mask:
-            d_slash = "/" if self.dest_mask >= 0 else ""
-            d_mask = self.dest_mask if self.dest_mask >= 0 else ""
-
-        return {
-            "id": str(self.id),
-            "source": "{}{}{}".format(s_source, s_slash, s_mask),
-            "source_port": self.source_port,
-            "dest": "{}{}{}".format(d_source, d_slash, d_mask),
-            "dest_port": self.dest_port,
-            "protocol": self.protocol,
-            "flags": self.flags,
-            "packet_len": self.packet_len,
-            "fragment": self.fragment,
-            "comment": self.comment,
-            "expires": utils.datetime_to_webpicker(self.expires),
-            "created": utils.datetime_to_webpicker(self.created),
-            "action": self.action.name,
-            "user": str(self.user.uuid),
-            "rstate": self.rstate.description,
-        }
+    def json(self, prefered_format="yearfirst"):
+        """
+        Serialize to json
+        :param prefered_format: string with prefered time format
+        :returns: json
+        """
+        return json.dumps(self.to_dict())
 
 
 class Flowspec6(db.Model):
@@ -613,44 +576,21 @@ class Flowspec6(db.Model):
             "rstate": self.rstate.description,
         }
 
-    def to_table_source(self):
+    def dict(self, prefered_format="yearfirst"):
         """
         Serialize to dict
-        :return: dictionary
-
+        :param prefered_format: string with prefered time format
+        :returns: dictionary
         """
+        return self.to_dict(prefered_format)
 
-        s_slash = ""
-        d_slash = ""
-        s_mask = ""
-        d_mask = ""
-
-        s_source = self.source
-        if self.source_mask:
-            s_slash = "/" if self.source_mask >= 0 else ""
-            s_mask = self.source_mask if self.source_mask >= 0 else ""
-
-        d_source = self.dest
-        if self.dest_mask:
-            d_slash = "/" if self.dest_mask >= 0 else ""
-            d_mask = self.dest_mask if self.dest_mask >= 0 else ""
-
-        return {
-            "id": self.id,
-            "source": "{}{}{}".format(s_source, s_slash, s_mask),
-            "source_port": self.source_port,
-            "dest": "{}{}{}".format(d_source, d_slash, d_mask),
-            "dest_port": self.dest_port,
-            "protocol": self.next_header,
-            "flags": self.flags,
-            "packet_len": self.packet_len,
-            "comment": self.comment,
-            "expires": utils.datetime_to_webpicker(self.expires),
-            "created": utils.datetime_to_webpicker(self.created),
-            "action": self.action.name,
-            "user": self.user.uuid,
-            "rstate": self.rstate.description,
-        }
+    def json(self, prefered_format="yearfirst"):
+        """
+        Serialize to json
+        :param prefered_format: string with prefered time format
+        :returns: json
+        """
+        return json.dumps(self.to_dict())
 
 
 class Log(db.Model):
