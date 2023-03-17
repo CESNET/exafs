@@ -299,7 +299,6 @@ class RTBH(db.Model):
         :returns: dictionary
         """
         return self.to_dict(prefered_format)
-  
 
     def json(self, prefered_format="yearfirst"):
         """
@@ -308,7 +307,6 @@ class RTBH(db.Model):
         :returns: json
         """
         return json.dumps(self.to_dict())
-
 
 
 class Flowspec4(db.Model):
@@ -456,7 +454,6 @@ class Flowspec4(db.Model):
         :returns: dictionary
         """
         return self.to_dict(prefered_format)
-
 
     def json(self, prefered_format="yearfirst"):
         """

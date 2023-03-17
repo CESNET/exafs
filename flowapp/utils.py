@@ -1,7 +1,15 @@
 from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
-from flowapp.constants import COMP_FUNCS, TIME_YEAR, TIME_US, TIME_STMP, TIME_FORMAT_ARG, RULE_TYPES, FORM_TIME_PATTERN
+from flowapp.constants import (
+    COMP_FUNCS,
+    TIME_YEAR,
+    TIME_US,
+    TIME_STMP,
+    TIME_FORMAT_ARG,
+    RULE_TYPES,
+    FORM_TIME_PATTERN,
+)
 
 
 def other_rtypes(rtype):
@@ -15,7 +23,7 @@ def other_rtypes(rtype):
     except ValueError:
         pass
 
-    return result    
+    return result
 
 
 def output_date_format(json_request_data, pref_format=TIME_YEAR):
@@ -41,7 +49,10 @@ def parse_api_time(apitime):
 
     apitime = str(apitime)
     try:
-        return round_to_ten_minutes(datetime.strptime(apitime, FORM_TIME_PATTERN)), TIME_US
+        return (
+            round_to_ten_minutes(datetime.strptime(apitime, FORM_TIME_PATTERN)),
+            TIME_US,
+        )
     except ValueError:
         mytime = False
 
@@ -62,7 +73,7 @@ def parse_api_time(apitime):
     except ValueError:
         mytime = False
 
-    return False             
+    return False
 
 
 def quote_to_ent(comment):
@@ -73,17 +84,17 @@ def quote_to_ent(comment):
     :return: string
     """
     if comment:
-        return comment.replace('"', '&quot;')
+        return comment.replace('"', "&quot;")
 
 
 def webpicker_to_datetime(webtime, format=TIME_YEAR):
     """
     convert 'YYYY/MM/DD HH:mm' to datetime
     """
-    if format==TIME_YEAR:
-        formating_string = '%Y/%m/%d %H:%M'
+    if format == TIME_YEAR:
+        formating_string = "%Y/%m/%d %H:%M"
     else:
-        formating_string = '%m/%d/%Y %H:%M'
+        formating_string = "%m/%d/%Y %H:%M"
 
     return datetime.strptime(webtime, formating_string)
 
@@ -92,10 +103,10 @@ def datetime_to_webpicker(python_time, format=TIME_YEAR):
     """
     convert datetime to 'YYYY/MM/DD HH:mm' string
     """
-    if format==TIME_YEAR:
-        formating_string = '%Y/%m/%d %H:%M'
+    if format == TIME_YEAR:
+        formating_string = "%Y/%m/%d %H:%M"
     else:
-        formating_string = '%m/%d/%Y %H:%M'
+        formating_string = "%m/%d/%Y %H:%M"
 
     return datetime.strftime(python_time, formating_string)
 
@@ -123,9 +134,11 @@ def round_to_ten_minutes(python_time):
     :return: datetime
     """
     python_time += timedelta(minutes=5)
-    python_time -= timedelta(minutes=python_time.minute % 10,
-                             seconds=python_time.second,
-                             microseconds=python_time.microsecond)
+    python_time -= timedelta(
+        minutes=python_time.minute % 10,
+        seconds=python_time.second,
+        microseconds=python_time.microsecond,
+    )
 
     return python_time
 
@@ -138,10 +151,9 @@ def flash_errors(form):
     """
     for field, errors in form.errors.items():
         for error in errors:
-            flash(u"Error in the %s field - %s" % (
-                getattr(form, field).label.text,
-                error
-            ))
+            flash(
+                "Error in the %s field - %s" % (getattr(form, field).label.text, error)
+            )
 
 
 def active_css_rstate(rtype, rstate):
@@ -151,12 +163,19 @@ def active_css_rstate(rtype, rstate):
     :return: dict
     """
 
-    return {'active': '', 'expired': '', 'all': '', 'ipv4': '', 'ipv6': '', 'rtbh': '', rtype: 'active',
-            rstate: 'active'}
+    return {
+        "active": "",
+        "expired": "",
+        "all": "",
+        "ipv4": "",
+        "ipv6": "",
+        "rtbh": "",
+        rtype: "active",
+        rstate: "active",
+    }
 
 
-def get_comp_func(rstate='active'):
-
+def get_comp_func(rstate="active"):
     try:
         comp_func = COMP_FUNCS[rstate]
     except IndexError:

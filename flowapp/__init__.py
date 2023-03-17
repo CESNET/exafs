@@ -29,7 +29,7 @@ def create_app():
     migrate.init_app(app, db)
     csrf.init_app(app)
 
-    # Load the default configuration for dashboard and main menu 
+    # Load the default configuration for dashboard and main menu
     app.config.from_object(InstanceConfig)
 
     app.config.setdefault("VERSION", __version__)
