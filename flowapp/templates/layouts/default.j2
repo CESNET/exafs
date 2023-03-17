@@ -37,7 +37,7 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               {% if session['can_edit'] %}
                   {% for item in main_menu['edit'] %}
-                    <li class="nav-item"><a class="nav-link" href="{{ item.url }}">{{ item.name}}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for(item.url) }}">{{ item.name}}</a></li>
                   {% endfor %}
               {% endif %}
               {% if 3 in session['user_role_ids'] %}

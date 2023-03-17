@@ -14,7 +14,6 @@ from flask import (
 from flowapp import models, validators, flowspec
 from flowapp.auth import auth_required
 from flowapp.constants import (
-    RULE_TYPE_DISPATCH,
     SORT_ARG,
     ORDER_ARG,
     DEFAULT_ORDER,
@@ -25,9 +24,8 @@ from flowapp.constants import (
     TYPE_ARG,
     RULES_KEY,
     ORDSRC_ARG,
-    COLSPANS,
     COMP_FUNCS,
-    COUNT_MATCH,
+    DEFAULT_COUNT_MATCH
 )
 from flowapp.utils import active_css_rstate, other_rtypes
 
@@ -54,8 +52,9 @@ def index(rtype="ipv4", rstate="active"):
     :param rstate:
     :return: view from view factory
     """
+
     # params sanitization
-    if rtype not in RULE_TYPE_DISPATCH.keys():
+    if rtype not in current_app.config["DASHBOARD"].keys():
         return abort(404)
     if rstate not in COMP_FUNCS.keys():
         return abort(404)
@@ -117,7 +116,7 @@ def index(rtype="ipv4", rstate="active"):
 
     # search rules
     if get_search_query:
-        count_match = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
+        count_match = current_app.config["COUNT_MATCH"]
         rules = filter_rules(rules, get_search_query)
         # extended search in for all rule types
         count_match[rtype] = len(rules)
@@ -129,18 +128,20 @@ def index(rtype="ipv4", rstate="active"):
         count_match = ""
 
     res, encoded = view_factory(
-        rtype,
-        rstate,
-        rules,
-        get_sort_key,
-        get_sort_order,
-        get_search_query,
-        count_match,
-        macro_file,
-        macro_tbody,
-        macro_thead,
+        rtype=rtype,
+        rstate=rstate,
+        rules=rules,
+        sort_key=get_sort_key,
+        sort_order=get_sort_order,
+        table_colspan=current_app.config["DASHBOARD"][rtype]["table_colspan"],
+        table_columns=current_app.config["DASHBOARD"][rtype]["table_columns"],
+        search_query=get_search_query,
+        count_match=count_match,
+        macro_file=macro_file,
+        macro_tbody=macro_tbody,
+        macro_thead=macro_thead,
     )
-
+    print("ENCODED: ", encoded)
     session[RULES_KEY] = encoded
 
     return res
@@ -165,14 +166,13 @@ def create_dashboard_table_body(
     tstring = tstring + f"from '{macro_file}' import {macro_name}"
     tstring = tstring + " %} {{"
     tstring = (
-        tstring + f" {macro_name}(rules, today, rtype_int, editable, group_op) " + "}}"
+        tstring + f" {macro_name}(rules, today, editable, group_op) " + "}}"
     )
 
     dashboard_table_body = render_template_string(
         tstring,
         rules=rules,
         today=datetime.now(),
-        rtype_int=RULE_TYPES[rtype],
         editable=editable,
         group_op=group_op,
     )
@@ -231,8 +231,10 @@ def create_admin_response(
     rules,
     sort_key,
     sort_order,
+    table_colspan,
+    table_columns,
     search_query="",
-    count_match=COUNT_MATCH,
+    count_match=DEFAULT_COUNT_MATCH,
     macro_file="macros.j2",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
@@ -252,7 +254,7 @@ def create_admin_response(
     )
 
     dashboard_table_head = create_dashboard_table_head(
-        rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+        rules_columns=table_columns,
         rtype=rtype,
         rstate=rstate,
         sort_key=sort_key,
@@ -266,13 +268,13 @@ def create_admin_response(
         render_template(
             "pages/dashboard_admin.j2",
             display_rules=len(rules),
-            button_colspan=COLSPANS[rtype],
-            table_title=RULE_TYPE_DISPATCH[rtype]["title"],
+            button_colspan=table_colspan,
+            table_title=f"{rtype} rules",
             css_classes=active_css_rstate(rtype, rstate),
             count_match=count_match,
             dashboard_table_body=dashboard_table_body,
             dashboard_table_head=dashboard_table_head,
-            rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+            rules_columns=table_columns,
             rtype=rtype,
             rstate=rstate,
             sort_key=sort_key,
@@ -292,8 +294,10 @@ def create_user_response(
     rules,
     sort_key,
     sort_order,
+    table_colspan,
+    table_columns,
     search_query="",
-    count_match=COUNT_MATCH,
+    count_match=DEFAULT_COUNT_MATCH,
     macro_file="macros.j2",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
@@ -336,7 +340,7 @@ def create_user_response(
         rules_editable, rtype, macro_file=macro_file, macro_name=macro_tbody
     )
     dashboard_table_editable_head = create_dashboard_table_head(
-        rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+        rules_columns=table_columns,
         rtype=rtype,
         rstate=rstate,
         sort_key=sort_key,
@@ -347,7 +351,7 @@ def create_user_response(
         macro_name=macro_thead,
     )
     dashboard_table_readonly_head = create_dashboard_table_head(
-        rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+        rules_columns=table_columns,
         rtype=rtype,
         rstate=rstate,
         sort_key=sort_key,
@@ -363,9 +367,9 @@ def create_user_response(
     res = make_response(
         render_template(
             "pages/dashboard_user.j2",
-            table_title=RULE_TYPE_DISPATCH[rtype]["title"],
-            button_colspan=COLSPANS[rtype],
-            rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+            table_title=f"{rtype} rules",
+            button_colspan=table_colspan,
+            rules_columns=table_columns,
             dashboard_table_editable=dashboard_table_editable,
             dashboard_table_readonly=dashboard_table_readonly,
             display_editable=display_editable,
@@ -393,8 +397,10 @@ def create_view_response(
     rules,
     sort_key,
     sort_order,
+    table_colspan,
+    table_columns,
     search_query="",
-    count_match=COUNT_MATCH,
+    count_match=DEFAULT_COUNT_MATCH,
     macro_file="macros.j2",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
@@ -415,7 +421,7 @@ def create_view_response(
     )
 
     dashboard_table_head = create_dashboard_table_head(
-        RULE_TYPE_DISPATCH[rtype]["columns"],
+        table_columns,
         rtype,
         rstate,
         sort_key,
@@ -429,9 +435,9 @@ def create_view_response(
     res = make_response(
         render_template(
             "pages/dashboard_view.j2",
-            table_title=RULE_TYPE_DISPATCH[rtype]["title"],
-            button_colspan=COLSPANS[rtype],
-            rules_columns=RULE_TYPE_DISPATCH[rtype]["columns"],
+            table_title=f"{rtype} rules",
+            button_colspan=table_colspan,
+            rules_columns=table_columns,
             display_rules=len(rules),
             css_classes=active_css_rstate(rtype, rstate),
             search_query=search_query,
@@ -450,7 +456,7 @@ def create_view_response(
 
 def create_rules_payload(rules, rtype):
     payload = {RULE_TYPES[rtype]: [rule.id for rule in rules]}
-
+    print(payload)
     return payload
 
 

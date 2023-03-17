@@ -58,61 +58,6 @@ def create_app():
     app.register_blueprint(api_v3, url_prefix="/api/v3")
     app.register_blueprint(dashboard, url_prefix="/dashboard")
 
-    # menu items for the main menu
-    with app.test_request_context():
-        app.config["MAIN_MENU"] = {
-            "edit": [
-                {"name": "Add IPv4", "url": "rules.ipv4_rule"},
-                {"name": "Add IPv6", "url": "rules.ipv6_rule"},
-                {"name": "Add RTBH", "url": "rules.rtbh_rule"},
-                {"name": "API Key", "url": "api_keys.all"},
-            ],
-            "admin": [
-                {"name": "Commands Log","url": "admin.log"},
-                {
-                    "name": "Users",
-                    "url": "admin.users",
-                    "divide_before": True,
-                },
-                {"name": "Add User", "url": "admin.user"},
-                {"name": "Organizations", "url": "admin.organizations"},
-                {"name": "Add Org.","url": "admin.organization"},
-                {
-                    "name": "Action",
-                    "url": "admin.actions",
-                    "divide_before": True,
-                },
-                {"name": "Add action", "url": "admin.action"},
-                {"name": "RTBH Communities", "url": "admin.communities"},
-                {"name": "Add RTBH Comm.", "url": "admin.community"},
-            ],
-        }
-        app.config["DASHBOARD"] = {
-            "ipv4": {
-                "name": "IPv4",
-                "url_handler": "dashboard.index",
-                "macro_file": "macros.j2",
-                "macro_tbody": "build_ip_tbody",
-                "macro_thead": "build_rules_thead",
-            },
-            "ipv6": {
-                "name": "IPv6",
-                "url_handler": "dashboard.index",
-                "macro_file": "macros.j2",
-                "macro_tbody": "build_ip_tbody",
-                "macro_thead": "build_rules_thead",
-            },
-            "rtbh": {
-                "name": "RTBH",
-                "url_handler": "dashboard.index",
-                "macro_file": "macros.j2",
-                "macro_tbody": "build_rtbh_tbody",
-                "macro_thead": "build_rules_thead",
-                "data_handler": models,
-                "data_handler_method": "get_ip_rules",
-            },
-        }
-
     @ext.login_handler
     def login(user_info):
         try:

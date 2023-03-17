@@ -1,7 +1,13 @@
 
-{% macro build_ip_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
+{% macro build_ip_tbody(rules, today, editable=True, group_op=True) %}
 <tbody>
     {% for rule in rules %}
+        {% if rule.next_header is defined %}
+            {% set rtype_int = 6 %}
+        {% else %}
+            {% set rtype_int = 4 %}
+        {% endif %}
+
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
             <td>
                 <span class="task">{{ rule.source }}</span>{% if rule.source_mask %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
@@ -67,7 +73,7 @@
 {% endmacro %}
 
 
-{% macro build_rtbh_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
+{% macro build_rtbh_tbody(rules, today, editable=True, group_op=True) %}
     <tbody>
 {% for rule in rules %}
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>
