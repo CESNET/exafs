@@ -3,33 +3,6 @@ This module contains constant values used in application
 """
 from operator import ge, lt
 
-
-RULES_COLUMNS_V4 = (
-    ("source", "Source addr."),
-    ("source_port", "S port"),
-    ("dest", "Dest. addr."),
-    ("dest_port", "D port"),
-    ("protocol", "Proto"),
-    ("packet_len", "Packet len"),
-    ("expires", "Expires"),
-    ("action_id", "Action"),
-    ("flags", "Flags"),
-    ("user_id", "User"),
-)
-
-RULES_COLUMNS_V6 = (
-    ("source", "Source addr."),
-    ("source_port", "S port"),
-    ("dest", "Dest. addr."),
-    ("dest_port", "D port"),
-    ("next_header", "Next header"),
-    ("packet_len", "Packet len"),
-    ("expires", "Expires"),
-    ("action_id", "Action"),
-    ("flags", "Flags"),
-    ("user_id", "User"),
-)
-
 DEFAULT_SORT = "expires"
 DEFAULT_ORDER = "desc"
 
@@ -50,13 +23,8 @@ TIME_STMP = "timestamp"
 RULES_KEY = "rules"
 
 RULE_TYPES = {"ipv4": 4, "ipv6": 6, "rtbh": 1}
+DEFAULT_COUNT_MATCH = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
 
-RTBH_COLUMNS = (
-    ("ipv4", "IP adress (v4 or v6)"),
-    ("community_id", "Community"),
-    ("expires", "Expires"),
-    ("user_id", "User"),
-)
 ANNOUNCE = 1
 WITHDRAW = 2
 IPV4_DEFMASK = 32
@@ -75,18 +43,7 @@ IPV4_FRAGMENT = {
     "last": "last-fragment",
 }
 
-
-RULE_TYPE_DISPATCH = {
-    "ipv4": {"title": "IPv4 rules", "columns": RULES_COLUMNS_V4},
-    "ipv6": {"title": "IPv6 rules", "columns": RULES_COLUMNS_V6},
-    "rtbh": {"title": "RTBH rules", "columns": RTBH_COLUMNS},
-}
-
-COLSPANS = {"rtbh": 5, "ipv4": 10, "ipv6": 10}
-
 COMP_FUNCS = {"active": ge, "expired": lt, "all": None}
-
-COUNT_MATCH = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
 
 TCP_FLAGS = [
     ("SYN", "SYN"),

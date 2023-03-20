@@ -1,4 +1,4 @@
-class Config(object):
+class Config():
     """
     Default config options
     """
@@ -13,8 +13,19 @@ class Config(object):
     LOGOUT_URL = "https://flowspec.example.com/Shibboleth.sso/Logout"
     # SQL Alchemy config
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # URL of the ExaAPI
+
+    # ExaApi configuration
+    # possible values HTTP, RABBIT
+    EXA_API = "HTTP"
+    # for HTTP EXA_API_URL must be specified
     EXA_API_URL = "http://localhost:5000/"
+    # for RABBITMQ EXA_API_RABBIT_* must be specified
+    EXA_API_RABBIT_HOST = "your rabbit host"
+    EXA_API_RABBIT_PORT = "rabit port (5672)"
+    EXA_API_RABBIT_PASS = "some secret password"
+    EXA_API_RABBIT_USER = "rabbit user"
+    EXA_API_RABBIT_VHOST = "rabbit vhost"
+    EXA_API_RABBIT_QUEUE = "exa_api"
 
     # Secret keys for Flask Session and JWT (API and CSRF protection)
     JWT_SECRET = "GenerateSomeLongRandomSequence"

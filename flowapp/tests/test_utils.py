@@ -5,34 +5,34 @@ from datetime import datetime, timedelta
 
 from flowapp import utils
 
-@pytest.mark.parametrize("apitime, preformat", [
-    ("10/15/2015 14:46", "us"),
-    ("2015/10/15 14:46", "yearfirst"),
-    ("1444913400", "timestamp"),
-    (1444913400, "timestamp")
-])
+
+@pytest.mark.parametrize(
+    "apitime, preformat",
+    [
+        ("10/15/2015 14:46", "us"),
+        ("2015/10/15 14:46", "yearfirst"),
+        ("1444913400", "timestamp"),
+        (1444913400, "timestamp"),
+    ],
+)
 def test_parse_api_time(apitime, preformat):
     """
     is the time parsed correctly
     """
     result = utils.parse_api_time(apitime)
-    assert type(result) == type((1,2))
+    assert isinstance(result, tuple)
     assert result[0] == datetime(2015, 10, 15, 14, 50)
     assert result[1] == preformat
- 
 
-@pytest.mark.parametrize("apitime", [
-    "10/152015 14:46",
-    "201/10/15 14:46",
-    "144123254913400",
-    "abcd"
-])
+
+@pytest.mark.parametrize(
+    "apitime", ["10/152015 14:46", "201/10/15 14:46", "144123254913400", "abcd"]
+)
 def test_parse_api_time_bad_time(apitime):
     """
     is the time parsed correctly
     """
-    assert utils.parse_api_time(apitime) == False
-
+    assert not utils.parse_api_time(apitime)
 
 
 def test_get_rule_state_by_time():
@@ -56,11 +56,16 @@ def test_round_to_ten():
     assert utils.round_to_ten_minutes(d2) == dround
 
 
-@pytest.mark.parametrize("address_a, address_b", [
-    (u"2001:718:1c01:16:f1c4:c682:817:7e23", u"2001:0718:1c01:0016:f1c4:c682:0817:7e23"),
-    (u"2001:718::", u"2001:718::0"),
-    (u"2001:718::0", u"2001:0718:0000:0000:0000:0000:0000:0000")
-
-])
+@pytest.mark.parametrize(
+    "address_a, address_b",
+    [
+        (
+            "2001:718:1c01:16:f1c4:c682:817:7e23",
+            "2001:0718:1c01:0016:f1c4:c682:0817:7e23",
+        ),
+        ("2001:718::", "2001:718::0"),
+        ("2001:718::0", "2001:0718:0000:0000:0000:0000:0000:0000"),
+    ],
+)
 def test_ipv6_comparsion(address_a, address_b):
     assert ipaddress.ip_address(address_a) == ipaddress.ip_address(address_b)

@@ -410,7 +410,9 @@ def community():
             flash("Community saved", "alert-success")
             return redirect(url_for("admin.communities"))
         else:
-            flash(f"Community with name {form.name.data} already exists", "alert-danger")
+            flash(
+                f"Community with name {form.name.data} already exists", "alert-danger"
+            )
 
     community_url = url_for("admin.community")
     return render_template(

@@ -8,6 +8,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 
 from .__about__ import __version__
+from .instance_config import InstanceConfig
 
 
 db = SQLAlchemy()
@@ -27,6 +28,9 @@ def create_app():
     # db.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+
+    # Load the default configuration for dashboard and main menu
+    app.config.from_object(InstanceConfig)
 
     app.config.setdefault("VERSION", __version__)
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
@@ -57,36 +61,6 @@ def create_app():
     app.register_blueprint(api_v2, url_prefix="/api/v2")
     app.register_blueprint(api_v3, url_prefix="/api/v3")
     app.register_blueprint(dashboard, url_prefix="/dashboard")
-
-    # menu items for the main menu
-    with app.test_request_context():
-        app.config["MAIN_MENU"] = {
-            "edit": [
-                {"name": "Add IPv4", "url": url_for("rules.ipv4_rule")},
-                {"name": "Add IPv6", "url": url_for("rules.ipv6_rule")},
-                {"name": "Add RTBH", "url": url_for("rules.rtbh_rule")},
-                {"name": "API Key", "url": url_for("api_keys.all")},
-            ],
-            "admin": [
-                {
-                    "name": "Commands Log",
-                    "url": url_for("admin.log"),
-                    "divide_after": True,
-                },
-                {"name": "Users", "url": url_for("admin.users")},
-                {"name": "Add User", "url": url_for("admin.user")},
-                {"name": "Organizations", "url": url_for("admin.organizations")},
-                {
-                    "name": "Add Org.",
-                    "url": url_for("admin.organization"),
-                    "divide_after": True,
-                },
-                {"name": "Action", "url": url_for("admin.actions")},
-                {"name": "Add action", "url": url_for("admin.action")},
-                {"name": "RTBH Communities", "url": url_for("admin.communities")},
-                {"name": "Add RTBH Comm.", "url": url_for("admin.community")},
-            ],
-        }
 
     @ext.login_handler
     def login(user_info):
@@ -183,7 +157,19 @@ def create_app():
 
     @app.context_processor
     def inject_main_menu():
+        """
+        inject main menu config to templates
+        used in default template to create main menu
+        """
         return {"main_menu": app.config.get("MAIN_MENU")}
+
+    @app.context_processor
+    def inject_dashboard():
+        """
+        inject dashboard config to templates
+        used in submenu dashboard to create dashboard tables
+        """
+        return {"dashboard": app.config.get("DASHBOARD")}
 
     @app.template_filter("strftime")
     def format_datetime(value):

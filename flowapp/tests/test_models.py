@@ -23,7 +23,7 @@ def test_insert_ipv4(db):
         action_id=1,
         expires=datetime.now(),
         user_id=4,
-        rstate_id=1
+        rstate_id=1,
     )
     db.session.add(model)
     db.session.commit()
@@ -49,22 +49,22 @@ def test_get_ipv4_model_if_exists(db):
         action_id=1,
         expires=datetime.now(),
         user_id=4,
-        rstate_id=1
+        rstate_id=1,
     )
     db.session.add(model)
     db.session.commit()
 
     form_data = {
-        'source': '192.168.1.1',
-        'source_mask': '32',
-        'source_port': '80',
-        'dest': '',
-        'dest_mask': '',
-        'dest_port': '',
-        'protocol': 'tcp',
-        'flags': '',
-        'packet_len': '',
-        'action': 1
+        "source": "192.168.1.1",
+        "source_mask": "32",
+        "source_port": "80",
+        "dest": "",
+        "dest_mask": "",
+        "dest_port": "",
+        "protocol": "tcp",
+        "flags": "",
+        "packet_len": "",
+        "action": 1,
     }
 
     result = models.get_ipv4_model_if_exists(form_data, 1)
@@ -91,22 +91,22 @@ def test_get_ipv6_model_if_exists(db):
         action_id=1,
         expires=datetime.now(),
         user_id=4,
-        rstate_id=1
+        rstate_id=1,
     )
     db.session.add(model)
     db.session.commit()
 
     form_data = {
-        'source': '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
-        'source_mask': '32',
-        'source_port': '80',
-        'dest': '',
-        'dest_mask': '',
-        'dest_port': '',
-        'next_header': 'tcp',
-        'flags': '',
-        'packet_len': '',
-        'action': 1
+        "source": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+        "source_mask": "32",
+        "source_port": "80",
+        "dest": "",
+        "dest_mask": "",
+        "dest_port": "",
+        "next_header": "tcp",
+        "flags": "",
+        "packet_len": "",
+        "action": 1,
     }
 
     result = models.get_ipv6_model_if_exists(form_data, 1)
@@ -132,7 +132,7 @@ def test_ipv4_eq(db):
         action_id=1,
         expires="123",
         user_id=4,
-        rstate_id=1
+        rstate_id=1,
     )
 
     model_B = models.Flowspec4(
@@ -149,7 +149,7 @@ def test_ipv4_eq(db):
         action_id=1,
         expires="123456",
         user_id=1,
-        rstate_id=1
+        rstate_id=1,
     )
 
     assert model_A == model_B
@@ -173,7 +173,7 @@ def test_ipv4_ne(db):
         action_id=1,
         expires="123",
         user_id=4,
-        rstate_id=1
+        rstate_id=1,
     )
 
     model_B = models.Flowspec4(
@@ -190,11 +190,10 @@ def test_ipv4_ne(db):
         action_id=1,
         expires="123456",
         user_id=1,
-        rstate_id=1
+        rstate_id=1,
     )
 
     assert model_A != model_B
-
 
 
 def test_rtbj_eq(db):
@@ -209,7 +208,7 @@ def test_rtbj_eq(db):
         community_id=1,
         expires="123",
         user_id=4,
-        rstate_id=1
+        rstate_id=1,
     )
 
     model_B = models.RTBH(
@@ -220,7 +219,7 @@ def test_rtbj_eq(db):
         community_id=1,
         expires="123456",
         user_id=1,
-        rstate_id=1
+        rstate_id=1,
     )
 
     assert model_A == model_B
