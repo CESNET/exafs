@@ -102,7 +102,7 @@ def create_app():
         try:
             rtype = session[constants.TYPE_ARG]
         except KeyError:
-            rtype = "ipv4"
+            rtype = next(app.config["DASHBOARD"].keys())
 
         try:
             rstate = session[constants.RULE_ARG]
