@@ -52,7 +52,7 @@ def index(rtype=None, rstate="active"):
     """
     # set first key of dashboard config as default rtype
     if not rtype:
-        rtype = next(current_app.config["DASHBOARD"].keys())
+        rtype = next(iter(current_app.config["DASHBOARD"].keys()))
 
     # params sanitization
     if rtype not in current_app.config["DASHBOARD"].keys():

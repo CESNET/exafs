@@ -15,6 +15,11 @@ if env == 'devel':
     app.config.update(
         DEVEL=True
     )
+    # customize local installation
+    app.config['MAIN_MENU']['edit'] = app.config['MAIN_MENU']['edit'][2:]
+    app.config['DASHBOARD'].pop('ipv4')
+    app.config['DASHBOARD'].pop('ipv6')
+
 else:
     app.config.from_object(config.ProductionConfig)
     app.config.update(
