@@ -14,7 +14,7 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
-            return redirect('/login')
+            return redirect("/login")
         return f(*args, **kwargs)
 
     return decorated
@@ -27,8 +27,8 @@ def admin_required(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 3 not in session['user_role_ids']:
-            return redirect(url_for('index'))
+        if 3 not in session["user_role_ids"]:
+            return redirect(url_for("index"))
         return f(*args, **kwargs)
 
     return decorated
@@ -41,8 +41,8 @@ def user_or_admin_required(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not all(i > 1 for i in session['user_role_ids']):
-            return redirect(url_for('index'))
+        if not all(i > 1 for i in session["user_role_ids"]):
+            return redirect(url_for("index"))
         return f(*args, **kwargs)
 
     return decorated
@@ -56,10 +56,14 @@ def localhost_only(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         remote = request.remote_addr
-        localv4 = current_app.config.get('LOCAL_IP')
-        localv6 = current_app.config.get('LOCAL_IP6')
+        localv4 = current_app.config.get("LOCAL_IP")
+        localv6 = current_app.config.get("LOCAL_IP6")
         if remote != localv4 and remote != localv6:
-            print("AUTH LOCAL ONLY FAIL FROM {} / local adresses [{}, {}]".format(remote, localv4, localv6))
+            print(
+                "AUTH LOCAL ONLY FAIL FROM {} / local adresses [{}, {}]".format(
+                    remote, localv4, localv6
+                )
+            )
             abort(403)  # Forbidden
         return f(*args, **kwargs)
 
@@ -71,7 +75,7 @@ def get_user():
     get user from session
     """
     try:
-        uuid = session['user_uuid']
+        uuid = session["user_uuid"]
     except KeyError:
         uuid = False
 
@@ -87,9 +91,9 @@ def check_auth(uuid):
     and it needs to be done outside the app - for example in Apache.
     """
 
-    session['app_version'] = __version__
+    session["app_version"] = __version__
 
-    if current_app.config.get('SSO_AUTH'):
+    if current_app.config.get("SSO_AUTH"):
         # SSO AUTH
         exist = False
         if uuid:
@@ -97,14 +101,16 @@ def check_auth(uuid):
         return exist
     else:
         # Localhost login / no check
-        session['user_email'] = current_app.config['LOCAL_USER_UUID']
-        session['user_id'] = current_app.config['LOCAL_USER_ID']
-        session['user_roles'] = current_app.config['LOCAL_USER_ROLES']
-        session['user_orgs'] = ", ".join(org['name'] for org in current_app.config['LOCAL_USER_ORGS'])
-        session['user_role_ids'] = current_app.config['LOCAL_USER_ROLE_IDS']
-        session['user_org_ids'] = current_app.config['LOCAL_USER_ORG_IDS']
-        roles = [i > 1 for i in session['user_role_ids']]
-        session['can_edit'] = True if all(roles) and roles else []
+        session["user_email"] = current_app.config["LOCAL_USER_UUID"]
+        session["user_id"] = current_app.config["LOCAL_USER_ID"]
+        session["user_roles"] = current_app.config["LOCAL_USER_ROLES"]
+        session["user_orgs"] = ", ".join(
+            org["name"] for org in current_app.config["LOCAL_USER_ORGS"]
+        )
+        session["user_role_ids"] = current_app.config["LOCAL_USER_ROLE_IDS"]
+        session["user_org_ids"] = current_app.config["LOCAL_USER_ORG_IDS"]
+        roles = [i > 1 for i in session["user_role_ids"]]
+        session["can_edit"] = True if all(roles) and roles else []
         return True
 
 
@@ -117,10 +123,10 @@ def check_access_rights(current_user, model_id):
     :param model_id: user_id from the model data
     :return: boolean
     """
-    if model_id == current_user['id']:
+    if model_id == current_user["id"]:
         return True
 
-    if max(current_user['role_ids']) == 3:
+    if max(current_user["role_ids"]) == 3:
         return True
 
     return False

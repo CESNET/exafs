@@ -2,11 +2,11 @@ import re
 
 from flowapp.constants import MAX_PORT
 
-NUMBER = re.compile(r'^\d+$', re.IGNORECASE)
-RANGE = re.compile(r'^(\d+)-(\d+)$', re.IGNORECASE)
-NOTRAN = re.compile(r'^>=(\d+)&<=(\d+)$', re.IGNORECASE)
-GREATER = re.compile(r'>[=]?(\d+)$', re.IGNORECASE)
-LOWER = re.compile(r'<[=]?(\d+)$', re.IGNORECASE)
+NUMBER = re.compile(r"^\d+$", re.IGNORECASE)
+RANGE = re.compile(r"^(\d+)-(\d+)$", re.IGNORECASE)
+NOTRAN = re.compile(r"^>=(\d+)&<=(\d+)$", re.IGNORECASE)
+GREATER = re.compile(r">[=]?(\d+)$", re.IGNORECASE)
+LOWER = re.compile(r"<[=]?(\d+)$", re.IGNORECASE)
 
 
 def translate_sequence(sequence, max_val=MAX_PORT):
@@ -42,7 +42,9 @@ def to_exabgp_string(value_string, max_val):
         return "={}".format(check_limit(value_string, max_val))
     elif RANGE.match(value_string):
         m = RANGE.match(value_string)
-        return ">={}&<={}".format(check_limit(m.group(1), max_val), check_limit(m.group(2), max_val))
+        return ">={}&<={}".format(
+            check_limit(m.group(1), max_val), check_limit(m.group(2), max_val)
+        )
     elif NOTRAN.match(value_string):
         return value_string
     elif GREATER.match(value_string):
@@ -62,7 +64,9 @@ def check_limit(value, max_value):
     """
     value = int(value)
     if value > max_value:
-        raise ValueError("Invalid value number: {} is too big. Max is {}.".format(value, max_value))
+        raise ValueError(
+            "Invalid value number: {} is too big. Max is {}.".format(value, max_value)
+        )
     else:
         return value
 

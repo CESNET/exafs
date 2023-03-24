@@ -143,6 +143,7 @@ def test_delete_rtbh_rule(client, db, jwt_token):
     )
     assert req2.status_code == 201
 
+
 def test_validation_rtbh_rule(client, db, jwt_token):
     """
     test that creating with invalid data returns 400 and errors
@@ -162,10 +163,11 @@ def test_validation_rtbh_rule(client, db, jwt_token):
     data = json.loads(req.data)
     print("RTBH DATA", data)
     assert req.status_code == 400
-    assert data["message"] == 'error - invalid request data'
+    assert data["message"] == "error - invalid request data"
     assert type(data["validation_errors"]) == dict
     assert "ipv6" in data["validation_errors"]
     assert "ipv4" in data["validation_errors"]
+
 
 def test_create_v6rule(client, db, jwt_token):
     """

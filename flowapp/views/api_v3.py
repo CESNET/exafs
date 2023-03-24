@@ -1,9 +1,8 @@
 from flask import Blueprint, request
+from flowapp import csrf
 from flowapp.views import api_common
 
 api = Blueprint("api_v3", __name__, template_folder="templates")
-
-from flowapp import db, validators, flowspec, csrf, messages
 
 
 @api.route("/auth", methods=["GET"])
@@ -16,12 +15,12 @@ def authorize():
 @api_common.token_required
 def index(current_user):
     key_map = {
-            "ipv4_rules": "flowspec_ipv4_rw", 
-            "ipv6_rules": "flowspec_ipv6_rw", 
-            "rtbh_rules": "rtbh_any_rw", 
-            "ipv4_rules_readonly": "flowspec_ipv4_ro",
-            "ipv6_rules_readonly": "flowspec_ipv6_ro",
-            "rtbh_rules_readonly": "rtbh_any_ro", 
+        "ipv4_rules": "flowspec_ipv4_rw",
+        "ipv6_rules": "flowspec_ipv6_rw",
+        "rtbh_rules": "rtbh_any_rw",
+        "ipv4_rules_readonly": "flowspec_ipv4_ro",
+        "ipv6_rules_readonly": "flowspec_ipv6_ro",
+        "rtbh_rules_readonly": "rtbh_any_ro",
     }
     return api_common.index(current_user, key_map)
 

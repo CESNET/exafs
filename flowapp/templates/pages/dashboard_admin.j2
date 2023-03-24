@@ -1,21 +1,19 @@
 {% extends 'layouts/default.j2' %}
-{% from 'macros.j2' import build_ip_tbody, build_rtbh_tbody, build_rules_thead %}
+
 
 {% block title %}Flowspec{% endblock %}
 {% block content %}
 
     {% include 'pages/submenu_dashboard.j2' %}
-
+    {% if display_rules %}
     <div class="row">
         <form action="{{ url_for('rules.group_operation') }}" method="post">
          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
-            {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query) }}
-            {% if rtype_int == 1 %}
-                {{ build_rtbh_tbody(rules, today, rtype_int) }}
-            {% else %}
-                {{ build_ip_tbody(rules, today, rtype_int) }}
-            {% endif %}
+            {{ dashboard_table_head }} 
+            
+            {{ dashboard_table_body }}
+            
             <tr>
             <td colspan="{{ button_colspan }}">
             </td>
@@ -34,4 +32,7 @@
         </form>
     </div>
     <script type="text/javascript" src="{{ url_for('static', filename='js/check_all.js') }}"></script>
+    {% else %}
+        <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
+    {% endif %}
 {% endblock %}
