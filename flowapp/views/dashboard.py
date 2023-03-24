@@ -43,13 +43,16 @@ def whois(ip_address):
 
 @dashboard.route("/<path:rtype>/<path:rstate>/")
 @auth_required
-def index(rtype="ipv4", rstate="active"):
+def index(rtype=None, rstate="active"):
     """
     dispatcher object for the dashboard
     :param rtype:  ipv4, ipv6, rtbh
     :param rstate:
     :return: view from view factory
     """
+    # set first key of dashboard config as default rtype
+    if not rtype:
+        rtype = next(current_app.config["DASHBOARD"].keys())
 
     # params sanitization
     if rtype not in current_app.config["DASHBOARD"].keys():
