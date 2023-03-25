@@ -14,6 +14,7 @@ from flask import (
 from flowapp import models, validators, flowspec
 from flowapp.auth import auth_required
 from flowapp.constants import (
+    RULES_KEY,
     SORT_ARG,
     ORDER_ARG,
     DEFAULT_ORDER,
@@ -114,7 +115,7 @@ def index(rtype=None, rstate="active"):
     # get the handler and the data
     handler = getattr(data_handler_module, data_handler_method)
     rules = handler(rtype, rstate, get_sort_key, get_sort_order)
-
+    session[RULES_KEY] = [rule.id for rule in rules]
     # search rules
     if get_search_query:
         count_match = current_app.config["COUNT_MATCH"]

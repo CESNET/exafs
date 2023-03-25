@@ -22,16 +22,17 @@
             <td  class="text-center">
 
                 <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
-                    <span class="glyphicon glyphicon-remove"></span>
+                    <i class="bi bi-x"></i>
                 </button>
 
                 <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
-                    <span class="glyphicon glyphicon-time"></span>
+                    <i class="bi bi-clock"></i>
                 </button>
             </td>
             </tr>
         </table>
     </form>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/check_all.js') }}"></script>
     {% else %}
         <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
     {% endif %}

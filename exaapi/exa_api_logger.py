@@ -1,6 +1,7 @@
 import logging
 import config
 
+
 def create():
     logger = logging.getLogger(__name__)
     f_format = logging.Formatter(config.LOG_FORMAT)

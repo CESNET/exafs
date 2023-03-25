@@ -112,7 +112,6 @@ def test_create_rtbh_rule(client, db, jwt_token):
         },
     )
     data = json.loads(req.data)
-    print("RTBH DATA", data)
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == 1
@@ -231,7 +230,6 @@ def test_all_validation_errors(client, db, jwt_token):
         "/api/v1/rules/ipv4", headers={"x-access-token": jwt_token}, json={"action": 2}
     )
     data = json.loads(req.data)
-    print("DATA", data)
     assert req.status_code == 400
 
 
@@ -252,7 +250,6 @@ def test_validate_v6rule(client, db, jwt_token):
         },
     )
     data = json.loads(req.data)
-    print("V6 DATA", data)
     assert req.status_code == 400
     assert len(data["validation_errors"]) > 0
     assert sorted(data["validation_errors"].keys()) == sorted(
@@ -404,7 +401,6 @@ def test_update_existing_rtbh_rule_with_timestamp(client, db, jwt_token):
         },
     )
     data = json.loads(req.data)
-    print("RTBH DATA", data)
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == 1
@@ -427,7 +423,6 @@ def test_create_rtbh_rule_with_timestamp(client, db, jwt_token):
         },
     )
     data = json.loads(req.data)
-    print("RTBH DATA", data)
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == 2

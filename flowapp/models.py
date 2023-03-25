@@ -957,3 +957,36 @@ def get_ip_rules(rule_type, rule_state, sort="expires", order="desc"):
             rules_rtbh = db.session.query(RTBH).order_by(sorting_rtbh()).all()
 
         return rules_rtbh
+
+
+def get_user_rules_ids(user_id, rule_type):
+    """
+    Returns list of rule ids belonging to user
+    :param user_id: user id
+    :param rule_type: ipv4, ipv6 or rtbh
+    :return: list
+    """
+
+    if rule_type == "ipv4":
+        rules4 = (
+            db.session.query(Flowspec4.id)
+            .filter_by(user_id=user_id)
+            .all()
+        )
+        return [int(x[0]) for x in rules4]
+
+    if rule_type == "ipv6":
+        rules6 = (
+            db.session.query(Flowspec6.id)
+            .order_by(Flowspec6.expires.desc())
+            .all()
+        )
+        return [int(x[0]) for x in rules6]
+
+    if rule_type == "rtbh":
+        rules_rtbh = (
+            db.session.query(RTBH.id)
+            .filter_by(user_id=user_id)
+            .all()
+        )
+        return [int(x[0]) for x in rules_rtbh]

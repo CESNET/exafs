@@ -8,6 +8,7 @@ from flowapp import constants, db, messages
 from flowapp.auth import (
     admin_required,
     auth_required,
+    is_admin,
     localhost_only,
     user_or_admin_required,
 )
@@ -164,13 +165,11 @@ def delete_rule(rule_type, rule_id):
     :param rule_type: string - type of rule to be deleted
     :param rule_id: integer - rule id
     """
-    rules_dict = session[constants.RULES_KEY]
-    rules = rules_dict[str(rule_type)]
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]
 
     model = db.session.query(model_name).get(rule_id)
-    if model.id in rules:
+    if model.id in session[constants.RULES_KEY]:
         # withdraw route
         route = route_model(model, constants.WITHDRAW)
         announce_route(route)
@@ -235,16 +234,14 @@ def group_delete():
     """
     Delete rules
     """
-    rules_dict = session[constants.RULES_KEY]
     rule_type = session[constants.TYPE_ARG]
-    rules = [str(rule) for rule in rules_dict[str(constants.RULE_TYPES[rule_type])]]
     model_name = DATA_MODELS_NAMED[rule_type]
     rule_type_int = constants.RULE_TYPES[rule_type]
     route_model = ROUTE_MODELS[rule_type_int]
-
+    rules = [str(x) for x in session[constants.RULES_KEY]]
     to_delete = request.form.getlist("delete-id")
 
-    if set(to_delete).issubset(set(rules)):
+    if set(to_delete).issubset(set(rules)) or is_admin(session["user_roles"]):
         for rule_id in to_delete:
             # withdraw route
             model = db.session.query(model_name).get(rule_id)
@@ -290,14 +287,12 @@ def group_update():
     rule_type = session[constants.TYPE_ARG]
     form_name = DATA_FORMS_NAMED[rule_type]
     to_update = request.form.getlist("delete-id")
-    rules_dict = session[constants.RULES_KEY]
     rule_type = session[constants.TYPE_ARG]
     rule_type_int = constants.RULE_TYPES[rule_type]
-    rules = [str(rule) for rule in rules_dict[str(rule_type_int)]]
-
+    rules = [str(x) for x in session[constants.RULES_KEY]]
     # redirect bad request
-    if not set(to_update).issubset(set(rules)):
-        flash("You can edit these rules!", "alert-danger")
+    if not set(to_update).issubset(set(rules)) or is_admin(session["user_roles"]):
+        flash("You can't edit these rules!", "alert-danger")
         return redirect(
             url_for(
                 "dashboard.index",

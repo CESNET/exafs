@@ -130,3 +130,34 @@ def check_access_rights(current_user, model_id):
         return True
 
     return False
+
+
+def check_access_rights_gui(current_user_id, current_user_roles, model_id):
+    """
+    Check if the current user has right to edit/delete certain model data
+    Used in GUI - rules.py etc.
+    Returns true if the user is owner of the record or if the user is admin
+    :param current_user_id: current user id
+    :param current_user_roles: current user roles
+    :param model_id: user_id from the model data
+    :return: boolean
+    """
+    if model_id == current_user_id:
+        return True
+
+    if max(current_user_roles) == 3:
+        return True
+
+    return False
+
+
+def is_admin(current_user_roles):
+    """
+    Check if the current user is admin
+    :param current_user_roles: current user roles
+    :return: boolean
+    """
+    if max(current_user_roles) == 3:
+        return True
+
+    return False
