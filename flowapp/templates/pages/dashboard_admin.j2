@@ -14,20 +14,7 @@
             
             {{ dashboard_table_body }}
             
-            <tr>
-            <td colspan="{{ button_colspan }}">
-            </td>
-            <td  class="text-center">
-
-                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
-                    <i class="bi bi-x"></i>
-                </button>
-
-                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
-                    <i class="bi bi-clock"></i>
-                </button>
-            </td>
-            </tr>
+            {{ dashboard_table_foot }}}
         </table>
         </form>
     </div>

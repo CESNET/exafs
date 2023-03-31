@@ -72,16 +72,24 @@ def index(rtype=None, rstate="active"):
         view_factory = create_view_response
 
     # get the macros for the current rule type from config
-    # warning no checks here, if the config is not set properly the app will crash
+    # warning no checks here, if the config is set to non existing macro the app will crash
     macro_file = (
         current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.j2")
     )
-    macro_tbody = current_app.config["DASHBOARD"].get(rtype)["macro_tbody"]
+    macro_tbody = (
+        current_app.config["DASHBOARD"].get(rtype).get("macro_tbody", "build_ip_tbody")
+    )
     macro_thead = (
         current_app.config["DASHBOARD"]
         .get(rtype)
         .get("macro_thead", "build_rules_thead")
     )
+    macro_tfoot = (
+        current_app.config["DASHBOARD"]
+        .get(rtype)
+        .get("macro_tfoot", "build_group_buttons_tfoot")
+    )
+
     data_handler_module = (
         current_app.config["DASHBOARD"].get(rtype).get("data_handler", models)
     )
@@ -143,6 +151,7 @@ def index(rtype=None, rstate="active"):
         macro_file=macro_file,
         macro_tbody=macro_tbody,
         macro_thead=macro_thead,
+        macro_tfoot=macro_tfoot,
     )
 
 
@@ -222,6 +231,24 @@ def create_dashboard_table_head(
     return dashboard_table_head
 
 
+def create_dashboard_table_foot(
+    colspan=10, macro_file="macros.j2", macro_name="build_group_buttons_tfoot"
+):
+    """
+    create the table foot for the dashboard using a jinja2 macro
+    :param colspan:  the number of columns
+    :param macro_file:  the file where the macro is defined
+    :param macro_name:  the name of the macro
+    """
+    tstring = "{% "
+    tstring = tstring + f"from '{macro_file}' import {macro_name}"
+    tstring = tstring + " %} {{"
+    tstring = tstring + f" {macro_name}(colspan) " + "}}"
+
+    dashboard_table_foot = render_template_string(tstring, colspan=colspan)
+    return dashboard_table_foot
+
+
 def create_admin_response(
     rtype,
     rstate,
@@ -236,6 +263,7 @@ def create_admin_response(
     macro_file="macros.j2",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
+    macro_tfoot="build_group_buttons_tfoot",
 ):
     """
     Admin can see and edit any rules
@@ -262,16 +290,22 @@ def create_admin_response(
         macro_name=macro_thead,
     )
 
+    dashboard_table_foot = create_dashboard_table_foot(
+        table_colspan,
+        macro_file=macro_file,
+        macro_name=macro_tfoot,
+    )
+
     res = make_response(
         render_template(
             "pages/dashboard_admin.j2",
             display_rules=len(rules),
-            button_colspan=table_colspan,
             table_title=table_title,
             css_classes=active_css_rstate(rtype, rstate),
             count_match=count_match,
             dashboard_table_body=dashboard_table_body,
             dashboard_table_head=dashboard_table_head,
+            dashboard_table_foot=dashboard_table_foot,
             rules_columns=table_columns,
             rtype=rtype,
             rstate=rstate,
@@ -298,6 +332,7 @@ def create_user_response(
     macro_file="macros.j2",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
+    macro_tfoot="build_rules_tfoot",
 ):
     """
     Filter out the rules for normal users
@@ -358,6 +393,13 @@ def create_user_response(
         macro_file=macro_file,
         macro_name=macro_thead,
     )
+
+    dashboard_table_foot = create_dashboard_table_foot(
+        table_colspan,
+        macro_file=macro_file,
+        macro_name=macro_tfoot,
+    )
+
     display_editable = len(rules_editable)
     display_readonly = len(read_only_rules)
 
@@ -365,7 +407,6 @@ def create_user_response(
         render_template(
             "pages/dashboard_user.j2",
             table_title=table_title,
-            button_colspan=table_colspan,
             rules_columns=table_columns,
             dashboard_table_editable=dashboard_table_editable,
             dashboard_table_readonly=dashboard_table_readonly,
@@ -374,6 +415,7 @@ def create_user_response(
             css_classes=active_css_rstate(rtype, rstate),
             dashboard_table_editable_head=dashboard_table_editable_head,
             dashboard_table_readonly_head=dashboard_table_readonly_head,
+            dashboard_table_foot=dashboard_table_foot,
             rtype=rtype,
             rstate=rstate,
             sort_key=sort_key,
@@ -400,6 +442,7 @@ def create_view_response(
     macro_file="macros.j2",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
+    macro_tfoot="build_rules_tfoot",
 ):
     """
     Filter out the rules for normal users
@@ -428,11 +471,16 @@ def create_view_response(
         macro_name=macro_thead,
     )
 
+    dashboard_table_foot = create_dashboard_table_foot(
+        table_colspan,
+        macro_file=macro_file,
+        macro_name=macro_tfoot,
+    )
+
     res = make_response(
         render_template(
             "pages/dashboard_view.j2",
             table_title=table_title,
-            button_colspan=table_colspan,
             rules_columns=table_columns,
             display_rules=len(rules),
             css_classes=active_css_rstate(rtype, rstate),
@@ -442,6 +490,7 @@ def create_view_response(
             rtype=rtype,
             dashboard_table_body=dashboard_table_body,
             dashboard_table_head=dashboard_table_head,
+            dashboard_table_foot=dashboard_table_foot,
         )
     )
 
