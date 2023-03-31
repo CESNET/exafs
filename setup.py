@@ -24,7 +24,7 @@ setuptools.setup(
     python_requires=">=3.8",
     install_requires=[
         "Flask>=2.0.2",
-        "Flask-SQLAlchemy<3.0.0",
+        "Flask-SQLAlchemy>=2.2",
         "Flask-SSO>=0.4.0",
         "Flask-WTF>=1.0.0",
         "Flask-Migrate>=3.0.0",
