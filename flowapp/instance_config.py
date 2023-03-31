@@ -60,6 +60,7 @@ class InstanceConfig:
             "macro_file": "file with macros to render your dashboard",
             "macro_tbody": "macro for rendering table body",
             "macro_thead": "macro for rendering table header",
+            "macro_tfoot": "macro for rendering group operations buttons at the bottom of the table",
             "table_colspan": "colspan for buttons under the table rows",
             "table_columns": "your table columnus",
             'data_handler': "module where your data handler is defined, default is models",
