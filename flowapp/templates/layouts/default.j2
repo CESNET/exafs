@@ -30,7 +30,7 @@
     <div class="container">
       <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-          <a class="navbar-brand" href="/">{{ config['APP_NAME'] }} / ExaFS_{{ session['app_version'] }}</a>
+          <a class="navbar-brand" href="/">{{ config['APP_NAME'] }}</a>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
           </button>
@@ -70,7 +70,7 @@
       {% with messages = get_flashed_messages(with_categories=true)  %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-dismissible fade show {{category}}" role="alert">
+            <div class="alert alert-dismissible fade show {{category}} shadow-sm" role="alert">
               {{ message }}
               <button type="button" class="btn-close" data-bs-dismiss="alert"
                             aria-label="Close"></button>
@@ -91,6 +91,7 @@
             </li>
         </ul>
     </nav>
+    <p class="position-fixed bottom-0 end-0 form-text p-2 me-2">ExaFS {{ session['app_version'] }}</p>
 
     <script type="text/javascript" src="/static/js/ip_context.js"></script>  
     <script type="text/javascript" src="/static/js/enable_tooltips.js"></script>
