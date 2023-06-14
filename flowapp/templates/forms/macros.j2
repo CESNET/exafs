@@ -18,6 +18,9 @@
         {% else %}
             {% set input_class = 'form-control' %}
         {% endif %}
+        {% if field.errors %}
+            {% set input_class = input_class + ' is-invalid' %}
+        {% endif %}
         {% if tooltip %}
             <div class="input-group">
                 {{ field(class_=input_class, **kwargs) }}
@@ -30,7 +33,7 @@
         {% endif %}
         {% if field.errors %}
             {% for e in field.errors %}
-                <p class="help-block">{{ e }}</p>
+                <p class="help-block text-danger">{{ e }}</p>
             {% endfor %}
         {% endif %}
     </div>
