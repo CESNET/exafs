@@ -4,7 +4,7 @@
 
 {% block title %}Flowspec{% endblock %}
 {% block content %}
-
+ <div class="content">
     {% include 'pages/submenu_dashboard_view.j2' %}
 
     {% if display_rules %}
@@ -18,5 +18,5 @@
     {% else %}
         <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
     {% endif %}
-
+ </div>
 {% endblock %}

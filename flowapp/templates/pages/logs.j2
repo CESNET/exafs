@@ -1,6 +1,7 @@
 {% extends 'layouts/default.j2' %}
 {% block title %}Flowspec Users{% endblock %}
 {% block content %}
+  <div class="content">
     <h2>Commands log / latest on top</h2>
     {% if logs %}
         <h5>
@@ -32,4 +33,5 @@
     {% else %}
         <h3>No logs for last two days</h3>
     {% endif %}
+  </div>
 {% endblock %}
