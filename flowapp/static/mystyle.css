@@ -189,3 +189,7 @@ tbody .bi {
 .alert {
   border-radius: 10px;
 }
+
+.bg-exafs {
+  background-color: #065895 !important;
+}
