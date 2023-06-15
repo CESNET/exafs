@@ -10,13 +10,13 @@
 
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
             <td>
-                <span class="task">{{ rule.source }}</span>{% if rule.source_mask %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
+                <span class="task">{{ rule.source }}</span>{% if rule.source_mask != none %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.source_port }}
             </td>
             <td>
-                <span class="task">{{ rule.dest }}</span>{% if rule.dest_mask %}{{ '/' if rule.dest_mask >= 0 else '' }}{{ rule.dest_mask if rule.dest_mask >= 0 else '' }}{% endif %}
+                <span class="task">{{ rule.dest }}</span>{% if rule.dest_mask != none %}{{ '/' if rule.dest_mask >= 0 else '' }}{{ rule.dest_mask if rule.dest_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.dest_port }}
