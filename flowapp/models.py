@@ -33,7 +33,7 @@ class User(db.Model):
     email = db.Column(db.String(255))
     name = db.Column(db.String(255))
     phone = db.Column(db.String(255))
-    apikeys = db.relationship("ApiKey", backref="user2", lazy="dynamic")
+    apikeys = db.relationship("ApiKey", back_populates="user", lazy="dynamic")
     role = db.relationship("Role", secondary=user_role, lazy="dynamic", backref="user")
 
     organization = db.relationship(
@@ -83,7 +83,7 @@ class ApiKey(db.Model):
     machine = db.Column(db.String(255))
     key = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    user = db.relationship("User", backref="apikey")
+    user = db.relationship("User", back_populates="apikeys")
 
 
 class Role(db.Model):
