@@ -302,11 +302,8 @@ class IPv6Address(object):
 
     def __call__(self, form, field):
         try:
-            address = ipaddress.ip_address(field.data)
+            ipaddress.IPv6Address(field.data)
         except ValueError:
-            raise ValidationError(self.message + str(field.data))
-
-        if not isinstance(address, ipaddress.IPv6Address):
             raise ValidationError(self.message + str(field.data))
 
 
@@ -322,13 +319,9 @@ class IPv4Address(object):
 
     def __call__(self, form, field):
         try:
-            address = ipaddress.ip_address(field.data)
+            ipaddress.IPv4Address(field.data)
         except ValueError:
             raise ValidationError(self.message + str(field.data))
-
-        if not isinstance(address, ipaddress.IPv4Address):
-            raise ValidationError(self.message + str(field.data))
-
 
 def editable_range(rule, net_ranges):
     """
