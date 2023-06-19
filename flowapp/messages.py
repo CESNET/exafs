@@ -244,7 +244,7 @@ def sanitize_mask(rule_mask, default_mask=IPV4_DEFMASK):
     :param rule: flowspec rule
     :return: int mask
     """
-    if not rule_mask:
+    if rule_mask is None:
         return default_mask
 
     if 0 <= rule_mask <= default_mask:
