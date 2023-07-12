@@ -100,12 +100,11 @@ def create_rtbh(rule, message_type=ANNOUNCE):
     try:
         if current_app.config["USE_MULTI_NEIGHBOR"] and rule.community.comm:
             if rule.community.comm in current_app.config["MULTI_NEIGHBOR"].keys():
-                target = current_app.config["MULTI_NEIGHBOR"].get(rule.community.comm)
-                neighbor = "neighbor {target} ".format(target=target)
+                targets = current_app.config["MULTI_NEIGHBOR"].get(rule.community.comm)
             else:
                 targets = current_app.config["MULTI_NEIGHBOR"].get("primary")
-                neighbor = prepare_multi_neighbor(targets)
-
+            
+            neighbor = prepare_multi_neighbor(targets)
         else:
             neighbor = ""
     except KeyError:
@@ -253,9 +252,9 @@ def sanitize_mask(rule_mask, default_mask=IPV4_DEFMASK):
         return default_mask
 
 
-def prepare_multi_neighbor(targets):
+def prepare_multi_neighbor(targets: list):
     """
     prepare multi neighbor string
     """
-    neigbors = ["neighbor {}".format(tgt) for tgt in targets]
+    neigbors = [f"neighbor {tgt}" for tgt in targets]
     return ", ".join(neigbors) + " "
