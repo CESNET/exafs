@@ -11,12 +11,15 @@
 {% macro render_field(field, label_visible=true, tooltip=False) -%}
     <div class="form-group {% if field.errors %}has-error{% endif %} {{ kwargs.pop('class_', '') }}">
         {% if (field.type != 'HiddenField' and field.type !='CSRFTokenField') and label_visible %}
-            <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
+          <label for="{{ field.id }}" class="control-label">{{ field.label }} {% if field.flags.required %}<span class="text-danger">*</span>{% endif %}</label>
         {% endif %}
         {% if field.type == 'SelectField' %}
             {% set input_class = 'form-select' %}
         {% else %}
             {% set input_class = 'form-control' %}
+        {% endif %}
+        {% if field.errors %}
+            {% set input_class = input_class + ' is-invalid' %}
         {% endif %}
         {% if tooltip %}
             <div class="input-group">
@@ -30,7 +33,7 @@
         {% endif %}
         {% if field.errors %}
             {% for e in field.errors %}
-                <p class="help-block">{{ e }}</p>
+                <p class="help-block text-danger">{{ e }}</p>
             {% endfor %}
         {% endif %}
     </div>

@@ -1,11 +1,11 @@
 import jwt
 import ipaddress
 
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, timedelta
 
-from flowapp.constants import FORM_TIME_PATTERN, WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG
+from flowapp.constants import WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG
 from flowapp.models import (
     RTBH,
     Flowspec4,
@@ -22,16 +22,12 @@ from flowapp.models import (
 )
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
 from flowapp.utils import (
-    round_to_ten_minutes,
-    webpicker_to_datetime,
     quote_to_ent,
     get_state_by_time,
-    parse_api_time,
     output_date_format,
 )
 from flowapp.auth import check_access_rights
 from flowapp.output import (
-    ROUTE_MODELS,
     RULE_TYPES,
     announce_route,
     log_route,
@@ -39,7 +35,7 @@ from flowapp.output import (
 )
 
 
-from flowapp import app, db, validators, flowspec, csrf, messages
+from flowapp import db, validators, flowspec, messages
 
 
 def token_required(f):
@@ -54,7 +50,9 @@ def token_required(f):
             return jsonify({"message": "auth token is missing"}), 401
 
         try:
-            data = jwt.decode(token, app.config.get("JWT_SECRET"), algorithms=["HS256"])
+            data = jwt.decode(
+                token, current_app.config.get("JWT_SECRET"), algorithms=["HS256"]
+            )
             current_user = data["user"]
         except jwt.DecodeError:
             return jsonify({"message": "auth token is invalid"}), 403
@@ -71,11 +69,9 @@ def authorize(user_key):
     Generate API Key for the loged user using PyJWT
     :return: page with token
     """
-    jwt_key = app.config.get("JWT_SECRET")
+    jwt_key = current_app.config.get("JWT_SECRET")
 
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
-    print("MODEL", model)
-    print("ADDR", request.remote_addr)
     if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(
         request.remote_addr
     ):
@@ -90,7 +86,7 @@ def authorize(user_key):
             },
             "exp": datetime.now() + timedelta(minutes=30),
         }
-        #encoded = jwt.encode(payload, jwt_key, algorithm="HS256").decode("utf-8")
+        # encoded = jwt.encode(payload, jwt_key, algorithm="HS256").decode("utf-8")
         encoded = jwt.encode(payload, jwt_key, algorithm="HS256")
 
         return jsonify({"token": encoded})
@@ -133,8 +129,12 @@ def index(current_user, key_map):
         )
 
         payload = {
-            key_map["ipv4_rules"]: [rule.to_dict(prefered_tf) for rule in rules4_editable],
-            key_map["ipv6_rules"]: [rule.to_dict(prefered_tf) for rule in rules6_editable],
+            key_map["ipv4_rules"]: [
+                rule.to_dict(prefered_tf) for rule in rules4_editable
+            ],
+            key_map["ipv6_rules"]: [
+                rule.to_dict(prefered_tf) for rule in rules6_editable
+            ],
             key_map["ipv4_rules_readonly"]: [
                 rule.to_dict(prefered_tf) for rule in rules4_visible
             ],
@@ -187,7 +187,7 @@ def create_ipv4(current_user):
     # add values to form instance
     form.action.choices = get_user_actions(current_user["role_ids"])
     form.net_ranges = net_ranges
-    
+
     # if the form is not valid, we should return 404 with errors
     if not form.validate():
         print("F EXPIRES", form.expires)
@@ -201,7 +201,7 @@ def create_ipv4(current_user):
     if model:
         model.expires = form.expires.data
         flash_message = (
-            u"Existing IPv4 Rule found. Expiration time was updated to new value."
+            "Existing IPv4 Rule found. Expiration time was updated to new value."
         )
     else:
         model = Flowspec4(
@@ -221,7 +221,7 @@ def create_ipv4(current_user):
             user_id=current_user["id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
-        flash_message = u"IPv4 Rule saved"
+        flash_message = "IPv4 Rule saved"
         db.session.add(model)
 
     db.session.commit()
@@ -266,7 +266,7 @@ def create_ipv6(current_user):
     if model:
         model.expires = form.expires.data
         flash_message = (
-            u"Existing IPv6 Rule found. Expiration time was updated to new value."
+            "Existing IPv6 Rule found. Expiration time was updated to new value."
         )
     else:
         model = Flowspec6(
@@ -285,7 +285,7 @@ def create_ipv6(current_user):
             user_id=current_user["id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
-        flash_message = u"IPv6 Rule saved"
+        flash_message = "IPv6 Rule saved"
         db.session.add(model)
 
     db.session.commit()
@@ -330,7 +330,7 @@ def create_rtbh(current_user):
     if model:
         model.expires = form.expires.data
         flash_message = (
-            u"Existing RTBH Rule found. Expiration time was updated to new value."
+            "Existing RTBH Rule found. Expiration time was updated to new value."
         )
     else:
         model = RTBH(
@@ -346,7 +346,7 @@ def create_rtbh(current_user):
         )
         db.session.add(model)
         db.session.commit()
-        flash_message = u"RTBH Rule saved"
+        flash_message = "RTBH Rule saved"
 
     # announce routes
     if model.rstate_id == 1:
@@ -493,8 +493,6 @@ def token_test_get(current_user):
 
 
 def get_form_errors(form):
-    valid_errors = []
-
     # if the only error is in CSRF then it is ok - csrf is exempt for this view
     try:
         del form.errors["csrf_token"]

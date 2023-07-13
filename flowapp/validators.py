@@ -12,9 +12,12 @@ def filter_rules_in_network(net_ranges, rules):
     :param rules: list of rules (ipv4 or ipv6
     :return: filtered list of rules
     """
-    return [rule for rule in rules if
-            network_in_range(rule.source, rule.source_mask, net_ranges)
-            or network_in_range(rule.dest, rule.dest_mask, net_ranges)]
+    return [
+        rule
+        for rule in rules
+        if network_in_range(rule.source, rule.source_mask, net_ranges)
+        or network_in_range(rule.dest, rule.dest_mask, net_ranges)
+    ]
 
 
 def split_rules_for_user(net_ranges, rules):
@@ -27,7 +30,9 @@ def split_rules_for_user(net_ranges, rules):
     user_rules = []
     rest_rules = []
     for rule in rules:
-        if network_in_range(rule.source, rule.source_mask, net_ranges) or network_in_range(rule.dest, rule.dest_mask, net_ranges):
+        if network_in_range(
+            rule.source, rule.source_mask, net_ranges
+        ) or network_in_range(rule.dest, rule.dest_mask, net_ranges):
             user_rules.append(rule)
         else:
             rest_rules.append(rule)
@@ -42,9 +47,12 @@ def filter_rtbh_rules(net_ranges, rules):
     :param rules: list of RTBH rules
     :return: filtered list of rules
     """
-    return [rule for rule in rules if
-            network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges)
-            or network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges)]
+    return [
+        rule
+        for rule in rules
+        if network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges)
+        or network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges)
+    ]
 
 
 def split_rtbh_rules_for_user(net_ranges, rules):
@@ -57,7 +65,9 @@ def split_rtbh_rules_for_user(net_ranges, rules):
     filtered = []
     read_only = []
     for rule in rules:
-        if network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges) or network_in_range(rule.ipv6, rule.ipv6_mask, net_ranges):
+        if network_in_range(rule.ipv4, rule.ipv4_mask, net_ranges) or network_in_range(
+            rule.ipv6, rule.ipv6_mask, net_ranges
+        ):
             filtered.append(rule)
         else:
             read_only.append(rule)
@@ -75,7 +85,9 @@ def address_in_range(address, net_ranges):
     result = False
     for adr_range in net_ranges:
         try:
-            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(
+                adr_range
+            )
         except ValueError:
             return False
 
@@ -90,10 +102,12 @@ def network_in_range(address, mask, net_ranges):
     :return: boolean
     """
     result = False
-    network = u"{}/{}".format(address, mask)
+    network = "{}/{}".format(address, mask)
     for adr_range in net_ranges:
         try:
-            result = result or subnet_of(ipaddress.ip_network(network), ipaddress.ip_network(adr_range))
+            result = result or subnet_of(
+                ipaddress.ip_network(network), ipaddress.ip_network(adr_range)
+            )
         except TypeError:  # V4 can't be a subnet of V6 and vice versa
             pass
         except ValueError:
@@ -110,17 +124,19 @@ def range_in_network(address, mask, net_ranges):
     :return: boolean
     """
     result = False
-    network = u"{}/{}".format(address, mask)
+    network = "{}/{}".format(address, mask)
     for adr_range in net_ranges:
         try:
-            result = result or supernet_of(ipaddress.ip_network(network), ipaddress.ip_network(adr_range))
+            result = result or supernet_of(
+                ipaddress.ip_network(network), ipaddress.ip_network(adr_range)
+            )
         except ValueError:
             return False
 
     return result
 
 
-def whole_world_range(net_ranges, address=u"0.0.0.0"):
+def whole_world_range(net_ranges, address="0.0.0.0"):
     """
     check if  user can specify network address for whole world
     :param address: 0.0.0.0/0 or ::/0
@@ -131,7 +147,9 @@ def whole_world_range(net_ranges, address=u"0.0.0.0"):
 
     try:
         for adr_range in net_ranges:
-            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(
+                adr_range
+            )
     except ValueError:
         return False
 
@@ -145,7 +163,7 @@ def address_with_mask(address, mask):
     :param mask: int net prefix/mask
     :return: boolean
     """
-    merged = u"{}/{}".format(address, mask)
+    merged = "{}/{}".format(address, mask)
     try:
         ipaddress.ip_network(merged)
     except ValueError:
@@ -161,7 +179,7 @@ class DateNotExpired(object):
 
     def __init__(self, message=None):
         if not message:
-            message = u'You can not insert expired rule. Date expired:'
+            message = "You can not insert expired rule. Date expired:"
         self.message = message
 
     def __call__(self, form, field):
@@ -178,21 +196,23 @@ class PortString(object):
 
     def __init__(self, message=None, max_values=constants.MAX_COMMA_VALUES):
         if not message:
-            message = u'Invalid syntax: '
+            message = "Invalid syntax: "
         self.message = message
         self.max_values = max_values
 
     def __call__(self, form, field):
         field_data = field.data.split(";")
         if len(field_data) > self.max_values:
-            raise ValidationError("{} maximum {} comma separated values".format(self.message, self.max_values))
+            raise ValidationError(
+                "{} maximum {} comma separated values".format(
+                    self.message, self.max_values
+                )
+            )
         try:
             for port_string in field_data:
                 flowspec.to_exabgp_string(port_string, constants.MAX_PORT)
         except ValueError as e:
             raise ValidationError(self.message + str(e.args[0]))
-
-        
 
 
 class PacketString(object):
@@ -202,7 +222,7 @@ class PacketString(object):
 
     def __init__(self, message=None):
         if not message:
-            message = u'Invalid packet size value: '
+            message = "Invalid packet size value: "
         self.message = message
 
     def __call__(self, form, field):
@@ -221,7 +241,7 @@ class NetRangeString(object):
 
     def __init__(self, message=None):
         if not message:
-            message = u'Invalid network range: '
+            message = "Invalid network range: "
         self.message = message
 
     def __call__(self, form, field):
@@ -245,7 +265,9 @@ class NetInRange(object):
         result = False
         for address in field.data.split("/"):
             for adr_range in self.net_ranges:
-                result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+                result = result or ipaddress.ip_address(
+                    address
+                ) in ipaddress.ip_network(adr_range)
 
         if not result:
             raise ValidationError(self.message)
@@ -258,7 +280,7 @@ class IPAddress(object):
 
     def __init__(self, message=None):
         if not message:
-            message = u'This does not look like valid IP Address: '
+            message = "This does not look like valid IP Address: "
         self.message = message
 
     def __call__(self, form, field):
@@ -275,16 +297,13 @@ class IPv6Address(object):
 
     def __init__(self, message=None):
         if not message:
-            message = u'This does not look like valid IPv6 Address: '
+            message = "This does not look like valid IPv6 Address: "
         self.message = message
 
     def __call__(self, form, field):
         try:
-            address = ipaddress.ip_address(field.data)
+            ipaddress.IPv6Address(field.data)
         except ValueError:
-            raise ValidationError(self.message + str(field.data))
-
-        if not isinstance(address, ipaddress.IPv6Address):
             raise ValidationError(self.message + str(field.data))
 
 
@@ -295,18 +314,14 @@ class IPv4Address(object):
 
     def __init__(self, message=None):
         if not message:
-            message = u'This does not look like valid IPv4 Address: '
+            message = "This does not look like valid IPv4 Address: "
         self.message = message
 
     def __call__(self, form, field):
         try:
-            address = ipaddress.ip_address(field.data)
+            ipaddress.IPv4Address(field.data)
         except ValueError:
             raise ValidationError(self.message + str(field.data))
-
-        if not isinstance(address, ipaddress.IPv4Address):
-            raise ValidationError(self.message + str(field.data))
-
 
 def editable_range(rule, net_ranges):
     """
@@ -336,12 +351,15 @@ def _is_subnet_of(a, b):
     try:
         # Always false if one is v4 and the other is v6.
         if a._version != b._version:
-            raise TypeError("%s and %s are not of the same version"(a, b))
-        return (b.network_address <= a.network_address and
-                b.broadcast_address >= a.broadcast_address)
+            raise TypeError("%s and %s are not of the same version" % (a, b))
+        return (
+            b.network_address <= a.network_address
+            and b.broadcast_address >= a.broadcast_address
+        )
     except AttributeError:
-        raise TypeError("Unable to test subnet containment "
-                        "between %s and %s" % (a, b))
+        raise TypeError(
+            "Unable to test subnet containment " "between %s and %s" % (a, b)
+        )
 
 
 def subnet_of(net_a, net_b):
@@ -352,4 +370,3 @@ def subnet_of(net_a, net_b):
 def supernet_of(net_a, net_b):
     """Return True if this network is a supernet of other."""
     return _is_subnet_of(net_b, net_a)
-

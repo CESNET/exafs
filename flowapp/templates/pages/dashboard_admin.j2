@@ -1,37 +1,25 @@
 {% extends 'layouts/default.j2' %}
-{% from 'macros.j2' import build_ip_tbody, build_rtbh_tbody, build_rules_thead %}
+
 
 {% block title %}Flowspec{% endblock %}
 {% block content %}
 
     {% include 'pages/submenu_dashboard.j2' %}
-
+    {% if display_rules %}
     <div class="row">
         <form action="{{ url_for('rules.group_operation') }}" method="post">
          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <table class="table table-hover ip-table">
-            {{ build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query) }}
-            {% if rtype_int == 1 %}
-                {{ build_rtbh_tbody(rules, today, rtype_int) }}
-            {% else %}
-                {{ build_ip_tbody(rules, today, rtype_int) }}
-            {% endif %}
-            <tr>
-            <td colspan="{{ button_colspan }}">
-            </td>
-            <td  class="text-center">
-
-                <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-toggle="tooltip" data-placement="top" title="delete selected rules">
-                    <i class="bi bi-x"></i>
-                </button>
-
-                <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-toggle="tooltip" data-placement="top" title="update selected rules">
-                    <i class="bi bi-clock"></i>
-                </button>
-            </td>
-            </tr>
+            {{ dashboard_table_head }} 
+            
+            {{ dashboard_table_body }}
+            
+            {{ dashboard_table_foot }}
         </table>
         </form>
     </div>
     <script type="text/javascript" src="{{ url_for('static', filename='js/check_all.js') }}"></script>
+    {% else %}
+        <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
+    {% endif %}
 {% endblock %}

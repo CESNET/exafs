@@ -185,3 +185,7 @@ tbody .bi {
   font-size: 105%;
   color: white;
 }
+
+.alert {
+  border-radius: 10px;
+}

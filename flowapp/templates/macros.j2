@@ -1,16 +1,22 @@
 
-{% macro build_ip_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
+{% macro build_ip_tbody(rules, today, editable=True, group_op=True) %}
 <tbody>
     {% for rule in rules %}
+        {% if rule.next_header is defined %}
+            {% set rtype_int = 6 %}
+        {% else %}
+            {% set rtype_int = 4 %}
+        {% endif %}
+
         <tr {% if rule.expires < today %} class="warning" {% endif %}>
             <td>
-                <span class="task">{{ rule.source }}</span>{% if rule.source_mask %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
+                <span class="task">{{ rule.source }}</span>{% if rule.source_mask != none %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.source_port }}
             </td>
             <td>
-                <span class="task">{{ rule.dest }}</span>{% if rule.dest_mask %}{{ '/' if rule.dest_mask >= 0 else '' }}{{ rule.dest_mask if rule.dest_mask >= 0 else '' }}{% endif %}
+                <span class="task">{{ rule.dest }}</span>{% if rule.dest_mask != none %}{{ '/' if rule.dest_mask >= 0 else '' }}{{ rule.dest_mask if rule.dest_mask >= 0 else '' }}{% endif %}
             </td>
             <td>
                 {{ rule.dest_port }}
@@ -43,11 +49,11 @@
                     <i class="bi bi-clock table-icon"></i>
                 </a>
                 <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button">
-                    <i class="bi bi-x"></i>
+                    <i class="bi bi-x-lg"></i>
                 </a>
             {% endif %}
             {% if rule.comment %}
-                <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+                <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
                     <i class="bi bi-chat-left-text-fill"></i>
                 </button>
             {% endif %}
@@ -67,7 +73,7 @@
 {% endmacro %}
 
 
-{% macro build_rtbh_tbody(rules, today, rtype_int, editable=True, group_op=True) %}
+{% macro build_rtbh_tbody(rules, today, editable=True, group_op=True) %}
     <tbody>
 {% for rule in rules %}
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>
@@ -95,11 +101,11 @@
             <i class="bi bi-clock table-icon"></i>
         </a>
         <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
-            <i class="bi bi-x"></i>
+            <i class="bi bi-x-lg"></i>
         </a>
         {% endif %}
         {% if rule.comment %}
-           <button type="button" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="{{ rule.comment }}">
+           <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
               <i class="bi bi-chat-left-text-fill"></i>
            </button>
          {% endif %}
@@ -139,4 +145,21 @@
     {% endif %}
     </tr>
 </thead>
+{% endmacro %}
+
+{% macro build_group_buttons_tfoot(button_colspan=10) %}
+<tr>
+    <td colspan="{{ button_colspan }}">
+    </td>
+    <td  class="text-center">
+
+        <button type="submit" name="action" value="group-delete" class="btn btn-danger btn-sm" id="group-delete"  data-bs-toggle="tooltip" data-bs-placement="top" title="delete selected rules">
+            <i class="bi bi-x-lg"></i>
+        </button>
+
+        <button type="submit" name="action" value="group-update" class="btn btn-primary btn-sm" id="group-update" data-bs-toggle="tooltip" data-bs-placement="top" title="update selected rules">
+            <i class="bi bi-clock"></i>
+        </button>
+    </td>
+</tr>
 {% endmacro %}

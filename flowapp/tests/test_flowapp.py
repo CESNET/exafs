@@ -1,7 +1,6 @@
-
 def test_create_survey(client, db):
     """
     test that creating with valid data returns 201
     """
-    req = client.get('/rules/add_ipv4_rule')
+    req = client.get("/rules/add_ipv4_rule")
     assert req.status_code == 200

@@ -1,7 +1,8 @@
-class Config(object):
+class Config():
     """
     Default config options
     """
+
     # Flask debugging
     DEBUG = True
     # Flask testing
@@ -9,55 +10,63 @@ class Config(object):
     # SSO auth enabled
     SSO_AUTH = False
     # SSO LOGOUT
-    LOGOUT_URL = 'https://flowspec.example.com/Shibboleth.sso/Logout?return=https://shibbo.example.com/idp/profile/Logout'
+    LOGOUT_URL = "https://flowspec.example.com/Shibboleth.sso/Logout"
     # SQL Alchemy config
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # URL of the ExaAPI
-    EXA_API_URL = 'http://localhost:5000/'
+
+    # ExaApi configuration
+    # possible values HTTP, RABBIT
+    EXA_API = "HTTP"
+    # for HTTP EXA_API_URL must be specified
+    EXA_API_URL = "http://localhost:5000/"
+    # for RABBITMQ EXA_API_RABBIT_* must be specified
+    EXA_API_RABBIT_HOST = "your rabbit host"
+    EXA_API_RABBIT_PORT = "rabit port (5672)"
+    EXA_API_RABBIT_PASS = "some secret password"
+    EXA_API_RABBIT_USER = "rabbit user"
+    EXA_API_RABBIT_VHOST = "rabbit vhost"
+    EXA_API_RABBIT_QUEUE = "exa_api"
 
     # Secret keys for Flask Session and JWT (API and CSRF protection)
-    JWT_SECRET = 'GenerateSomeLongRandomSequence'
-    SECRET_KEY = 'GenerateSomeLongRandomSequence'
+    JWT_SECRET = "GenerateSomeLongRandomSequence"
+    SECRET_KEY = "GenerateSomeLongRandomSequence"
 
     # LOCAL user parameters - when the app is used without SSO_AUTH
     # Defined in User model
-    LOCAL_USER_UUID = 'admin@example.com'
+    LOCAL_USER_UUID = "admin@example.com"
     # Defined in User model
     LOCAL_USER_ID = 1
     # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
-    LOCAL_USER_ROLES = ['admin']
+    LOCAL_USER_ROLES = ["admin"]
     # Defined in Organization model
     # List of organizations for the local user. There can be many of them.
     # Define the name and the adress range. The range is then used for first data insert
     # after the tables are created with db-init.py script.
     LOCAL_USER_ORGS = [
-        {
-            'name': 'Example Org.',
-            'arange': '192.168.0.0/16\n2121:414:1a0b::/48'
-        },
+        {"name": "Example Org.", "arange": "192.168.0.0/16\n2121:414:1a0b::/48"},
     ]
     # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
     LOCAL_USER_ROLE_IDS = [3]
     # Defined in Organization model
     LOCAL_USER_ORG_IDS = [1]
     # APP Name - display in main toolbar
-    APP_NAME = 'ExaFS'
+    APP_NAME = "ExaFS"
     # Route Distinguisher for VRF
-    # When True set your rd string and label to be used in messages 
-    USE_RD = True 
-    RD_STRING = '7654:3210'
-    RD_LABEL = 'label for RD' 
-
+    # When True set your rd string and label to be used in messages
+    USE_RD = True
+    RD_STRING = "7654:3210"
+    RD_LABEL = "label for RD"
 
 
 class ProductionConfig(Config):
     """
     Production config options
     """
+
     # SQL Alchemy config string - mustl include user and pwd
-    SQLALCHEMY_DATABASE_URI = 'mysql://user:password@localhost/exafs?charset=utf8'
+    SQLALCHEMY_DATABASE_URI = "Your Productionl Database URI"
     # Public IP of the production machine
-    LOCAL_IP = '127.0.0.1'
+    LOCAL_IP = "127.0.0.1"
     # SSO AUTH enabled in produciion
     SSO_AUTH = True
     # Set true if you need debug in production
@@ -68,11 +77,11 @@ class DevelopmentConfig(Config):
     """
     Development config options - usually for localhost development and debugging process
     """
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:my-secret-pw@127.0.0.1:3306/exafs?host=127.0.0.1?port=3306?charset=utf8'
-    LOCAL_IP = '127.0.0.1'
+
+    SQLALCHEMY_DATABASE_URI = "Your Local Database URI"
+    LOCAL_IP = "127.0.0.1"
     DEBUG = True
 
 
 class TestingConfig(Config):
-
     TESTING = True
