@@ -29,7 +29,7 @@ def create_app():
         db.reflect()
         db.drop_all()
         print("#: creating tables")
-        db.create_all()
+        db.create_all(bind_key=[None])
 
 
     return app
