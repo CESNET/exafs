@@ -37,5 +37,7 @@ setuptools.setup(
         "mysqlclient>=2.0.0",
         "email_validator>=1.1",
         "pika>=1.3.0",
+        "Flask-Login",
+        "passlib",
     ],
 )
