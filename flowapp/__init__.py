@@ -16,7 +16,7 @@ migrate = Migrate()
 csrf = CSRFProtect()
 
 
-def create_app():
+def create_app(config):
     app = Flask(__name__)
     # Map SSO attributes from ADFS to session keys under session['user']
     #: Default attribute map
@@ -36,8 +36,37 @@ def create_app():
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
     app.config.setdefault("SSO_LOGIN_URL", "/login")
 
-    # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
+
     ext = SSO(app=app)
+
+    if getattr(config, "SSO_AUTH"):
+        # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
+        @ext.login_handler
+        def login(user_info):
+            try:
+                uuid = user_info.get("eppn")
+            except KeyError:
+                uuid = False
+                return redirect("/")
+            else:
+                user = db.session.query(models.User).filter_by(uuid=uuid).first()
+                try:
+                    session["user_uuid"] = user.uuid
+                    session["user_email"] = user.uuid
+                    session["user_name"] = user.name
+                    session["user_id"] = user.id
+                    session["user_roles"] = [role.name for role in user.role.all()]
+                    session["user_orgs"] = ", ".join(
+                        org.name for org in user.organization.all()
+                    )
+                    session["user_role_ids"] = [role.id for role in user.role.all()]
+                    session["user_org_ids"] = [org.id for org in user.organization.all()]
+                    roles = [i > 1 for i in session["user_role_ids"]]
+                    session["can_edit"] = True if all(roles) and roles else []
+                except AttributeError:
+                    return redirect("/")
+
+                return redirect("/")
 
     from flowapp import models, constants, validators
     from .views.admin import admin
@@ -61,33 +90,6 @@ def create_app():
     app.register_blueprint(api_v2, url_prefix="/api/v2")
     app.register_blueprint(api_v3, url_prefix="/api/v3")
     app.register_blueprint(dashboard, url_prefix="/dashboard")
-
-    @ext.login_handler
-    def login(user_info):
-        try:
-            uuid = user_info.get("eppn")
-        except KeyError:
-            uuid = False
-            return redirect("/")
-        else:
-            user = db.session.query(models.User).filter_by(uuid=uuid).first()
-            try:
-                session["user_uuid"] = user.uuid
-                session["user_email"] = user.uuid
-                session["user_name"] = user.name
-                session["user_id"] = user.id
-                session["user_roles"] = [role.name for role in user.role.all()]
-                session["user_orgs"] = ", ".join(
-                    org.name for org in user.organization.all()
-                )
-                session["user_role_ids"] = [role.id for role in user.role.all()]
-                session["user_org_ids"] = [org.id for org in user.organization.all()]
-                roles = [i > 1 for i in session["user_role_ids"]]
-                session["can_edit"] = True if all(roles) and roles else []
-            except AttributeError:
-                return redirect("/")
-
-            return redirect("/")
 
     @app.route("/logout")
     def logout():

@@ -12,26 +12,24 @@ from os import environ
 from flowapp import create_app, db
 import config
 
-
-# Call app factory
-app = create_app()
-
 # Configurations
 env = environ.get('EXAFS_ENV', 'Production')
 
+
 if env == 'devel':
-    app.config.from_object(config.DevelopmentConfig)
-    app.config.update(
-        DEVEL=True
-    )
+    config_obj = config.DevelopmentConfig()
+    config_obj.DEVEL = True
 else:
-    app.config.from_object(config.ProductionConfig)
-    app.config.update(
-        SESSION_COOKIE_SECURE=True,
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE='Lax',
-        DEVEL=False
-    )
+    config_obj = config.ProductionConfig()
+    config_obj.SESSION_COOKIE_SECURE = True
+    config_obj.SESSION_COOKIE_HTTPONLY = True
+    config_obj.SESSION_COOKIE_SAMESITE = 'Lax'
+    config_obj.DEVEL = False
+
+# Call app factory
+app = create_app(config=config_obj)
+
+app.config.from_object(config_obj)
 
 # init database object
 db.init_app(app)
