@@ -9,6 +9,9 @@ class Config():
     TESTING = False
     # SSO auth enabled
     SSO_AUTH = False
+    # Database auth enabled. SSO_AUTH should be set to False,
+    # otherwise ExaFS would require users to authenticate twice.
+    DB_AUTH = False
     # SSO LOGOUT
     LOGOUT_URL = "https://flowspec.example.com/Shibboleth.sso/Logout"
     # SQL Alchemy config
@@ -57,6 +60,11 @@ class Config():
     RD_STRING = "7654:3210"
     RD_LABEL = "label for RD"
 
+    # Database authentication config, only used when DB_AUTH is True
+    AUTH_DB_TABLENAME = 'users'  # Name of the table that contains users
+    AUTH_DB_EMAIL_COL = 'email'  # Name of the column in the users table containing user emails
+    AUTH_DB_PASSWORD_COL = 'password'  # Name of the in the users table column containing password hashes
+
 
 class ProductionConfig(Config):
     """
@@ -72,6 +80,15 @@ class ProductionConfig(Config):
     # Set true if you need debug in production
     DEBUG = False
 
+    # Configuration for authentication database. Only used when DB_AUTH is set to True.
+    SQLALCHEMY_BINDS = {
+        "auth": "mysql://"
+    }
+    # Hashing algorithm to use for passwords.
+    # Can be either any of hashes supported by passlib
+    # (https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
+    # or "none" to turn off hashing (not recommended for production).
+    AUTH_PASSWORD_HASH_ALGO = "bcrypt"
 
 class DevelopmentConfig(Config):
     """
@@ -79,9 +96,17 @@ class DevelopmentConfig(Config):
     """
 
     SQLALCHEMY_DATABASE_URI = "Your Local Database URI"
+    SQLALCHEMY_BINDS = {
+        "auth": "mysql://"
+    }
     LOCAL_IP = "127.0.0.1"
     DEBUG = True
 
+    # Hashing algorithm to use for passwords.
+    # Can be either any of hashes supported by passlib
+    # (https://passlib.readthedocs.io/en/stable/lib/passlib.hash.html)
+    # or "none" to turn off hashing (not recommended for production).
+    AUTH_PASSWORD_HASH_ALGO = "none"
 
 class TestingConfig(Config):
     TESTING = True
