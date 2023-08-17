@@ -9,6 +9,8 @@ from wtforms import (
     SelectMultipleField,
     StringField,
     TextAreaField,
+    PasswordField,
+    EmailField,
 )
 from wtforms.validators import (
     DataRequired,
@@ -596,3 +598,20 @@ class IPv6Form(IPForm):
             return False
 
         return True
+
+
+class LoginForm(FlaskForm):
+    email = EmailField(
+        "E-mail",
+        validators=[DataRequired()]
+    )
+
+    password = PasswordField(
+        "Password",
+        validators=[DataRequired()]
+    )
+
+    remember = BooleanField(
+        "Remember login",
+        validators=[Optional()]
+    )
