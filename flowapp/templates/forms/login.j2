@@ -1,0 +1,17 @@
+{% extends 'layouts/default.j2' %}
+{% from 'forms/macros.j2' import render_form %}
+
+{% block title %}Log in{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-sm-12 col-md-6">
+      <div class="content rounded p-3 bg-light shadow-lg">
+        <h1 class="text-center">Welcome back!</h1>
+        <h4 class="text-center">Please log in.</h4>
+        {{ render_form(form, action_url=action_url, action_text='Login') }}
+      </div>
+
+    </div>
+  </div>
+
+{% endblock %}
