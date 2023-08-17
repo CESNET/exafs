@@ -58,8 +58,18 @@
               {% endif %}
             </ul>
             <span class="navbar-text">
+              {% if "user_email" in session %}
               {{ session['user_name']}} &lt;{{ session['user_email'] }}&gt;, 
               role: {{ session['user_roles']|join(", ") }}, org: {{ session['user_orgs'] }}</span>
+                {% if config.DB_AUTH %}
+                  <ul class="navbar-nav ms-2">
+                    <li class="nav-item">
+                      <a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="bi bi-door-open-fill"></i> Log out</a>
+                    </li>
+                  </ul>
+                {% endif %}
+            {% endif %}
+
           </div>    
         
         </div>
