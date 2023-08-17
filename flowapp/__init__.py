@@ -6,6 +6,7 @@ from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
+from flask_login import LoginManager
 
 from .__about__ import __version__
 from .instance_config import InstanceConfig
@@ -36,7 +37,7 @@ def create_app(config):
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
     app.config.setdefault("SSO_LOGIN_URL", "/login")
 
-
+    login_manager = LoginManager()
     ext = SSO(app=app)
 
     if getattr(config, "SSO_AUTH"):
@@ -67,6 +68,34 @@ def create_app(config):
                     return redirect("/")
 
                 return redirect("/")
+
+    if getattr(config, "DB_AUTH"):
+        from .views.auth import auth as auth_bp
+        from .models import AuthUser
+
+        login_manager.init_app(app)
+        app.register_blueprint(auth_bp, url_prefix="/auth")
+        login_manager.login_view = "auth.login"
+
+        AuthUser.__table__.name = getattr(config, "AUTH_DB_TABLENAME", "users")
+        AuthUser.__table__.c["email"].name = getattr(config, "AUTH_DB_EMAIL_COL", "email")
+        AuthUser.__table__.c["password_hash"].name = getattr(config, "AUTH_DB_PASSWORD_COL", "password")
+
+        @login_manager.user_loader
+        def load_user(user_id: str):
+            from .models import User
+            user = db.session.query(User).filter_by(uuid=user_id).first()
+            auth_user = db.session.query(AuthUser).filter_by(email=user_id).first()
+            if user is not None:
+                session["user_email"] = user.uuid
+                session["user_id"] = user.id
+                session["user_roles"] = [role.name for role in user.role]
+                session["user_orgs"] = ", ".join([org.name for org in user.organization])
+                session["user_role_ids"] = [role.id for role in user.role]
+                session["user_org_ids"] = [org.id for org in user.organization]
+                roles = [i > 1 for i in session["user_role_ids"]]
+                session["can_edit"] = True if all(roles) and roles else []
+            return auth_user
 
     from flowapp import models, constants, validators
     from .views.admin import admin
