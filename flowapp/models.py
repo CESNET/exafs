@@ -1,4 +1,6 @@
 import json
+
+from flask import session, current_app
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
@@ -606,6 +608,37 @@ class Log(db.Model):
         self.rule_id = rule_id
         self.user_id = user_id
         self.author = author
+
+
+class AuthUser(db.Model):
+    """Class for loading e-mails and password hashes for users from
+    external authentication database."""
+
+    # Different bind key to make sure the model does NOT get
+    # created with the rest of the database tables.
+    __bind_key__ = "auth"
+    __tablename__ = "users"
+
+    email = db.Column(db.String, primary_key=True)
+    password_hash = db.Column(db.String)
+
+
+    @property
+    def is_active(self):
+        """Required by the flask-login extension."""
+        return True
+
+    @property
+    def is_anonymous(self):
+        """Required by the flask-login extension."""
+        return False
+
+    @property
+    def is_authenticated(self):
+        return session["user_email"] == self.email
+
+    def get_id(self):
+        return self.email
 
 
 # DDL
