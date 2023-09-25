@@ -1,0 +1,7 @@
+{% extends 'layouts/default.j2' %}
+{% block content %}
+  <h1>Could not log you in.</h1>
+  <p class="form-text">401: Unauthorized</p>
+  <p>Please log out and try logging in again.</p>
+  <p><a href="{{url_for('logout')}}">Log out</a></p>
+{% endblock %}
