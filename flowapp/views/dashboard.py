@@ -11,6 +11,7 @@ from flask import (
     make_response,
     abort,
 )
+from markupsafe import Markup
 from flowapp import models, validators, flowspec
 from flowapp.auth import auth_required
 from flowapp.constants import (
@@ -303,9 +304,9 @@ def create_admin_response(
             table_title=table_title,
             css_classes=active_css_rstate(rtype, rstate),
             count_match=count_match,
-            dashboard_table_body=dashboard_table_body,
-            dashboard_table_head=dashboard_table_head,
-            dashboard_table_foot=dashboard_table_foot,
+            dashboard_table_body=Markup(dashboard_table_body),
+            dashboard_table_head=Markup(dashboard_table_head),
+            dashboard_table_foot=Markup(dashboard_table_foot),
             rules_columns=table_columns,
             rtype=rtype,
             rstate=rstate,
@@ -408,14 +409,14 @@ def create_user_response(
             "pages/dashboard_user.html",
             table_title=table_title,
             rules_columns=table_columns,
-            dashboard_table_editable=dashboard_table_editable,
-            dashboard_table_readonly=dashboard_table_readonly,
+            dashboard_table_editable=Markup(dashboard_table_editable),
+            dashboard_table_readonly=Markup(dashboard_table_readonly),
             display_editable=display_editable,
             display_readonly=display_readonly,
             css_classes=active_css_rstate(rtype, rstate),
-            dashboard_table_editable_head=dashboard_table_editable_head,
-            dashboard_table_readonly_head=dashboard_table_readonly_head,
-            dashboard_table_foot=dashboard_table_foot,
+            dashboard_table_editable_head=Markup(dashboard_table_editable_head),
+            dashboard_table_readonly_head=Markup(dashboard_table_readonly_head),
+            dashboard_table_foot=Markup(dashboard_table_foot),
             rtype=rtype,
             rstate=rstate,
             sort_key=sort_key,
@@ -488,9 +489,9 @@ def create_view_response(
             count_match=count_match,
             rstate=rstate,
             rtype=rtype,
-            dashboard_table_body=dashboard_table_body,
-            dashboard_table_head=dashboard_table_head,
-            dashboard_table_foot=dashboard_table_foot,
+            dashboard_table_body=Markup(dashboard_table_body),
+            dashboard_table_head=Markup(dashboard_table_head),
+            dashboard_table_foot=Markup(dashboard_table_foot),
         )
     )
 
