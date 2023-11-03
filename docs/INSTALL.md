@@ -8,7 +8,7 @@ The default Python for RHEL9 is Python 3.9
 Virtualenv with Python39 is used by uWSGI server to keep the packages for app separated from system.
 
 ## Prerequisites
-First, choose how to [authenticate and authorize users]('./AUTH.md'). The application currently supports three options. 
+First, choose how to [authenticate and authorize users](./AUTH.md). The application currently supports three options. 
 
 Depending on the selected WWW server, set up a proxy. We recommend using Apache + mod_uwsgi. If you use another solution, set up the WWW server as you are used to. 
 
