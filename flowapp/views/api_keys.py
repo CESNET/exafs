@@ -35,7 +35,7 @@ def all():
     payload = {"keys": [key.id for key in keys]}
     encoded = jwt.encode(payload, jwt_key, algorithm="HS256")
 
-    resp = make_response(render_template("pages/api_key.j2", keys=keys))
+    resp = make_response(render_template("pages/api_key.html", keys=keys))
 
     if current_app.config.get("DEVEL"):
         resp.set_cookie(COOKIE_KEY, encoded, httponly=True, samesite="Lax")
@@ -73,7 +73,7 @@ def add():
                     % (getattr(form, field).label.text, error)
                 )
 
-    return render_template("forms/api_key.j2", form=form, generated_key=generated)
+    return render_template("forms/api_key.html", form=form, generated_key=generated)
 
 
 @api_keys.route("/delete/<int:key_id>", methods=["GET"])

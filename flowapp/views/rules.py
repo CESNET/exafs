@@ -48,9 +48,9 @@ DATA_MODELS_NAMED = {"rtbh": RTBH, "ipv4": Flowspec4, "ipv6": Flowspec6}
 DATA_FORMS = {1: RTBHForm, 4: IPv4Form, 6: IPv6Form}
 DATA_FORMS_NAMED = {"rtbh": RTBHForm, "ipv4": IPv4Form, "ipv6": IPv6Form}
 DATA_TEMPLATES = {
-    1: "forms/rtbh_rule.j2",
-    4: "forms/ipv4_rule.j2",
-    6: "forms/ipv6_rule.j2",
+    1: "forms/rtbh_rule.html",
+    4: "forms/ipv4_rule.html",
+    6: "forms/ipv6_rule.html",
 }
 DATA_TABLES = {1: "RTBH", 4: "flowspec4", 6: "flowspec6"}
 DEFAULT_SORT = {1: "ivp4", 4: "source", 6: "source"}
@@ -482,7 +482,7 @@ def ipv4_rule():
     form.expires.data = default_expires
 
     return render_template(
-        "forms/ipv4_rule.j2", form=form, action_url=url_for("rules.ipv4_rule")
+        "forms/ipv4_rule.html", form=form, action_url=url_for("rules.ipv4_rule")
     )
 
 
@@ -559,7 +559,7 @@ def ipv6_rule():
     form.expires.data = default_expires
 
     return render_template(
-        "forms/ipv6_rule.j2", form=form, action_url=url_for("rules.ipv6_rule")
+        "forms/ipv6_rule.html", form=form, action_url=url_for("rules.ipv6_rule")
     )
 
 
@@ -631,7 +631,7 @@ def rtbh_rule():
     form.expires.data = default_expires
 
     return render_template(
-        "forms/rtbh_rule.j2", form=form, action_url=url_for("rules.rtbh_rule")
+        "forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule")
     )
 
 
@@ -651,7 +651,7 @@ def export():
     announce_all_routes()
 
     return render_template(
-        "pages/dashboard_admin.j2",
+        "pages/dashboard_admin.html",
         rules=rules,
         actions=actions,
         rules_rtbh=rules_rtbh,

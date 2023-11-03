@@ -1,10 +1,10 @@
-{% extends 'layouts/default.j2' %}
-{% from 'macros.j2' import build_ip_tbody, build_rtbh_tbody, build_rules_thead %}
+{% extends 'layouts/default.html' %}
+{% from 'macros.html' import build_ip_tbody, build_rtbh_tbody, build_rules_thead %}
 
 {% block title %}Flowspec{% endblock %}
 {% block content %}
 
-    {% include 'pages/submenu_dashboard.j2' %}
+    {% include 'pages/submenu_dashboard.html' %}
 
     <div class="row">
         <table class="table table-hover ip-table">

@@ -36,7 +36,7 @@ dashboard = Blueprint("dashboard", __name__, template_folder="templates")
 def whois(ip_address):
     result = subprocess.run(["whois", ip_address], stdout=subprocess.PIPE)
     return render_template(
-        "pages/dashboard_whois.j2",
+        "pages/dashboard_whois.html",
         result=result.stdout.decode("utf-8"),
         ip_address=ip_address,
     )
@@ -74,7 +74,7 @@ def index(rtype=None, rstate="active"):
     # get the macros for the current rule type from config
     # warning no checks here, if the config is set to non existing macro the app will crash
     macro_file = (
-        current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.j2")
+        current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.html")
     )
     macro_tbody = (
         current_app.config["DASHBOARD"].get(rtype).get("macro_tbody", "build_ip_tbody")
@@ -160,7 +160,7 @@ def create_dashboard_table_body(
     rtype,
     editable=True,
     group_op=True,
-    macro_file="macros.j2",
+    macro_file="macros.html",
     macro_name="build_ip_tbody",
 ):
     """
@@ -193,7 +193,7 @@ def create_dashboard_table_head(
     sort_order,
     search_query="",
     group_op=True,
-    macro_file="macros.j2",
+    macro_file="macros.html",
     macro_name="build_rules_thead",
 ):
     """
@@ -232,7 +232,7 @@ def create_dashboard_table_head(
 
 
 def create_dashboard_table_foot(
-    colspan=10, macro_file="macros.j2", macro_name="build_group_buttons_tfoot"
+    colspan=10, macro_file="macros.html", macro_name="build_group_buttons_tfoot"
 ):
     """
     create the table foot for the dashboard using a jinja2 macro
@@ -260,7 +260,7 @@ def create_admin_response(
     table_title,
     search_query="",
     count_match=DEFAULT_COUNT_MATCH,
-    macro_file="macros.j2",
+    macro_file="macros.html",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
     macro_tfoot="build_group_buttons_tfoot",
@@ -298,7 +298,7 @@ def create_admin_response(
 
     res = make_response(
         render_template(
-            "pages/dashboard_admin.j2",
+            "pages/dashboard_admin.html",
             display_rules=len(rules),
             table_title=table_title,
             css_classes=active_css_rstate(rtype, rstate),
@@ -329,7 +329,7 @@ def create_user_response(
     table_title,
     search_query="",
     count_match=DEFAULT_COUNT_MATCH,
-    macro_file="macros.j2",
+    macro_file="macros.html",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
     macro_tfoot="build_rules_tfoot",
@@ -405,7 +405,7 @@ def create_user_response(
 
     res = make_response(
         render_template(
-            "pages/dashboard_user.j2",
+            "pages/dashboard_user.html",
             table_title=table_title,
             rules_columns=table_columns,
             dashboard_table_editable=dashboard_table_editable,
@@ -439,7 +439,7 @@ def create_view_response(
     table_title,
     search_query="",
     count_match=DEFAULT_COUNT_MATCH,
-    macro_file="macros.j2",
+    macro_file="macros.html",
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
     macro_tfoot="build_rules_tfoot",
@@ -479,7 +479,7 @@ def create_view_response(
 
     res = make_response(
         render_template(
-            "pages/dashboard_view.j2",
+            "pages/dashboard_view.html",
             table_title=table_title,
             rules_columns=table_columns,
             display_rules=len(rules),

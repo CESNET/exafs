@@ -1,10 +1,10 @@
-{% extends 'layouts/default.j2' %}
+{% extends 'layouts/default.html' %}
 
 
 {% block title %}Flowspec{% endblock %}
 {% block content %}
 
-    {% include 'pages/submenu_dashboard.j2' %}
+    {% include 'pages/submenu_dashboard.html' %}
     {% if display_rules %}
     <div class="row">
         <form action="{{ url_for('rules.group_operation') }}" method="post">
