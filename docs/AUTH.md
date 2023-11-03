@@ -37,7 +37,7 @@ ProxyPass / uwsgi://127.0.0.1:8000/
 ### Simple Auth
 This mode uses a WWW server (usually Apache) as an auth proxy. It is thus possible to use an external user database. Everything needs to be set in the web server configuration, then in **config.py** enable `HEADER_AUTH = True` and set `AUTH_HEADER_NAME = 'X-Authenticated-User'` 
 
-See [apache.conf.example]('./apache.example.conf') for more information about configuration.
+See [apache.conf.example](./apache.conf.example) for more information about configuration.
 
 ### Local single user mode
 This mode is used as a fallback if neither SSO nor Simple Auth is enabled. Configuration is done using **config.py**. The mode is more for testing purposes, it does not allow to set up multiple users with different permission levels and also does not perform user authentication. 
