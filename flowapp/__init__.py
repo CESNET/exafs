@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import babel
 
-from flask import Flask, redirect, render_template, session, url_for
+from flask import Flask, redirect, render_template, session, url_for, request
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -72,21 +72,9 @@ def create_app():
         else:
             user = db.session.query(models.User).filter_by(uuid=uuid).first()
             try:
-                session["user_uuid"] = user.uuid
-                session["user_email"] = user.uuid
-                session["user_name"] = user.name
-                session["user_id"] = user.id
-                session["user_roles"] = [role.name for role in user.role.all()]
-                session["user_orgs"] = ", ".join(
-                    org.name for org in user.organization.all()
-                )
-                session["user_role_ids"] = [role.id for role in user.role.all()]
-                session["user_org_ids"] = [org.id for org in user.organization.all()]
-                roles = [i > 1 for i in session["user_role_ids"]]
-                session["can_edit"] = True if all(roles) and roles else []
+                _register_user_to_session(uuid)
             except AttributeError:
-                return redirect("/")
-
+                pass
             return redirect("/")
 
     @app.route("/logout")
@@ -95,6 +83,19 @@ def create_app():
         session["user_id"] = False
         session.clear()
         return redirect(app.config.get("LOGOUT_URL"))
+
+    @app.route("/ext-login")
+    def ext_login():
+        header_name = app.config.get("AUTH_HEADER_NAME", 'X-Authenticated-User')
+        if header_name not in request.headers:
+            return render_template("errors/401.j2")
+        uuid = request.headers.get(header_name)
+        if uuid:
+            try:
+                _register_user_to_session(uuid)
+            except AttributeError:
+                return render_template("errors/401.j2")
+        return redirect("/")
 
     @app.route("/")
     @auth_required
@@ -177,4 +178,20 @@ def create_app():
 
         return babel.dates.format_datetime(value, format)
 
+    def _register_user_to_session(uuid: str):
+        user = db.session.query(models.User).filter_by(uuid=uuid).first()
+        session["user_uuid"] = user.uuid
+        session["user_email"] = user.uuid
+        session["user_name"] = user.name
+        session["user_id"] = user.id
+        session["user_roles"] = [role.name for role in user.role.all()]
+        session["user_orgs"] = ", ".join(
+            org.name for org in user.organization.all()
+        )
+        session["user_role_ids"] = [role.id for role in user.role.all()]
+        session["user_org_ids"] = [org.id for org in user.organization.all()]
+        roles = [i > 1 for i in session["user_role_ids"]]
+        session["can_edit"] = True if all(roles) and roles else []
+
     return app
+
