@@ -8,30 +8,12 @@ The default Python for RHEL9 is Python 3.9
 Virtualenv with Python39 is used by uWSGI server to keep the packages for app separated from system.
 
 ## Prerequisites
+First, choose how to [authenticate and authorize users](./AUTH.md). The application currently supports three options. 
 
-ExaFS is using Shibboleth auth and therefore we suggest to use Apache web server. 
-Install the Apache httpd as usual and then continue with this guide. 
-
-First configure Shibboleth
-
-### shibboleth config:
-```
-<Location />
-  AuthType shibboleth
-  ShibRequestSetting requireSession 1
-  require shib-session
-</Location>
+Depending on the selected WWW server, set up a proxy. We recommend using Apache + mod_uwsgi. If you use another solution, set up the WWW server as you are used to. 
 
 ```
-
-### httpd ssl.conf 
-We are using https only. It's important to configure proxy pass to uwsgi in httpd config.
-```
-# Proxy everything to the WSGI server except /Shibboleth.sso and
-# /shibboleth-sp
-ProxyPass /kon.php !
-ProxyPass /Shibboleth.sso !
-ProxyPass /shibboleth-sp !
+# Proxy everything to the WSGI server
 ProxyPass / uwsgi://127.0.0.1:8000/
 ```
 

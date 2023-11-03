@@ -14,7 +14,10 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
-            return redirect("/login")
+            if current_app.config.get("SSO_AUTH"):
+                return redirect("/login")
+            elif current_app.config.get("HEADER_AUTH", False):
+                return redirect("/ext-login")
         return f(*args, **kwargs)
 
     return decorated
@@ -99,6 +102,12 @@ def check_auth(uuid):
         if uuid:
             exist = db.session.query(User).filter_by(uuid=uuid).first()
         return exist
+    elif current_app.config.get("HEADER_AUTH", False):
+        # External auth (for example apache)
+        header_name = current_app.config.get("AUTH_HEADER_NAME", 'X-Authenticated-User')
+        if header_name not in request.headers or not session.get("user_uuid"):
+            return False
+        return db.session.query(User).filter_by(uuid=request.headers.get(header_name))
     else:
         # Localhost login / no check
         session["user_email"] = current_app.config["LOCAL_USER_UUID"]

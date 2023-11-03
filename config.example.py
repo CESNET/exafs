@@ -9,6 +9,12 @@ class Config():
     TESTING = False
     # SSO auth enabled
     SSO_AUTH = False
+    # Authentication is done outside the app, use HTTP header to get the user uuid.
+    # If SSO_AUTH is set to True, this option is ignored and SSO auth is used.
+    HEADER_AUTH = True
+    # Name of HTTP header containing the UUID of authenticated user.
+    # Only used when HEADER_AUTH is set to True
+    AUTH_HEADER_NAME = 'X-Authenticated-User'
     # SSO LOGOUT
     LOGOUT_URL = "https://flowspec.example.com/Shibboleth.sso/Logout"
     # SQL Alchemy config
