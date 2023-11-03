@@ -70,7 +70,6 @@ def create_app():
             uuid = False
             return redirect("/")
         else:
-            user = db.session.query(models.User).filter_by(uuid=uuid).first()
             try:
                 _register_user_to_session(uuid)
             except AttributeError:
@@ -194,4 +193,3 @@ def create_app():
         session["can_edit"] = True if all(roles) and roles else []
 
     return app
-

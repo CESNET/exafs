@@ -1,0 +1,24 @@
+# mod_dbd configuration
+DBDriver pgsql
+DBDParams "dbname=exafs_users host=localhost user=exafs password=verysecurepassword"
+
+DBDMin  4
+DBDKeep 8
+DBDMax  20
+DBDExptime 300
+
+# ExaFS authentication
+<VirtualHost *:80>
+    ServerName example.com
+    DocumentRoot /var/www/html
+
+    <Location />
+    AuthType Basic
+    AuthName "Database Authentication"
+    AuthBasicProvider dbd
+    AuthDBDUserPWQuery "SELECT pass_hash AS password FROM \"users\" WHERE email = %s"
+    Require valid-user
+    RequestHeader set X-Authenticated-User expr=%{REMOTE_USER}
+    ProxyPass http://127.0.0.1:8080/
+    </Location>
+</VirtualHost>
