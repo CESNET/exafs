@@ -1,9 +1,9 @@
 body {
-    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-family: "Nunito Sans", "DM Sans", sans-serif;
     font-size: 14px;
     line-height: 1.42857143;
     color: #333;
-    background-color: #fff;
+    background-color: #fafafa;
     padding-top: 70px;
     padding-bottom: 30px;
 }
@@ -188,4 +188,15 @@ tbody .bi {
 
 .alert {
   border-radius: 10px;
+}
+
+.bg-exafs {
+  background-color: #065895 !important;
+}
+
+.content {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 20px;
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.175);
 }

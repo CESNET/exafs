@@ -2,29 +2,31 @@
 {% from 'forms/macros.j2' import render_field %}
 {% block title %}Add New Machine with ApiKey{% endblock %}
 {% block content %}
-  <h2>Add new ApiKey for your machine</h2>
-  <form action="{{ action_url }}" method="POST">
-  {{ form.hidden_tag() if form.hidden_tag }}
-  <div class="row">
-    <div class="col-sm-12">
+  <div class="content">
+    <h2>Add new ApiKey for your machine</h2>
+    <form action="{{ action_url }}" method="POST">
+      {{ form.hidden_tag() if form.hidden_tag }}
+      <div class="row">
+        <div class="col-sm-12">
           {{ render_field(form.machine) }}
-    </div>
-  </div>  
+        </div>
+      </div>
 
-  <div class="row">
-    <div class="col-sm-4">
-        ApiKey for this machine:
-    </div>
-    <div class="col-sm-8">
-        {{ generated_key }}
-    </div>
+      <div class="row">
+        <div class="col-sm-4">
+          ApiKey for this machine:
+        </div>
+        <div class="col-sm-8">
+          {{ generated_key }}
+        </div>
+      </div>
+
+
+      <div class="row">
+        <div class="col-sm-10">
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </form>
   </div>
-
-
-  <div class="row">
-    <div class="col-sm-10">
-      <button type="submit" class="btn btn-primary">Save</button>
-    </div>
-  </div>
-
 {% endblock %}
