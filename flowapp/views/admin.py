@@ -39,7 +39,7 @@ def log(page):
         .filter(Log.time > week_ago)
         .paginate(page=page, per_page=per_page, max_per_page=None, error_out=False)
     )
-    return render_template("pages/logs.j2", logs=logs)
+    return render_template("pages/logs.html", logs=logs)
 
 
 @admin.route("/user", methods=["GET", "POST"])
@@ -74,7 +74,7 @@ def user():
 
     action_url = url_for("admin.user")
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Add new user to Flowspec",
         form=form,
         action_url=action_url,
@@ -103,7 +103,7 @@ def edit_user(user_id):
     action_url = url_for("admin.edit_user", user_id=user_id)
 
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Editing {}".format(user.email),
         form=form,
         action_url=action_url,
@@ -136,7 +136,7 @@ def delete_user(user_id):
 @admin_required
 def users():
     users = User.query.all()
-    return render_template("pages/users.j2", users=users)
+    return render_template("pages/users.html", users=users)
 
 
 @admin.route("/organizations")
@@ -144,7 +144,7 @@ def users():
 @admin_required
 def organizations():
     orgs = db.session.query(Organization).all()
-    return render_template("pages/orgs.j2", orgs=orgs)
+    return render_template("pages/orgs.html", orgs=orgs)
 
 
 @admin.route("/organization", methods=["GET", "POST"])
@@ -169,7 +169,7 @@ def organization():
 
     action_url = url_for("admin.organization")
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Add new organization to Flowspec",
         form=form,
         action_url=action_url,
@@ -191,7 +191,7 @@ def edit_organization(org_id):
 
     action_url = url_for("admin.edit_organization", org_id=org.id)
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Editing {}".format(org.name),
         form=form,
         action_url=action_url,
@@ -224,7 +224,7 @@ def delete_organization(org_id):
 @admin_required
 def as_paths():
     mpaths = db.session.query(ASPath).all()
-    return render_template("pages/as_paths.j2", paths=mpaths)
+    return render_template("pages/as_paths.html", paths=mpaths)
 
 
 @admin.route("/as-path", methods=["GET", "POST"])
@@ -247,7 +247,7 @@ def as_path():
 
     action_url = url_for("admin.as_path")
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Add new AS-path to Flowspec",
         form=form,
         action_url=action_url,
@@ -269,7 +269,7 @@ def edit_as_path(path_id):
 
     action_url = url_for("admin.edit_as_path", path_id=pth.id)
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Editing {}".format(pth.prefix),
         form=form,
         action_url=action_url,
@@ -296,7 +296,7 @@ def delete_as_path(path_id):
 @admin_required
 def actions():
     actions = db.session.query(Action).all()
-    return render_template("pages/actions.j2", actions=actions)
+    return render_template("pages/actions.html", actions=actions)
 
 
 @admin.route("/action", methods=["GET", "POST"])
@@ -329,7 +329,7 @@ def action():
 
     action_url = url_for("admin.action")
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Add new action to Flowspec",
         form=form,
         action_url=action_url,
@@ -351,7 +351,7 @@ def edit_action(action_id):
 
     action_url = url_for("admin.edit_action", action_id=action.id)
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Editing {}".format(action.name),
         form=form,
         action_url=action_url,
@@ -383,7 +383,7 @@ def delete_action(action_id):
 @admin_required
 def communities():
     communities = db.session.query(Community).all()
-    return render_template("pages/communities.j2", communities=communities)
+    return render_template("pages/communities.html", communities=communities)
 
 
 @admin.route("/community", methods=["GET", "POST"])
@@ -416,7 +416,7 @@ def community():
 
     community_url = url_for("admin.community")
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Add new community to Flowspec",
         form=form,
         community_url=community_url,
@@ -438,7 +438,7 @@ def edit_community(community_id):
 
     community_url = url_for("admin.edit_community", community_id=community.id)
     return render_template(
-        "forms/simple_form.j2",
+        "forms/simple_form.html",
         title="Editing {}".format(community.name),
         form=form,
         community_url=community_url,

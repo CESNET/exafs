@@ -1,67 +1,43 @@
-{% extends 'layouts/default.j2' %}
-{% from 'forms/macros.j2' import render_field %}
-{% block title %}Add IPv4 rule{% endblock %}
+{% extends 'layouts/default.html' %}
+{% from 'forms/macros.html' import render_field %}
+{% block title %}Add RTBH rule{% endblock %}
 {% block content %}
-  <h2>{{ title or 'New'}} IPv4 rule</h2>
+  <h2>{{ title or 'New'}} RTBH rule</h2>
   <form action="{{ action_url }}" method="POST">
   {{ form.hidden_tag() if form.hidden_tag }}
   <div class="row">
     <div class="col-sm-8">
       <div class="row">
         <div class="col-sm-8">
-          {{ render_field(form.source) }}
+          {{ render_field(form.ipv4) }}
         </div>
         <div class="col-sm-4">
-            {{ render_field(form.source_mask) }}
+            {{ render_field(form.ipv4_mask) }}
         </div>
       </div>
       <div class="row">
         <div class="col-sm-8">
-          {{ render_field(form.dest) }}
+          {{ render_field(form.ipv6) }}
         </div>
         <div class="col-sm-4">
-            {{ render_field(form.dest_mask) }}
+            {{ render_field(form.ipv6_mask) }}
         </div>
       </div>
     </div>
-    <div class="col-sm-2">
+    <div class="col-sm-4">
       <div class="row">
-            {{ render_field(form.protocol) }}
+        {{ render_field(form.community) }}
       </div>
-        <div class="row">
-            {{ render_field(form.fragment, size=4) }}
-        </div>
-    </div>
-    <div class="col-sm-2">
-          {{ render_field(form.flags, size=9) }}
-    </div>
-
-  </div>
+    </div>  
+  </div>  
 
   <div class="row">
-    <div class="col-sm-4">
-        {{ render_field(form.source_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
-    </div>
-    <div class="col-sm-4">
-        {{ render_field(form.dest_port, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x") }}
-    </div>
-    <div class="col-sm-4">
-        {{ render_field(form.packet_len, tooltip="Possible values: x;>x;x-y;<x;<=x;>=x")  }}
-    </div>
-  </div>
-
-
-  <div class="row">
-    <div class="col-sm-6">
-      {{ render_field(form.action) }}
-    </div>
     <div class="col-sm-6">
       <div class="form-group">
         <label for="inputExpiration" class="control-label">Expiration date</label>
         <div class='input-group date' id='dateTimeExpires'>
                       <!--
                       <input type='text' name="expires" class="form-control" />
-
                       -->
                       {{ form.expires(class_='form-control') }}
                       <span class="input-group-addon">
@@ -74,7 +50,7 @@
                 <p class="help-block">{{ e }}</p>
             {% endfor %}
         {% endif %}
-      </div>
+      </div>            
     </div>
   </div>
 

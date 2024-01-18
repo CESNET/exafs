@@ -87,13 +87,13 @@ def create_app():
     def ext_login():
         header_name = app.config.get("AUTH_HEADER_NAME", 'X-Authenticated-User')
         if header_name not in request.headers:
-            return render_template("errors/401.j2")
+            return render_template("errors/401.html")
         uuid = request.headers.get(header_name)
         if uuid:
             try:
                 _register_user_to_session(uuid)
             except AttributeError:
-                return render_template("errors/401.j2")
+                return render_template("errors/401.html")
         return redirect("/")
 
     @app.route("/")
@@ -136,12 +136,12 @@ def create_app():
     # HTTP error handling
     @app.errorhandler(404)
     def not_found(error):
-        return render_template("errors/404.j2"), 404
+        return render_template("errors/404.html"), 404
 
     @app.errorhandler(500)
     def internal_error(exception):
         app.logger.error(exception)
-        return render_template("errors/500.j2"), 500
+        return render_template("errors/500.html"), 500
 
     @app.context_processor
     def utility_processor():

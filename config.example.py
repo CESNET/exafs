@@ -8,10 +8,10 @@ class Config():
     # Flask testing
     TESTING = False
     # SSO auth enabled
-    SSO_AUTH = False
+    SSO_AUTH = True
     # Authentication is done outside the app, use HTTP header to get the user uuid.
     # If SSO_AUTH is set to True, this option is ignored and SSO auth is used.
-    HEADER_AUTH = True
+    HEADER_AUTH = False
     # Name of HTTP header containing the UUID of authenticated user.
     # Only used when HEADER_AUTH is set to True
     AUTH_HEADER_NAME = 'X-Authenticated-User'
