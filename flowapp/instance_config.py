@@ -99,15 +99,15 @@ class InstanceConfig:
     DASHBOARD = {
         "ipv4": {
             "name": "IPv4",
-            "macro_file": "macros.j2",
+            "macro_file": "macros.html",
             "macro_tbody": "build_ip_tbody",
             "macro_thead": "build_rules_thead",
             "table_colspan": 10,
-            "table_columns": RULES_COLUMNS_V6,
+            "table_columns": RULES_COLUMNS_V4,
         },
         "ipv6": {
             "name": "IPv6",
-            "macro_file": "macros.j2",
+            "macro_file": "macros.html",
             "macro_tbody": "build_ip_tbody",
             "macro_thead": "build_rules_thead",
             "table_colspan": 10,
@@ -115,7 +115,7 @@ class InstanceConfig:
         },
         "rtbh": {
             "name": "RTBH",
-            "macro_file": "macros.j2",
+            "macro_file": "macros.html",
             "macro_tbody": "build_rtbh_tbody",
             "macro_thead": "build_rules_thead",
             "table_colspan": 5,

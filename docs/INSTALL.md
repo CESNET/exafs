@@ -125,9 +125,9 @@ Supervisord is used to run and manage application.
 
 #### Final steps - as deploy user
 
-Copy config.example.py to config.py and fill out the DB credetials. 
+1. Copy config.example.py to config.py and fill out the DB credetials. 
 
-Create and populate database tables.
+2. Create and populate database tables.
 ```
 cd ~/www
 source venv/bin/activate
@@ -135,8 +135,8 @@ python db-init.py
 ```
 DB-init script inserts default roles, actions, rule states and two organizations (TUL and Cesnet). But no users.
 
-So before start, use your favorite mysql admin tool and insert some users into database. 
-The uuid of user should be set the eppn value provided by Shibboleth. 
+3. Before start, **use your favorite mysql admin tool and insert some users into database**. 
+The **uuid** of user should be set the **eppn** value provided by Shibboleth. 
 
 You can use following MYSQL commands to insert the user, give him role 'admin' and add him to the the organization 'Cesnet'.
 

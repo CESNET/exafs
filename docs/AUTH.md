@@ -10,9 +10,12 @@ Since version 0.7.3, the application supports three different forms of user auth
 ### SSO
 To use SSO, you need to set up Apache + Shiboleth in the usual way. Then set `SSO_AUTH = True` in the application configuration file **config.py**
 
+In general the whole app should be protected by Shiboleth. However, there certain endpoints should be excluded from Shiboleth for the interaction with BGP. See configuration example bellow. The endpoints which are not protected by Shibboleth are protected by app itself. Either by @localhost_only decorator or by API key. 
+
 Shibboleth configuration example:
 
-#### shibboleth config:
+#### shibboleth config (shib.conf):
+
 ```
 <Location />
   AuthType shibboleth
@@ -20,6 +23,21 @@ Shibboleth configuration example:
   require shib-session
 </Location>
 
+
+<LocationMatch /api/>
+  Satisfy Any
+  allow from All
+</LocationMatch>
+
+<LocationMatch /rules/announce_all>
+  Satisfy Any
+  allow from All
+</LocationMatch>
+
+<LocationMatch /rules/withdraw_expired>
+  Satisfy Any
+  allow from All
+</LocationMatch> 
 ```
 
 
