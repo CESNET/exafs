@@ -88,6 +88,7 @@ def create_app():
         header_name = app.config.get("AUTH_HEADER_NAME", 'X-Authenticated-User')
         if header_name not in request.headers:
             return render_template("errors/401.html")
+
         uuid = request.headers.get(header_name)
         if uuid:
             try:

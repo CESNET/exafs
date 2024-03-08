@@ -15,12 +15,14 @@ In general the whole app should be protected by Shiboleth. However, there certai
 Shibboleth configuration example:
 
 #### shibboleth config (shib.conf):
+
 ```
 <Location />
   AuthType shibboleth
   ShibRequestSetting requireSession 1
   require shib-session
 </Location>
+
 
 <LocationMatch /api/>
   Satisfy Any
