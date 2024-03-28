@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, jsonify, request
 from flowapp import csrf
 from flowapp.views import api_common
 
@@ -49,6 +49,7 @@ def all_communities(current_user):
 
 @api.route("/rules/ipv4", methods=["POST"])
 @api_common.token_required
+@api_common.check_readonly
 def create_ipv4(current_user):
     """
     Api method for new IPv4 rule

@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 
 from flowapp import create_app
 from flowapp import db as _db
+from datetime import datetime
 import flowapp.models
 
 TESTDB = "test_project.db"
@@ -121,11 +122,6 @@ def db(app, request):
         print("#: inserting users")
         flowapp.models.insert_users(users)
 
-        model = flowapp.models.ApiKey(machine="127.0.0.1", key="testkey", user_id=1)
-
-        _db.session.add(model)
-        _db.session.commit()
-
     def teardown():
         _db.session.commit()
         _db.drop_all()
@@ -136,12 +132,51 @@ def db(app, request):
 
 
 @pytest.fixture(scope="session")
-def jwt_token(client, db, request):
+def jwt_token(client, app, db, request):
     """
     Get the test_client from the app, for the whole test session.
     """
+    with app.app_context():
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key="testkey", user_id=1)
+        db.session.add(model)
+        db.session.commit()
+
     print("\n----- GET JWT TEST TOKEN\n")
     url = "/api/v1/auth/testkey"
     token = client.get(url)
+    data = json.loads(token.data)
+    return data["token"]
+
+
+@pytest.fixture(scope="session")
+def expired_auth_token(client, app, db, request):
+    """
+    Get the test_client from the app, for the whole test session.
+    """
+    test_key = "expired_test_key"
+    expired_date = datetime.strptime("2019-01-01", "%Y-%m-%d")
+    with app.app_context():
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=test_key, user_id=1, expires=expired_date)
+        db.session.add(model)
+        db.session.commit()
+
+    return test_key
+
+
+@pytest.fixture(scope="session")
+def readonly_jwt_token(client, app, db, request):
+    """
+    Get the test_client from the app, for the whole test session.
+    """
+    readonly_key = "readonly-testkey"
+    with app.app_context():
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=readonly_key, user_id=1, readonly=True)
+        db.session.add(model)
+        db.session.commit()
+
+    print("\n----- GET JWT TEST TOKEN\n")
+    url = "/api/v3/auth"
+    headers = {"x-api-key": readonly_key}
+    token = client.get(url, headers=headers)
     data = json.loads(token.data)
     return data["token"]
