@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from flowapp import csrf
 from flowapp.views import api_common
 
@@ -63,6 +63,7 @@ def create_ipv4(current_user):
 @api.route("/rules/ipv6", methods=["POST"])
 @csrf.exempt
 @api_common.token_required
+@api_common.check_readonly
 def create_ipv6(current_user):
     """
     Create new IPv6 rule
@@ -76,6 +77,7 @@ def create_ipv6(current_user):
 @api.route("/rules/rtbh", methods=["POST"])
 @csrf.exempt
 @api_common.token_required
+@api_common.check_readonly
 def create_rtbh(current_user):
     return api_common.create_rtbh(current_user)
 
@@ -118,6 +120,7 @@ def rtbh_rule_get(current_user, rule_id):
 
 @api.route("/rules/ipv4/<int:rule_id>", methods=["DELETE"])
 @api_common.token_required
+@api_common.check_readonly
 def delete_v4_rule(current_user, rule_id):
     """
     Delete rule with given id and type
@@ -128,6 +131,7 @@ def delete_v4_rule(current_user, rule_id):
 
 @api.route("/rules/ipv6/<int:rule_id>", methods=["DELETE"])
 @api_common.token_required
+@api_common.check_readonly
 def delete_v6_rule(current_user, rule_id):
     """
     Delete rule with given id and type
@@ -138,6 +142,7 @@ def delete_v6_rule(current_user, rule_id):
 
 @api.route("/rules/rtbh/<int:rule_id>", methods=["DELETE"])
 @api_common.token_required
+@api_common.check_readonly
 def delete_rtbh_rule(current_user, rule_id):
     """
     Delete rule with given id and type

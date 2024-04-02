@@ -490,7 +490,7 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
     :param route_model:
     :return:
     """
-    model = db.session.query(model_name).get(rule_id)
+    model = db.session.get(model_name, rule_id)
     if model:
         if check_access_rights(current_user, model.user_id):
             # withdraw route

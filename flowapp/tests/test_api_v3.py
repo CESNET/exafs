@@ -1,11 +1,13 @@
 import json
 
+V_PREFIX = "/api/v3"
+
 
 def test_token(client, jwt_token):
     """
     test that token authorization works
     """
-    req = client.get("/api/v2/test_token", headers={"x-access-token": jwt_token})
+    req = client.get(f"{V_PREFIX}/test_token", headers={"x-access-token": jwt_token})
 
     assert req.status_code == 200
 
@@ -14,7 +16,7 @@ def test_withnout_token(client):
     """
     test that without token authorization return 401
     """
-    req = client.get("/api/v2/test_token")
+    req = client.get(f"{V_PREFIX}/test_token")
 
     assert req.status_code == 401
 
@@ -23,7 +25,7 @@ def test_list_actions(client, db, jwt_token):
     """
     test that endpoint returns all action in db
     """
-    req = client.get("/api/v2/actions", headers={"x-access-token": jwt_token})
+    req = client.get(f"{V_PREFIX}/actions", headers={"x-access-token": jwt_token})
 
     assert req.status_code == 200
     data = json.loads(req.data)
@@ -34,7 +36,7 @@ def test_list_communities(client, db, jwt_token):
     """
     test that endpoint returns all action in db
     """
-    req = client.get("/api/v2/communities", headers={"x-access-token": jwt_token})
+    req = client.get(f"{V_PREFIX}/communities", headers={"x-access-token": jwt_token})
 
     assert req.status_code == 200
     data = json.loads(req.data)
@@ -46,7 +48,7 @@ def test_create_v4rule(client, db, jwt_token):
     test that creating with valid data returns 201
     """
     req = client.post(
-        "/api/v2/rules/ipv4",
+        f"{V_PREFIX}/rules/ipv4",
         headers={"x-access-token": jwt_token},
         json={
             "action": 2,
@@ -62,7 +64,7 @@ def test_create_v4rule(client, db, jwt_token):
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data["rule"]
-    assert data["rule"]["id"] == 3
+    assert data["rule"]["id"] == 1
     assert data["rule"]["user"] == "jiri.vrany@tul.cz"
 
 
@@ -73,7 +75,7 @@ def test_delete_v4rule(client, db, jwt_token):
     and that the rule deletion works as expected
     """
     req = client.post(
-        "/api/v2/rules/ipv4",
+        f"{V_PREFIX}/rules/ipv4",
         headers={"x-access-token": jwt_token},
         json={
             "action": 2,
@@ -87,11 +89,11 @@ def test_delete_v4rule(client, db, jwt_token):
 
     assert req.status_code == 201
     data = json.loads(req.data)
-    assert data["rule"]["id"] == 4
+    assert data["rule"]["id"] == 2
     assert data["rule"]["rstate"] == "withdrawed rule"
 
     req2 = client.delete(
-        "/api/v2/rules/ipv4/{}".format(data["rule"]["id"]),
+        f'{V_PREFIX}/rules/ipv4/{data["rule"]["id"]}',
         headers={"x-access-token": jwt_token},
     )
     assert req2.status_code == 201
@@ -102,7 +104,7 @@ def test_create_rtbh_rule(client, db, jwt_token):
     test that creating with valid data returns 201
     """
     req = client.post(
-        "/api/v2/rules/rtbh",
+        f"{V_PREFIX}/rules/rtbh",
         headers={"x-access-token": jwt_token},
         json={
             "community": 1,
@@ -123,7 +125,7 @@ def test_delete_rtbh_rule(client, db, jwt_token):
     test that creating with valid data returns 201
     """
     req = client.post(
-        "/api/v2/rules/rtbh",
+        f"{V_PREFIX}/rules/rtbh",
         headers={"x-access-token": jwt_token},
         json={
             "community": 2,
@@ -135,9 +137,9 @@ def test_delete_rtbh_rule(client, db, jwt_token):
 
     assert req.status_code == 201
     data = json.loads(req.data)
-    assert data["rule"]["id"] == 3
+    assert data["rule"]["id"] == 2
     req2 = client.delete(
-        "/api/v2/rules/rtbh/{}".format(data["rule"]["id"]),
+        f'{V_PREFIX}/rules/rtbh/{data["rule"]["id"]}',
         headers={"x-access-token": jwt_token},
     )
     assert req2.status_code == 201
@@ -148,7 +150,7 @@ def test_validation_rtbh_rule(client, db, jwt_token):
     test that creating with invalid data returns 400 and errors
     """
     req = client.post(
-        "/api/v2/rules/rtbh",
+        f"{V_PREFIX}/rules/rtbh",
         headers={"x-access-token": jwt_token},
         json={
             "community": 1,
@@ -172,7 +174,7 @@ def test_create_v6rule(client, db, jwt_token):
     test that creating with valid data returns 201
     """
     req = client.post(
-        "/api/v2/rules/ipv6",
+        f"{V_PREFIX}/rules/ipv6",
         headers={"x-access-token": jwt_token},
         json={
             "action": 3,
@@ -195,7 +197,7 @@ def test_validation_v4rule(client, db, jwt_token):
     test that creating with invalid data returns 400 and errors
     """
     req = client.post(
-        "/api/v2/rules/ipv4",
+        f"{V_PREFIX}/rules/ipv4",
         headers={"x-access-token": jwt_token},
         json={
             "action": 2,
@@ -225,7 +227,7 @@ def test_all_validation_errors(client, db, jwt_token):
     test that creating with invalid data returns 400 and errors
     """
     req = client.post(
-        "/api/v2/rules/ipv4", headers={"x-access-token": jwt_token}, json={"action": 2}
+        f"{V_PREFIX}/rules/ipv4", headers={"x-access-token": jwt_token}, json={"action": 2}
     )
     data = json.loads(req.data)
     assert req.status_code == 400
@@ -236,7 +238,7 @@ def test_validate_v6rule(client, db, jwt_token):
     test that creating with invalid data returns 400 and errors
     """
     req = client.post(
-        "/api/v2/rules/ipv6",
+        f"{V_PREFIX}/rules/ipv6",
         headers={"x-access-token": jwt_token},
         json={
             "action": 32,
@@ -262,13 +264,13 @@ def test_rules(client, db, jwt_token):
     """
     test that there is one ipv4 rule created in the first test
     """
-    req = client.get("/api/v2/rules", headers={"x-access-token": jwt_token})
+    req = client.get(f"{V_PREFIX}/rules", headers={"x-access-token": jwt_token})
 
     assert req.status_code == 200
 
     data = json.loads(req.data)
-    assert len(data["flowspec_ipv4_rw"]) == 3
-    assert len(data["flowspec_ipv6_rw"]) == 2
+    assert len(data["flowspec_ipv4_rw"]) == 1
+    assert len(data["flowspec_ipv6_rw"]) == 1
 
 
 def test_timestamp_param(client, db, jwt_token):
@@ -276,7 +278,7 @@ def test_timestamp_param(client, db, jwt_token):
     test that url param for time format works as expected
     """
     req = client.get(
-        "/api/v2/rules?time_format=timestamp", headers={"x-access-token": jwt_token}
+        f"{V_PREFIX}/rules?time_format=timestamp", headers={"x-access-token": jwt_token}
     )
 
     assert req.status_code == 200
@@ -291,7 +293,7 @@ def test_update_existing_v4rule_with_timestamp(client, db, jwt_token):
     test that update with different data passes
     """
     req = client.post(
-        "/api/v2/rules/ipv4",
+        f"{V_PREFIX}/rules/ipv4",
         headers={"x-access-token": jwt_token},
         json={
             "action": 2,
@@ -306,7 +308,7 @@ def test_update_existing_v4rule_with_timestamp(client, db, jwt_token):
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data["rule"]
-    assert data["rule"]["id"] == 1
+    assert data["rule"]["id"] == 2
     assert data["rule"]["user"] == "jiri.vrany@tul.cz"
     assert data["rule"]["expires"] == 1444913400
 
@@ -316,7 +318,7 @@ def test_create_v4rule_with_timestamp(client, db, jwt_token):
     test that creating with valid data returns 201
     """
     req = client.post(
-        "/api/v2/rules/ipv4",
+        f"{V_PREFIX}/rules/ipv4",
         headers={"x-access-token": jwt_token},
         json={
             "action": 2,
@@ -331,7 +333,7 @@ def test_create_v4rule_with_timestamp(client, db, jwt_token):
     assert req.status_code == 201
     data = json.loads(req.data)
     assert data["rule"]
-    assert data["rule"]["id"] == 4
+    assert data["rule"]["id"] == 3
     assert data["rule"]["user"] == "jiri.vrany@tul.cz"
     assert data["rule"]["expires"] == 1444913400
 
@@ -341,7 +343,7 @@ def test_update_existing_v6rule_with_timestamp(client, db, jwt_token):
     test that update with different data passes
     """
     req = client.post(
-        "/api/v2/rules/ipv6",
+        f"{V_PREFIX}/rules/ipv6",
         headers={"x-access-token": jwt_token},
         json={
             "action": 3,
@@ -365,7 +367,7 @@ def test_create_v6rule_with_timestamp(client, db, jwt_token):
     test that creating with valid data returns 201
     """
     req = client.post(
-        "/api/v2/rules/ipv6",
+        f"{V_PREFIX}/rules/ipv6",
         headers={"x-access-token": jwt_token},
         json={
             "action": 2,
@@ -379,7 +381,7 @@ def test_create_v6rule_with_timestamp(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 201
     assert data["rule"]
-    assert data["rule"]["id"] == "3"
+    assert data["rule"]["id"] == "2"
     assert data["rule"]["user"] == "jiri.vrany@tul.cz"
     assert data["rule"]["expires"] == 1444913400
 
@@ -389,7 +391,7 @@ def test_update_existing_rtbh_rule_with_timestamp(client, db, jwt_token):
     test that update with different data passes
     """
     req = client.post(
-        "/api/v2/rules/rtbh",
+        f"{V_PREFIX}/rules/rtbh",
         headers={"x-access-token": jwt_token},
         json={
             "community": 1,
@@ -411,7 +413,7 @@ def test_create_rtbh_rule_with_timestamp(client, db, jwt_token):
     test that creating with valid data returns 201
     """
     req = client.post(
-        "/api/v2/rules/rtbh",
+        f"{V_PREFIX}/rules/rtbh",
         headers={"x-access-token": jwt_token},
         json={
             "community": 1,
@@ -423,6 +425,6 @@ def test_create_rtbh_rule_with_timestamp(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 201
     assert data["rule"]
-    assert data["rule"]["id"] == 3
+    assert data["rule"]["id"] == 2
     assert data["rule"]["user"] == "jiri.vrany@tul.cz"
     assert data["rule"]["expires"] == 1444913400

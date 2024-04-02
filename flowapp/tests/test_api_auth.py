@@ -28,6 +28,7 @@ def test_withnout_token(client):
 
     assert req.status_code == 401
 
+
 def test_readonly_token(client, readonly_jwt_token):
     """
     test that readonly flag is set correctly

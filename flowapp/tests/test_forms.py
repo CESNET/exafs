@@ -4,6 +4,7 @@ import flowapp.forms
 
 @pytest.fixture()
 def ip_form(field_class):
+
     form = flowapp.forms.IPForm()
     form.source = field_class()
     form.dest = field_class()

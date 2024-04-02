@@ -136,14 +136,17 @@ def jwt_token(client, app, db, request):
     """
     Get the test_client from the app, for the whole test session.
     """
+    mkey = "testkey"
+
     with app.app_context():
-        model = flowapp.models.ApiKey(machine="127.0.0.1", key="testkey", user_id=1)
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=mkey, user_id=1)
         db.session.add(model)
         db.session.commit()
 
     print("\n----- GET JWT TEST TOKEN\n")
-    url = "/api/v1/auth/testkey"
-    token = client.get(url)
+    url = "/api/v3/auth"
+    headers = {"x-api-key": mkey}
+    token = client.get(url, headers=headers)
     data = json.loads(token.data)
     return data["token"]
 
