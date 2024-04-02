@@ -6,6 +6,8 @@
     <tr>
     <th>Machine address</th>
     <th>ApiKey</th>
+    <th>Expires</th>
+    <th>Read only</th>
     <th>Action</th>
     </tr>
     {% for row in keys %}
@@ -17,10 +19,26 @@
             {{ row.key }}
         </td>
         <td>
-                    <a class="btn btn-danger btn-sm" href="{{ url_for('api_keys.delete', key_id=row.id) }}" role="button">
-                         <i class="bi bi-x-lg"></i>
-                    </a>
-                </td>
+            {{ row.expires }}
+        </td>
+        <td>
+            {% if row.readonly %}
+            <button type="button" class="btn btn-success btn-sm" title="Read Only">
+                <i class="bi bi-check-lg"></i>
+            </button>
+                
+            {% endif %}
+        </td>
+        <td>
+            <a class="btn btn-danger btn-sm" href="{{ url_for('api_keys.delete', key_id=row.id) }}" role="button">
+                <i class="bi bi-x-lg"></i>
+            </a>
+            {% if row.comment %}
+                <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ row.comment }}">
+                    <i class="bi bi-chat-left-text-fill"></i>
+                </button>
+            {% endif %}
+        </td>    
         </tr>
     {% endfor %}
     </table>
