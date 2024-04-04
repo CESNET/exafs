@@ -19,7 +19,7 @@
             {{ row.key }}
         </td>
         <td>
-            {{ row.expires }}
+            {{ row.expires|strftime }}
         </td>
         <td>
             {% if row.readonly %}

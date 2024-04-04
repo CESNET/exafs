@@ -1,0 +1,44 @@
+{% extends 'layouts/default.html' %}
+{% from 'forms/macros.html' import render_field,  render_checkbox_field %}
+{% block title %}Add New Machine with ApiKey{% endblock %}
+{% block content %}
+  <h2>Add new ApiKey for machine.</h2>
+  <p>
+    In general, the keys should be Read Only and with expiration.
+    If you need to create a full access Read/Write key, consider using usual user form
+    with your organization settings.
+</p>
+
+  <div class="row">
+    
+    <div class="col-sm-12">
+        <h6>Machine Api Key: {{ generated_key }}</h6>
+    </div>  
+
+  <form action="{{ url_for('admin.add_machine_key') }}" method="POST">
+  {{ form.hidden_tag() if form.hidden_tag }}
+  <div class="row">
+    <div class="col-sm-5">
+          {{ render_field(form.machine) }}
+    </div>
+    <div class="col-sm-2">
+      {{ render_checkbox_field(form.readonly, checked="checked") }}
+    </div>
+    <div class="col-sm-5">
+      {{ render_field(form.expires) }}
+    </div>
+  </div>  
+   
+  </div>
+  <div class="row">
+    <div class="col-sm-10">
+      {{ render_field(form.comment) }}
+    </div>
+
+  <div class="row">
+    <div class="col-sm-10">
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+
+{% endblock %}
