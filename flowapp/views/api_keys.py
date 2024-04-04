@@ -56,8 +56,6 @@ def add():
     form = ApiKeyForm(request.form, key=generated)
 
     if request.method == "POST" and form.validate():
-        print("Form validated")
-        # import ipdb; ipdb.set_trace()
         model = ApiKey(
             machine=form.machine.data,
             key=form.key.data,
