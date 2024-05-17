@@ -55,12 +55,17 @@ class MultiFormatDateTimeLocalField(DateTimeField):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("format", "%Y-%m-%dT%H:%M")
+        self.unlimited = kwargs.pop('unlimited', False)
         self.pref_format = None
         super().__init__(*args, **kwargs)
 
     def process_formdata(self, valuelist):
         if not valuelist:
-            return
+            return None
+        # with unlimited field we do not need to parse the empty value
+        if self.unlimited and len(valuelist) == 1 and len(valuelist[0]) == 0:
+            self.data = None
+            return None
 
         date_str = " ".join((str(val) for val in valuelist))
         result, pref_format = parse_api_time(date_str)
@@ -118,6 +123,43 @@ class ApiKeyForm(FlaskForm):
         "Machine address",
         validators=[DataRequired(), IPAddress(message="provide valid IP address")],
     )
+
+    comment = TextAreaField(
+        "Your comment for this key", validators=[Optional(), Length(max=255)]
+    )
+
+    expires = MultiFormatDateTimeLocalField(
+        "Key expiration. Leave blank for non expring key (not-recomended).",
+        format=FORM_TIME_PATTERN, validators=[Optional()], unlimited=True
+    )
+
+    readonly = BooleanField("Read only key", default=False)
+
+    key = HiddenField("GeneratedKey")
+
+
+class MachineApiKeyForm(FlaskForm):
+    """
+    ApiKey for Machines
+    Each key / machine pair is unique
+    Only Admin can create new these keys
+    """
+
+    machine = StringField(
+        "Machine address",
+        validators=[DataRequired(), IPAddress(message="provide valid IP address")],
+    )
+
+    comment = TextAreaField(
+        "Your comment for this key", validators=[Optional(), Length(max=255)]
+    )
+
+    expires = MultiFormatDateTimeLocalField(
+        "Key expiration. Leave blank for non expring key (not-recomended).",
+        format=FORM_TIME_PATTERN, validators=[Optional()], unlimited=True
+    )
+
+    readonly = BooleanField("Read only key", default=False)
 
     key = HiddenField("GeneratedKey")
 

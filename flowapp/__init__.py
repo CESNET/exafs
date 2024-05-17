@@ -174,8 +174,10 @@ def create_app():
 
     @app.template_filter("strftime")
     def format_datetime(value):
+        if value is None:
+            return app.config.get("MISSING_DATETIME_MESSAGE", "Never")
+        
         format = "y/MM/dd HH:mm"
-
         return babel.dates.format_datetime(value, format)
 
     def _register_user_to_session(uuid: str):

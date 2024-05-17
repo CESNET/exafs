@@ -78,6 +78,7 @@ class InstanceConfig:
         ],
         "admin": [
             {"name": "Commands Log", "url": "admin.log"},
+            {"name": "Machine keys", "url": "admin.machine_keys"},
             {
                 "name": "Users",
                 "url": "admin.users",

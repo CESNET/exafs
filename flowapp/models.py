@@ -34,6 +34,7 @@ class User(db.Model):
     name = db.Column(db.String(255))
     phone = db.Column(db.String(255))
     apikeys = db.relationship("ApiKey", back_populates="user", lazy="dynamic")
+    machineapikeys = db.relationship("MachineApiKey", back_populates="user", lazy="dynamic")
     role = db.relationship("Role", secondary=user_role, lazy="dynamic", backref="user")
 
     organization = db.relationship(
@@ -82,8 +83,34 @@ class ApiKey(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     machine = db.Column(db.String(255))
     key = db.Column(db.String(255))
+    readonly = db.Column(db.Boolean, default=False)
+    expires = db.Column(db.DateTime, nullable=True)
+    comment = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", back_populates="apikeys")
+
+    def is_expired(self):
+        if self.expires is None:
+            return False  # Non-expiring key
+        else:
+            return self.expires < datetime.now()
+
+
+class MachineApiKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    machine = db.Column(db.String(255))
+    key = db.Column(db.String(255))
+    readonly = db.Column(db.Boolean, default=True)
+    expires = db.Column(db.DateTime, nullable=True)
+    comment = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user = db.relationship("User", back_populates="machineapikeys")
+
+    def is_expired(self):
+        if self.expires is None:
+            return False  # Non-expiring key
+        else:
+            return self.expires < datetime.now()
 
 
 class Role(db.Model):

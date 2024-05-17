@@ -1,0 +1,55 @@
+{% extends 'layouts/default.html' %}
+{% block title %}ExaFS - ApiKeys{% endblock %}
+{% block content %}
+    <h1>Machines and ApiKeys</h1>
+    <p>
+        This is the list of all machines and their API keys, created by admin(s).
+        In general, the keys should be Read Only and with expiration.
+        If you need to create a full access Read/Write key, use usual user form with your organization settings.
+    </p>
+    <table class="table table-hover">
+    <tr>
+    <th>Machine address</th>
+    <th>ApiKey</th>
+    <th>Created by</th>
+    <th>Created for</th>
+    <th>Expires</th>
+    <th>Read/Write ?</th>
+    <th>Action</th>
+    </tr>
+    {% for row in keys %}
+        <tr>
+        <td>
+            {{ row.machine }}
+        </td>
+        <td>
+            {{ row.key }}
+        </td>
+        <td>
+            {{ row.user.name }}
+        </td>
+        <td>
+            {{ row.comment }}    
+        <td>
+            {{ row.expires|strftime }}
+        </td>
+        <td>
+            {% if not row.readonly %}
+            <button type="button" class="btn btn-warning btn-sm" title="Read Only">
+                <i class="bi bi-exclamation-lg"></i>
+            </button>
+                
+            {% endif %}
+        </td>
+        <td>
+            <a class="btn btn-danger btn-sm" href="{{ url_for('admin.delete_machine_key', key_id=row.id) }}" role="button">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </td>    
+        </tr>
+    {% endfor %}
+    </table>
+    <a class="btn btn-primary" href="{{ url_for('admin.add_machine_key') }}" role="button">
+    Add new Machine ApiKey
+    </a>
+{% endblock %}
