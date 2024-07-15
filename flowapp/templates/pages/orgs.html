@@ -4,7 +4,7 @@
     <table class="table table-hover">
     <tr>
     <th>Name</th>
-    <th>Adress Range</th>
+    <th>Adress Ranges</th>
     <th>action</th>
     </tr>
     {% for org in orgs %}
@@ -12,7 +12,11 @@
         <td>{{ org.name }}</td>
         <td>
             {% set rows = org.arange.split() %}
-            {{ rows|join("<br>") }}
+            <ul class="list-group">
+            {% for row in rows %}
+                <li class="list-group-item">{{ row }}</li>
+            {% endfor %}
+            </ul>
         </td>
         <td>
         <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_organization', org_id=org.id) }}" role="button">
