@@ -1,5 +1,7 @@
 """
-Author(s): Jakub Man <Jakub.Man@cesnet.cz>
+Author(s): 
+Jiri Vrany <vrany@cesnet.cz>
+Jakub Man <Jakub.Man@cesnet.cz>
 
 Setuptools configuration
 """
@@ -13,15 +15,17 @@ with open("flowapp/__about__.py") as f:
 
 setuptools.setup(
     name="exafs",
-    version=__version__, # noqa: F821
+    version=__version__,  # noqa: F821
     author="CESNET / Jiri Vrany, Petr Adamec, Josef Verich, Jakub Man",
     description="Tool for creation, validation, and execution of ExaBGP messages.",
     url="https://github.com/CESNET/exafs",
     license="MIT",
-    py_modules=["flowapp", "exaapi"],
+    py_modules=[
+        "flowapp",
+    ],
     packages=setuptools.find_packages(),
     include_package_data=True,
-    python_requires=">=3.8",
+    python_requires=">=3.11",
     install_requires=[
         "Flask>=2.0.2",
         "Flask-SQLAlchemy>=2.2",
