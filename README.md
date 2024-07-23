@@ -52,9 +52,10 @@ Last part of the system is Guarda service. This systemctl service is running in 
 * [Local database instalation notes](./docs/DB_LOCAL.md)
 
 ## Change Log
+- 1.0.0 . DRAFT - ExaAPI and Guarda modules moved to their own repositories. New format of message for ExaAPI - now sends information about user (author of rule) for logging purposes. 
 - 0.8.1 application is using Flask-Session stored in DB using SQL Alchemy driver. This can be configured for other
 drivers, however server side session is required for the application proper function.
-- 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machines.
+- 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machinnes.
 - 0.7.3 - New possibility of external auth proxy. 
 - 0.7.2 - Dashboard and Main menu are now customizable in config. App is ready to be packaged using setup.py.
 - 0.7.0 - ExaAPI now have two options - HTTP or RabbitMQ. ExaAPI process has been renamed, update of ExaBGP process value is needed for this version.
