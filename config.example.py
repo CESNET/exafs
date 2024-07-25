@@ -75,16 +75,23 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = "Your Productionl Database URI"
     # Public IP of the production machine
     LOCAL_IP = "127.0.0.1"
+    LOCAL_IP6 = "2001:718:ff05:107::155"
     # SSO AUTH enabled in produciion
     SSO_AUTH = True
-    # Map SSO attributes from ADFS to session keys under session['user']
     SSO_ATTRIBUTE_MAP = {
-        "eppn": (True, "eppn"),
+        "eppn": (False, "eppn"),
+        "HTTP_X_EPPN": (False, "eppn"),
     }
     SSO_LOGIN_URL = "/login"
 
     # Set true if you need debug in production
     DEBUG = False
+    DEVEL = False
+
+    # Set cookie behavior
+    SESSION_COOKIE_SECURE = (True,)
+    SESSION_COOKIE_HTTPONLY = (True,)
+    SESSION_COOKIE_SAMESITE = ("Lax",)
 
 
 class DevelopmentConfig(Config):
@@ -95,6 +102,7 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = "Your Local Database URI"
     LOCAL_IP = "127.0.0.1"
     DEBUG = True
+    DEVEL = True
 
 
 class TestingConfig(Config):
