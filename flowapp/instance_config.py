@@ -128,7 +128,7 @@ class InstanceConfig:
 
     SSO_ATTRIBUTE_MAP = {
         #    "eppn": (True, "eppn"),
-        "HTTP_X_EPPN": (True, "eppn"),
+        "eppn": (True, "HTTP_X_EPPN"),
     }
 
     SSO_LOGIN_URL = "/login"
