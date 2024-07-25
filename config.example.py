@@ -1,4 +1,4 @@
-class Config():
+class Config:
     """
     Default config options
     """
@@ -16,7 +16,7 @@ class Config():
 
     # Name of HTTP header containing the UUID of authenticated user.
     # Only used when HEADER_AUTH is set to True
-    AUTH_HEADER_NAME = 'X-Authenticated-User'
+    AUTH_HEADER_NAME = "X-Authenticated-User"
     # SSO LOGOUT
     LOGOUT_URL = "https://flowspec.example.com/Shibboleth.sso/Logout"
     # SQL Alchemy config
@@ -77,6 +77,12 @@ class ProductionConfig(Config):
     LOCAL_IP = "127.0.0.1"
     # SSO AUTH enabled in produciion
     SSO_AUTH = True
+    # Map SSO attributes from ADFS to session keys under session['user']
+    SSO_ATTRIBUTE_MAP = {
+        "eppn": (True, "eppn"),
+    }
+    SSO_LOGIN_URL = "/login"
+
     # Set true if you need debug in production
     DEBUG = False
 

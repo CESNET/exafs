@@ -18,11 +18,6 @@ csrf = CSRFProtect()
 
 def create_app():
     app = Flask(__name__)
-    # Map SSO attributes from ADFS to session keys under session['user']
-    #: Default attribute map
-    SSO_ATTRIBUTE_MAP = {
-        "eppn": (True, "eppn"),
-    }
 
     # db.init_app(app)
     migrate.init_app(app, db)
@@ -32,8 +27,6 @@ def create_app():
     app.config.from_object(InstanceConfig)
 
     app.config.setdefault("VERSION", __version__)
-    app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
-    app.config.setdefault("SSO_LOGIN_URL", "/login")
 
     # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
     ext = SSO(app=app)
