@@ -22,7 +22,6 @@ def create_app():
     #: Default attribute map
     SSO_ATTRIBUTE_MAP = {
         "eppn": (True, "eppn"),
-        "cn": (False, "cn"),
     }
 
     # db.init_app(app)
@@ -85,7 +84,7 @@ def create_app():
 
     @app.route("/ext-login")
     def ext_login():
-        header_name = app.config.get("AUTH_HEADER_NAME", 'X-Authenticated-User')
+        header_name = app.config.get("AUTH_HEADER_NAME", "X-Authenticated-User")
         if header_name not in request.headers:
             return render_template("errors/401.html")
 
@@ -148,9 +147,7 @@ def create_app():
     def utility_processor():
         def editable_rule(rule):
             if rule:
-                validators.editable_range(
-                    rule, models.get_user_nets(session["user_id"])
-                )
+                validators.editable_range(rule, models.get_user_nets(session["user_id"]))
                 return True
             return False
 
@@ -176,7 +173,7 @@ def create_app():
     def format_datetime(value):
         if value is None:
             return app.config.get("MISSING_DATETIME_MESSAGE", "Never")
-        
+
         format = "y/MM/dd HH:mm"
         return babel.dates.format_datetime(value, format)
 
@@ -187,9 +184,7 @@ def create_app():
         session["user_name"] = user.name
         session["user_id"] = user.id
         session["user_roles"] = [role.name for role in user.role.all()]
-        session["user_orgs"] = ", ".join(
-            org.name for org in user.organization.all()
-        )
+        session["user_orgs"] = ", ".join(org.name for org in user.organization.all())
         session["user_role_ids"] = [role.id for role in user.role.all()]
         session["user_org_ids"] = [org.id for org in user.organization.all()]
         roles = [i > 1 for i in session["user_role_ids"]]
