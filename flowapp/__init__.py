@@ -14,9 +14,10 @@ from .instance_config import InstanceConfig
 db = SQLAlchemy()
 migrate = Migrate()
 csrf = CSRFProtect()
+ext = SSO()
 
 
-def create_app():
+def create_app(config_object=None):
     app = Flask(__name__)
 
     # db.init_app(app)
@@ -25,15 +26,13 @@ def create_app():
 
     # Load the default configuration for dashboard and main menu
     app.config.from_object(InstanceConfig)
+    if config_object:
+        app.config.from_object(config_object)
 
     app.config.setdefault("VERSION", __version__)
 
-    print("Config loaded")
-    for key, value in app.config.items():
-        print(f"{key} = {value}")
-
-    # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
-    ext = SSO(app=app)
+    # Init SSO
+    ext.init_app(app)
 
     from flowapp import models, constants, validators
     from .views.admin import admin

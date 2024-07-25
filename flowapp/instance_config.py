@@ -125,10 +125,3 @@ class InstanceConfig:
     }
 
     COUNT_MATCH = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
-
-    SSO_ATTRIBUTE_MAP = {
-        #    "eppn": (True, "eppn"),
-        "eppn": (True, "HTTP_X_EPPN"),
-    }
-
-    SSO_LOGIN_URL = "/login"
