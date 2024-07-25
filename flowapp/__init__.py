@@ -25,7 +25,6 @@ def create_app(config_object=None):
     # SSO configuration
     SSO_ATTRIBUTE_MAP = {
         "eppn": (True, "eppn"),
-        "cn": (False, "cn"),
     }
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
     app.config.setdefault("SSO_LOGIN_URL", "/login")
