@@ -28,6 +28,10 @@ def create_app():
 
     app.config.setdefault("VERSION", __version__)
 
+    print("Config loaded")
+    for key, value in app.config.items():
+        print(f"{key} = {value}")
+
     # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
     ext = SSO(app=app)
 
