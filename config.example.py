@@ -75,7 +75,7 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = "Your Productionl Database URI"
     # Public IP of the production machine
     LOCAL_IP = "127.0.0.1"
-    LOCAL_IP6 = "2001:718:ff05:107::155"
+    LOCAL_IP6 = "::ffff:127.0.0.1"
     # SSO AUTH enabled in produciion
     SSO_AUTH = True
     SSO_ATTRIBUTE_MAP = {
@@ -101,6 +101,7 @@ class DevelopmentConfig(Config):
 
     SQLALCHEMY_DATABASE_URI = "Your Local Database URI"
     LOCAL_IP = "127.0.0.1"
+    LOCAL_IP6 = "::ffff:127.0.0.1"
     DEBUG = True
     DEVEL = True
 
