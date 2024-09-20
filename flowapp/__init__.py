@@ -23,6 +23,12 @@ sess = Session()
 def create_app(config_object=None):
     app = Flask(__name__)
 
+    SSO_ATTRIBUTE_MAP = {
+        "eppn": (True, "eppn"),
+        "cn": (False, "cn"),
+    }
+    app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
+    app.config.setdefault("SSO_LOGIN_URL", "/login")
     # db.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
