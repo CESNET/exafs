@@ -73,9 +73,7 @@ def reactivate_rule(rule_type, rule_id):
     form.net_ranges = get_user_nets(session["user_id"])
 
     if rule_type > 2:
-        form.action.choices = [
-            (g.id, g.name) for g in db.session.query(Action).order_by("name")
-        ]
+        form.action.choices = [(g.id, g.name) for g in db.session.query(Action).order_by("name")]
         form.action.data = model.action_id
 
     if rule_type == 1:
@@ -188,6 +186,7 @@ def delete_rule(rule_type, rule_id):
         flash("Rule deleted", "alert-success")
 
     else:
+        print("in session": [str(x) for x in session[constants.RULES_KEY]])
         flash("You can not delete this rule", "alert-warning")
 
     return redirect(
@@ -256,9 +255,7 @@ def group_delete():
                 "{} / {}".format(session["user_email"], session["user_orgs"]),
             )
 
-        db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(
-            synchronize_session=False
-        )
+        db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
         db.session.commit()
 
         flash("Rules {} deleted".format(to_delete), "alert-success")
@@ -309,9 +306,7 @@ def group_update():
     form = form_name(request.form)
     form.net_ranges = get_user_nets(session["user_id"])
     if rule_type_int > 2:
-        form.action.choices = [
-            (g.id, g.name) for g in db.session.query(Action).order_by("name")
-        ]
+        form.action.choices = [(g.id, g.name) for g in db.session.query(Action).order_by("name")]
     if rule_type_int == 1:
         form.community.choices = get_user_communities(session["user_role_ids"])
 
@@ -429,9 +424,7 @@ def ipv4_rule():
 
         if model:
             model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = (
-                "Existing IPv4 Rule found. Expiration time was updated to new value."
-            )
+            flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
         else:
             model = Flowspec4(
                 source=form.source.data,
@@ -473,17 +466,12 @@ def ipv4_rule():
     else:
         for field, errors in form.errors.items():
             for error in errors:
-                print(
-                    "Error in the %s field - %s"
-                    % (getattr(form, field).label.text, error)
-                )
+                print("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
 
-    return render_template(
-        "forms/ipv4_rule.html", form=form, action_url=url_for("rules.ipv4_rule")
-    )
+    return render_template("forms/ipv4_rule.html", form=form, action_url=url_for("rules.ipv4_rule"))
 
 
 @rules.route("/add_ipv6_rule", methods=["GET", "POST"])
@@ -507,9 +495,7 @@ def ipv6_rule():
 
         if model:
             model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = (
-                "Existing IPv4 Rule found. Expiration time was updated to new value."
-            )
+            flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
         else:
             model = Flowspec6(
                 source=form.source.data,
@@ -550,17 +536,12 @@ def ipv6_rule():
     else:
         for field, errors in form.errors.items():
             for error in errors:
-                print(
-                    "Error in the %s field - %s"
-                    % (getattr(form, field).label.text, error)
-                )
+                print("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
 
-    return render_template(
-        "forms/ipv6_rule.html", form=form, action_url=url_for("rules.ipv6_rule")
-    )
+    return render_template("forms/ipv6_rule.html", form=form, action_url=url_for("rules.ipv6_rule"))
 
 
 @rules.route("/add_rtbh_rule", methods=["GET", "POST"])
@@ -586,9 +567,7 @@ def rtbh_rule():
 
         if model:
             model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = (
-                "Existing RTBH Rule found. Expiration time was updated to new value."
-            )
+            flash_message = "Existing RTBH Rule found. Expiration time was updated to new value."
         else:
             model = RTBH(
                 ipv4=form.ipv4.data,
@@ -622,17 +601,12 @@ def rtbh_rule():
     else:
         for field, errors in form.errors.items():
             for error in errors:
-                print(
-                    "Error in the %s field - %s"
-                    % (getattr(form, field).label.text, error)
-                )
+                print("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
 
-    return render_template(
-        "forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule")
-    )
+    return render_template("forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule"))
 
 
 @rules.route("/export")
