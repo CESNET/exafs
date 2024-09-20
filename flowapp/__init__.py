@@ -183,7 +183,7 @@ def create_app(config_object=None):
         return babel.dates.format_datetime(value, format)
 
     def _register_user_to_session(uuid: str):
-        print(f"registering user {uuid} to session")
+        print(f"Registering user {uuid} to session")
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
         session["user_uuid"] = user.uuid
         session["user_email"] = user.uuid
