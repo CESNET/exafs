@@ -186,7 +186,6 @@ def delete_rule(rule_type, rule_id):
         flash("Rule deleted", "alert-success")
 
     else:
-        print("in session": [str(x) for x in session[constants.RULES_KEY]])
         flash("You can not delete this rule", "alert-warning")
 
     return redirect(
