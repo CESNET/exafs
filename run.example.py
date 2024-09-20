@@ -12,7 +12,7 @@ Or in case that you want to add extensions etc.
 
 from os import environ
 
-from flowapp import create_app, db
+from flowapp import create_app, db, sess
 import config
 
 
@@ -27,6 +27,11 @@ else:
 
 # init database object
 db.init_app(app)
+
+# init session
+app.config.update(SESSION_TYPE="sqlalchemy")
+app.config.update(SESSION_SQLALCHEMY=db)
+sess.init_app(app)
 
 
 # run app
