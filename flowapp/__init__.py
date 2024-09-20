@@ -176,6 +176,7 @@ def create_app(config_object=None):
         return babel.dates.format_datetime(value, format)
 
     def _register_user_to_session(uuid: str):
+        print(f"registering user {uuid} to session")
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
         session["user_uuid"] = user.uuid
         session["user_email"] = user.uuid
@@ -187,5 +188,7 @@ def create_app(config_object=None):
         session["user_org_ids"] = [org.id for org in user.organization.all()]
         roles = [i > 1 for i in session["user_role_ids"]]
         session["can_edit"] = True if all(roles) and roles else []
+
+        print("session", session)
 
     return app
