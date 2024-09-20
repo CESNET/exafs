@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_session import Session
+from cachelib.file import FileSystemCache
 
 from .__about__ import __version__
 from .instance_config import InstanceConfig
@@ -35,6 +36,12 @@ def create_app(config_object=None):
 
     # Init SSO
     ext.init_app(app)
+
+    # Init session
+    app.config.update(SESSION_TYPE="cachelib")
+    app.config.update(SESSION_SERIALIZATION_FORMAT="json")
+    app.config.update(SESSION_CACHELIB=FileSystemCache(threshold=500, cache_dir="/sessions"))
+    sess.init_app(app)
 
     from flowapp import models, constants, validators
     from .views.admin import admin
