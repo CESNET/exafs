@@ -53,8 +53,11 @@ Last part of the system is Guarda service. This systemctl service is running in 
 
 ## Change Log
 - 1.0.0 . DRAFT - ExaAPI and Guarda modules moved to their own repositories. New format of message for ExaAPI - now sends information about user (author of rule) for logging purposes. 
+<<<<<<< HEAD
 - 0.8.1 application is using Flask-Session stored in DB using SQL Alchemy driver. This can be configured for other
 drivers, however server side session is required for the application proper function.
+=======
+>>>>>>> f65f2be8c6ceee972be8b88c2b73fc3da7e69ee5
 - 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machinnes.
 - 0.7.3 - New possibility of external auth proxy. 
 - 0.7.2 - Dashboard and Main menu are now customizable in config. App is ready to be packaged using setup.py.

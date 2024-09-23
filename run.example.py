@@ -3,10 +3,13 @@ This is an example of how to run the application.
 First copy the file as run.py (or whatever you want)
 Then edit the file to match your needs.
 
+<<<<<<< HEAD
 From version 0.8.1 the application is using Flask-Session
 stored in DB using SQL Alchemy driver. This can be configured for other
 drivers, however server side session is required for the application.
 
+=======
+>>>>>>> f65f2be8c6ceee972be8b88c2b73fc3da7e69ee5
 In general you should not need to edit this example file.
 Only if you want to configure the application main menu and
 dashboard.

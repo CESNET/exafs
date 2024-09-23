@@ -16,11 +16,15 @@ db = SQLAlchemy()
 migrate = Migrate()
 csrf = CSRFProtect()
 ext = SSO()
+<<<<<<< HEAD
 sess = Session()
+=======
+>>>>>>> f65f2be8c6ceee972be8b88c2b73fc3da7e69ee5
 
 
 def create_app(config_object=None):
     app = Flask(__name__)
+<<<<<<< HEAD
 
     # SSO configuration
     SSO_ATTRIBUTE_MAP = {
@@ -28,6 +32,8 @@ def create_app(config_object=None):
     }
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
     app.config.setdefault("SSO_LOGIN_URL", "/login")
+=======
+>>>>>>> f65f2be8c6ceee972be8b88c2b73fc3da7e69ee5
 
     # extension init
     migrate.init_app(app, db)
