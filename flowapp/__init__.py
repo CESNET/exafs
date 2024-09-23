@@ -6,6 +6,7 @@ from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
+from flask_session import Session
 
 from .__about__ import __version__
 from .instance_config import InstanceConfig
@@ -14,30 +15,34 @@ from .instance_config import InstanceConfig
 db = SQLAlchemy()
 migrate = Migrate()
 csrf = CSRFProtect()
+ext = SSO()
+sess = Session()
 
 
-def create_app():
+def create_app(config_object=None):
     app = Flask(__name__)
-    # Map SSO attributes from ADFS to session keys under session['user']
-    #: Default attribute map
+
+    # SSO configuration
     SSO_ATTRIBUTE_MAP = {
         "eppn": (True, "eppn"),
         "cn": (False, "cn"),
     }
+    app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
+    app.config.setdefault("SSO_LOGIN_URL", "/login")
 
-    # db.init_app(app)
+    # extension init
     migrate.init_app(app, db)
     csrf.init_app(app)
 
     # Load the default configuration for dashboard and main menu
     app.config.from_object(InstanceConfig)
+    if config_object:
+        app.config.from_object(config_object)
 
     app.config.setdefault("VERSION", __version__)
-    app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
-    app.config.setdefault("SSO_LOGIN_URL", "/login")
 
-    # This attaches the *flask_sso* login handler to the SSO_LOGIN_URL,
-    ext = SSO(app=app)
+    # Init SSO
+    ext.init_app(app)
 
     from flowapp import models, constants, validators
     from .views.admin import admin
@@ -85,7 +90,7 @@ def create_app():
 
     @app.route("/ext-login")
     def ext_login():
-        header_name = app.config.get("AUTH_HEADER_NAME", 'X-Authenticated-User')
+        header_name = app.config.get("AUTH_HEADER_NAME", "X-Authenticated-User")
         if header_name not in request.headers:
             return render_template("errors/401.html")
 
@@ -148,9 +153,7 @@ def create_app():
     def utility_processor():
         def editable_rule(rule):
             if rule:
-                validators.editable_range(
-                    rule, models.get_user_nets(session["user_id"])
-                )
+                validators.editable_range(rule, models.get_user_nets(session["user_id"]))
                 return True
             return False
 
@@ -176,20 +179,19 @@ def create_app():
     def format_datetime(value):
         if value is None:
             return app.config.get("MISSING_DATETIME_MESSAGE", "Never")
-        
+
         format = "y/MM/dd HH:mm"
         return babel.dates.format_datetime(value, format)
 
     def _register_user_to_session(uuid: str):
+        print(f"Registering user {uuid} to session")
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
         session["user_uuid"] = user.uuid
         session["user_email"] = user.uuid
         session["user_name"] = user.name
         session["user_id"] = user.id
         session["user_roles"] = [role.name for role in user.role.all()]
-        session["user_orgs"] = ", ".join(
-            org.name for org in user.organization.all()
-        )
+        session["user_orgs"] = ", ".join(org.name for org in user.organization.all())
         session["user_role_ids"] = [role.id for role in user.role.all()]
         session["user_org_ids"] = [org.id for org in user.organization.all()]
         roles = [i > 1 for i in session["user_role_ids"]]
