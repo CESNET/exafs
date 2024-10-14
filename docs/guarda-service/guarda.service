@@ -1,0 +1,14 @@
+[Unit]
+Description=ExaBGP restart guardian
+After=exabgp.service
+Requires=exabgp.service
+PartOf=exabgp.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'sleep 10; curl -s $GUARDA_URL'
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=exabgp.service
