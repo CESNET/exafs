@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from operator import ge, lt
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
 from flowapp import constants, db, messages
 from flowapp.auth import (
@@ -465,7 +465,7 @@ def ipv4_rule():
     else:
         for field, errors in form.errors.items():
             for error in errors:
-                print("Error in the %s field - %s" % (getattr(form, field).label.text, error))
+                current_app.logger.debug("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
@@ -535,7 +535,7 @@ def ipv6_rule():
     else:
         for field, errors in form.errors.items():
             for error in errors:
-                print("Error in the %s field - %s" % (getattr(form, field).label.text, error))
+                current_app.logger.debug("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
@@ -600,7 +600,7 @@ def rtbh_rule():
     else:
         for field, errors in form.errors.items():
             for error in errors:
-                print("Error in the %s field - %s" % (getattr(form, field).label.text, error))
+                current_app.logger.debug("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires

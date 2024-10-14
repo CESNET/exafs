@@ -51,9 +51,7 @@ def token_required(f):
             return jsonify({"message": "auth token is missing"}), 401
 
         try:
-            data = jwt.decode(
-                token, current_app.config.get("JWT_SECRET"), algorithms=["HS256"]
-            )
+            data = jwt.decode(token, current_app.config.get("JWT_SECRET"), algorithms=["HS256"])
             current_user = data["user"]
         except jwt.DecodeError:
             return jsonify({"message": "auth token is invalid"}), 403
@@ -86,9 +84,7 @@ def authorize(user_key):
         return jsonify({"message": "auth token is expired"}), 401
 
     # check if the key is not used by different machine
-    if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(
-        request.remote_addr
-    ):
+    if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(request.remote_addr):
         payload = {
             "user": {
                 "uuid": model.user.uuid,
@@ -114,25 +110,24 @@ def check_readonly(func):
     Check if the token is readonly
     Used in api endpoints
     """
+
     @wraps(func)
     def decorated_function(*args, **kwargs):
         # Access read only flag from first of the args
-        print("ARGS", args)
-        print("KWARGS", kwargs)
         current_user = kwargs.get("current_user", False)
         read_only = current_user.get("readonly", False)
         if read_only:
             return jsonify({"message": "read only token can't perform this action"}), 403
         return func(*args, **kwargs)
+
     return decorated_function
 
 
 # endpints
 
+
 def index(current_user, key_map):
-    prefered_tf = (
-        request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
-    )
+    prefered_tf = request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
 
     net_ranges = get_user_nets(current_user["id"])
     rules4 = db.session.query(Flowspec4).order_by(Flowspec4.expires.desc()).all()
@@ -156,26 +151,14 @@ def index(current_user, key_map):
         user_actions = get_user_actions(current_user["role_ids"])
         user_actions = [act[0] for act in user_actions]
 
-        rules4_editable, rules4_visible = flowspec.filter_rules_action(
-            user_actions, rules4
-        )
-        rules6_editable, rules6_visible = flowspec.filter_rules_action(
-            user_actions, rules6
-        )
+        rules4_editable, rules4_visible = flowspec.filter_rules_action(user_actions, rules4)
+        rules6_editable, rules6_visible = flowspec.filter_rules_action(user_actions, rules6)
 
         payload = {
-            key_map["ipv4_rules"]: [
-                rule.to_dict(prefered_tf) for rule in rules4_editable
-            ],
-            key_map["ipv6_rules"]: [
-                rule.to_dict(prefered_tf) for rule in rules6_editable
-            ],
-            key_map["ipv4_rules_readonly"]: [
-                rule.to_dict(prefered_tf) for rule in rules4_visible
-            ],
-            key_map["ipv6_rules_readonly"]: [
-                rule.to_dict(prefered_tf) for rule in rules6_visible
-            ],
+            key_map["ipv4_rules"]: [rule.to_dict(prefered_tf) for rule in rules4_editable],
+            key_map["ipv6_rules"]: [rule.to_dict(prefered_tf) for rule in rules6_editable],
+            key_map["ipv4_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules4_visible],
+            key_map["ipv6_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules6_visible],
             key_map["rtbh_rules"]: [rule.to_dict(prefered_tf) for rule in rules_rtbh],
         }
         return jsonify(payload)
@@ -225,9 +208,7 @@ def create_ipv4(current_user):
 
     # if the form is not valid, we should return 404 with errors
     if not form.validate():
-        print("F EXPIRES", form.expires)
         form_errors = get_form_errors(form)
-        print("VALIDATION", form_errors)
         if form_errors:
             return jsonify(form_errors), 400
 
@@ -235,9 +216,7 @@ def create_ipv4(current_user):
 
     if model:
         model.expires = form.expires.data
-        flash_message = (
-            "Existing IPv4 Rule found. Expiration time was updated to new value."
-        )
+        flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
     else:
         model = Flowspec4(
             source=form.source.data,
@@ -300,9 +279,7 @@ def create_ipv6(current_user):
 
     if model:
         model.expires = form.expires.data
-        flash_message = (
-            "Existing IPv6 Rule found. Expiration time was updated to new value."
-        )
+        flash_message = "Existing IPv6 Rule found. Expiration time was updated to new value."
     else:
         model = Flowspec6(
             source=form.source.data,
@@ -364,9 +341,7 @@ def create_rtbh(current_user):
 
     if model:
         model.expires = form.expires.data
-        flash_message = (
-            "Existing RTBH Rule found. Expiration time was updated to new value."
-        )
+        flash_message = "Existing RTBH Rule found. Expiration time was updated to new value."
     else:
         model = RTBH(
             ipv4=form.ipv4.data,
@@ -438,9 +413,7 @@ def get_rule(current_user, model, rule_id):
     :param model: rule model
     :return: json
     """
-    prefered_tf = (
-        request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
-    )
+    prefered_tf = request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
 
     if model:
         if check_access_rights(current_user, model.user_id):

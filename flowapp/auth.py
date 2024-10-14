@@ -15,7 +15,7 @@ def auth_required(f):
     def decorated(*args, **kwargs):
         if not check_auth(get_user()):
             if current_app.config.get("SSO_AUTH"):
-                print("SSO AUTH SET BUT FAILS")
+                current_app.logger.warning("SSO AUTH SET BUT FAILS")
                 return redirect("/login")
             elif current_app.config.get("HEADER_AUTH", False):
                 return redirect("/ext-login")
@@ -63,7 +63,7 @@ def localhost_only(f):
         localv4 = current_app.config.get("LOCAL_IP")
         localv6 = current_app.config.get("LOCAL_IP6")
         if remote != localv4 and remote != localv6:
-            print("AUTH LOCAL ONLY FAIL FROM {} / local adresses [{}, {}]".format(remote, localv4, localv6))
+            current_app.logger.warning(f"AUTH LOCAL ONLY FAIL FROM {remote} / local adresses [{localv4}, {localv6}]")
             abort(403)  # Forbidden
         return f(*args, **kwargs)
 
@@ -94,7 +94,7 @@ def check_auth(uuid):
     session["app_version"] = __version__
 
     if current_app.config.get("SSO_AUTH"):
-        print("CHECK AUTH, SS AUTH SET", uuid)
+        current_app.logger.warning("CHECK AUTH, SS AUTH SET", uuid)
         # SSO AUTH
         exist = False
         if uuid:

@@ -62,7 +62,7 @@ def add():
             expires=form.expires.data,
             readonly=form.readonly.data,
             comment=form.comment.data,
-            user_id=session["user_id"]
+            user_id=session["user_id"],
         )
 
         db.session.add(model)
@@ -73,10 +73,7 @@ def add():
     else:
         for field, errors in form.errors.items():
             for error in errors:
-                print(
-                    "Error in the %s field - %s"
-                    % (getattr(form, field).label.text, error)
-                )
+                current_app.logger.debug("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
     return render_template("forms/api_key.html", form=form, generated_key=generated)
 
@@ -89,9 +86,7 @@ def delete(key_id):
     :param key_id: integer
     """
     key_list = request.cookies.get(COOKIE_KEY)
-    key_list = jwt.decode(
-        key_list, current_app.config.get("JWT_SECRET"), algorithms=["HS256"]
-    )
+    key_list = jwt.decode(key_list, current_app.config.get("JWT_SECRET"), algorithms=["HS256"])
 
     model = db.session.query(ApiKey).get(key_id)
     if model.id not in key_list["keys"]:

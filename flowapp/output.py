@@ -1,6 +1,7 @@
 """
 Module for message announcing and logging
 """
+
 from datetime import datetime
 
 import requests
@@ -36,16 +37,14 @@ def announce_to_http(route):
     """
     if not current_app.config["TESTING"]:
         try:
-            resp = requests.post(
-                current_app.config["EXA_API_URL"], data={"command": route}
-            )
+            resp = requests.post(current_app.config["EXA_API_URL"], data={"command": route})
             resp.raise_for_status()
         except requests.exceptions.HTTPError as err:
-            print("ExaAPI HTTP Error: ", err)
+            current_app.logger.error("ExaAPI HTTP Error: ", err)
         except requests.exceptions.RequestException as ce:
-            print("Connection to ExaAPI failed: ", ce)
+            current_app.logger.error("Connection to ExaAPI failed: ", ce)
     else:
-        print("Testing:", route)
+        current_app.logger.debug(f"Testing: {route}")
 
 
 def announce_to_rabbitmq(route):
@@ -69,7 +68,7 @@ def announce_to_rabbitmq(route):
         channel.queue_declare(queue=queue)
         channel.basic_publish(exchange="", routing_key=queue, body=route)
     else:
-        print("Testing:", route)
+        current_app.logger.debug("Testing: {route}")
 
 
 def log_route(user_id, route_model, rule_type, author):

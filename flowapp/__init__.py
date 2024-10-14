@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import babel
+from loguru import logger
 
 from flask import Flask, redirect, render_template, session, url_for, request
 from flask_sso import SSO
@@ -21,6 +22,10 @@ sess = Session()
 
 def create_app(config_object=None):
     app = Flask(__name__)
+
+    # logger init
+    logger.remove()
+    app.logger = logger
 
     # SSO configuration
     SSO_ATTRIBUTE_MAP = {
@@ -145,7 +150,7 @@ def create_app(config_object=None):
 
     @app.errorhandler(500)
     def internal_error(exception):
-        app.logger.error(exception)
+        app.logger.exception(exception)
         return render_template("errors/500.html"), 500
 
     @app.context_processor
