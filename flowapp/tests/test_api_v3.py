@@ -164,7 +164,7 @@ def test_validation_rtbh_rule(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 400
     assert data["message"] == "error - invalid request data"
-    assert type(data["validation_errors"]) == dict
+    assert type(data["validation_errors"]) is dict
     assert "ipv6" in data["validation_errors"]
     assert "ipv4" in data["validation_errors"]
 
@@ -226,10 +226,7 @@ def test_all_validation_errors(client, db, jwt_token):
     """
     test that creating with invalid data returns 400 and errors
     """
-    req = client.post(
-        f"{V_PREFIX}/rules/ipv4", headers={"x-access-token": jwt_token}, json={"action": 2}
-    )
-    data = json.loads(req.data)
+    req = client.post(f"{V_PREFIX}/rules/ipv4", headers={"x-access-token": jwt_token}, json={"action": 2})
     assert req.status_code == 400
 
 
@@ -252,9 +249,7 @@ def test_validate_v6rule(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 400
     assert len(data["validation_errors"]) > 0
-    assert sorted(data["validation_errors"].keys()) == sorted(
-        ["action", "next_header", "dest", "source"]
-    )
+    assert sorted(data["validation_errors"].keys()) == sorted(["action", "next_header", "dest", "source"])
     # assert data['validation_errors'][0].startswith('Error in the Action')
     # assert data['validation_errors'][1].startswith('Error in the Source')
     # assert data['validation_errors'][2].startswith('Error in the Next Header')
@@ -277,9 +272,7 @@ def test_timestamp_param(client, db, jwt_token):
     """
     test that url param for time format works as expected
     """
-    req = client.get(
-        f"{V_PREFIX}/rules?time_format=timestamp", headers={"x-access-token": jwt_token}
-    )
+    req = client.get(f"{V_PREFIX}/rules?time_format=timestamp", headers={"x-access-token": jwt_token})
 
     assert req.status_code == 200
 

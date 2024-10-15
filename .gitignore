@@ -1,5 +1,6 @@
 config.py
 run.py
+migrations/versions/
 
 # PyCharm
 .idea/
