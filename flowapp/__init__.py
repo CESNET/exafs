@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import babel
+import logging
 from loguru import logger
 
 from flask import Flask, redirect, render_template, session, url_for, request
+from flask.logging import default_handler
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -20,12 +22,15 @@ ext = SSO()
 sess = Session()
 
 
+class InterceptHandler(logging.Handler):
+
+    def emit(self, record):
+        logger_opt = logger.opt(depth=6, exception=record.exc_info, colors=True)
+        logger_opt.log(record.levelname, record.getMessage())
+
+
 def create_app(config_object=None):
     app = Flask(__name__)
-
-    # logger init
-    logger.remove()
-    app.logger = logger
 
     # SSO configuration
     SSO_ATTRIBUTE_MAP = {
@@ -71,6 +76,10 @@ def create_app(config_object=None):
     app.register_blueprint(api_v3, url_prefix="/api/v3")
     app.register_blueprint(dashboard, url_prefix="/dashboard")
 
+    # register loguru as handler
+    app.logger.removeHandler(default_handler)
+    app.logger.addHandler(InterceptHandler())
+
     @ext.login_handler
     def login(user_info):
         try:
@@ -109,6 +118,8 @@ def create_app(config_object=None):
     @app.route("/")
     @auth_required
     def index():
+
+        logger.debug("That's it, beautiful and simple logging!")
         try:
             rtype = session[constants.TYPE_ARG]
         except KeyError:

@@ -27,13 +27,7 @@ from flowapp.models import (
     get_user_nets,
     insert_initial_communities,
 )
-from flowapp.output import (
-    ROUTE_MODELS,
-    RULE_TYPES,
-    announce_route,
-    log_route,
-    log_withdraw,
-)
+from flowapp.output import ROUTE_MODELS, RuleTypes, announce_route, log_route, log_withdraw, RouteSources, Route
 from flowapp.utils import (
     flash_errors,
     get_state_by_time,
@@ -100,18 +94,28 @@ def reactivate_rule(rule_type, rule_id):
 
         if model.rstate_id == 1:
             # announce route
-            route = route_model(model, constants.ANNOUNCE)
+            command = route_model(model, constants.ANNOUNCE)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_orgs']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
             # log changes
             log_route(
                 session["user_id"],
                 model,
                 rule_type,
-                "{} / {}".format(session["user_email"], session["user_orgs"]),
+                f"{session['user_email']} / {session['user_orgs']}",
             )
         else:
             # withdraw route
-            route = route_model(model, constants.WITHDRAW)
+            command = route_model(model, constants.WITHDRAW)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_orgs']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
             # log changes
             log_withdraw(
@@ -169,7 +173,12 @@ def delete_rule(rule_type, rule_id):
     model = db.session.query(model_name).get(rule_id)
     if model.id in session[constants.RULES_KEY]:
         # withdraw route
-        route = route_model(model, constants.WITHDRAW)
+        command = route_model(model, constants.WITHDRAW)
+        route = Route(
+            author=f"{session['user_email']} / {session['user_orgs']}",
+            source=RouteSources.UI,
+            command=command,
+        )
         announce_route(route)
 
         log_withdraw(
@@ -234,7 +243,7 @@ def group_delete():
     """
     rule_type = session[constants.TYPE_ARG]
     model_name = DATA_MODELS_NAMED[rule_type]
-    rule_type_int = constants.RULE_TYPES[rule_type]
+    rule_type_int = constants.RULE_TYPES_DICT[rule_type]
     route_model = ROUTE_MODELS[rule_type_int]
     rules = [str(x) for x in session[constants.RULES_KEY]]
     to_delete = request.form.getlist("delete-id")
@@ -243,7 +252,12 @@ def group_delete():
         for rule_id in to_delete:
             # withdraw route
             model = db.session.query(model_name).get(rule_id)
-            route = route_model(model, constants.WITHDRAW)
+            command = route_model(model, constants.WITHDRAW)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_orgs']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
 
             log_withdraw(
@@ -284,7 +298,7 @@ def group_update():
     form_name = DATA_FORMS_NAMED[rule_type]
     to_update = request.form.getlist("delete-id")
     rule_type = session[constants.TYPE_ARG]
-    rule_type_int = constants.RULE_TYPES[rule_type]
+    rule_type_int = constants.RULE_TYPES_DICT[rule_type]
     rules = [str(x) for x in session[constants.RULES_KEY]]
     # redirect bad request
     if not set(to_update).issubset(set(rules)) or is_admin(session["user_roles"]):
@@ -366,14 +380,19 @@ def group_update_save(rule_type):
 
         if model.rstate_id == 1:
             # announce route
-            route = route_model(model, constants.ANNOUNCE)
+            command = route_model(model, constants.ANNOUNCE)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_orgs']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
             # log changes
             log_route(
                 session["user_id"],
                 model,
                 rule_type,
-                "{} / {}".format(session["user_email"], session["user_orgs"]),
+                f"{session['user_email']} / {session['user_orgs']}",
             )
         else:
             # withdraw route
@@ -450,15 +469,20 @@ def ipv4_rule():
 
         # announce route if model is in active state
         if model.rstate_id == 1:
-            route = messages.create_ipv4(model, constants.ANNOUNCE)
+            command = messages.create_ipv4(model, constants.ANNOUNCE)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_orgs']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
 
         # log changes
         log_route(
             session["user_id"],
             model,
-            RULE_TYPES["IPv4"],
-            "{} / {}".format(session["user_email"], session["user_orgs"]),
+            RuleTypes.IPv4,
+            f"{session['user_email']} / {session['user_orgs']}",
         )
 
         return redirect(url_for("index"))
@@ -520,15 +544,20 @@ def ipv6_rule():
 
         # announce routes
         if model.rstate_id == 1:
-            route = messages.create_ipv6(model, constants.ANNOUNCE)
+            command = messages.create_ipv6(model, constants.ANNOUNCE)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_orgs']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
 
         # log changes
         log_route(
             session["user_id"],
             model,
-            RULE_TYPES["IPv6"],
-            "{} / {}".format(session["user_email"], session["user_orgs"]),
+            RuleTypes.IPv6,
+            f"{session['user_email']} / {session['user_orgs']}",
         )
 
         return redirect(url_for("index"))
@@ -586,14 +615,19 @@ def rtbh_rule():
         flash(flash_message, "alert-success")
         # announce routes
         if model.rstate_id == 1:
-            route = messages.create_rtbh(model, constants.ANNOUNCE)
+            command = messages.create_rtbh(model, constants.ANNOUNCE)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_orgs']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
         # log changes
         log_route(
             session["user_id"],
             model,
-            RULE_TYPES["RTBH"],
-            "{} / {}".format(session["user_email"], session["user_orgs"]),
+            RuleTypes.RTBH,
+            f"{session['user_email']} / {session['user_orgs']}",
         )
 
         return redirect(url_for("index"))
@@ -687,7 +721,12 @@ def announce_all_routes(action=constants.ANNOUNCE):
     messages_all.extend(messages_v6)
     messages_all.extend(messages_rtbh)
 
-    for route in messages_all:
+    for command in messages_all:
+        route = Route(
+            author=f"{session['user_email']} / {session['user_orgs']}",
+            source=RouteSources.UI,
+            command=command,
+        )
         announce_route(route)
 
     if action == constants.WITHDRAW:

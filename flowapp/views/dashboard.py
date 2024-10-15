@@ -52,6 +52,7 @@ def index(rtype=None, rstate="active"):
     :param rstate:
     :return: view from view factory
     """
+
     # set first key of dashboard config as default rtype
     if not rtype:
         rtype = next(iter(current_app.config["DASHBOARD"].keys()))
@@ -74,31 +75,13 @@ def index(rtype=None, rstate="active"):
 
     # get the macros for the current rule type from config
     # warning no checks here, if the config is set to non existing macro the app will crash
-    macro_file = (
-        current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.html")
-    )
-    macro_tbody = (
-        current_app.config["DASHBOARD"].get(rtype).get("macro_tbody", "build_ip_tbody")
-    )
-    macro_thead = (
-        current_app.config["DASHBOARD"]
-        .get(rtype)
-        .get("macro_thead", "build_rules_thead")
-    )
-    macro_tfoot = (
-        current_app.config["DASHBOARD"]
-        .get(rtype)
-        .get("macro_tfoot", "build_group_buttons_tfoot")
-    )
+    macro_file = current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.html")
+    macro_tbody = current_app.config["DASHBOARD"].get(rtype).get("macro_tbody", "build_ip_tbody")
+    macro_thead = current_app.config["DASHBOARD"].get(rtype).get("macro_thead", "build_rules_thead")
+    macro_tfoot = current_app.config["DASHBOARD"].get(rtype).get("macro_tfoot", "build_group_buttons_tfoot")
 
-    data_handler_module = (
-        current_app.config["DASHBOARD"].get(rtype).get("data_handler", models)
-    )
-    data_handler_method = (
-        current_app.config["DASHBOARD"]
-        .get(rtype)
-        .get("data_handler_method", "get_ip_rules")
-    )
+    data_handler_module = current_app.config["DASHBOARD"].get(rtype).get("data_handler", models)
+    data_handler_method = current_app.config["DASHBOARD"].get(rtype).get("data_handler_method", "get_ip_rules")
 
     # get search query, sort order and sort key from request or session
     get_search_query = request.args.get(SEARCH_ARG, session.get(SEARCH_ARG, ""))
@@ -213,9 +196,7 @@ def create_dashboard_table_head(
     tstring = tstring + f"from '{macro_file}' import {macro_name}"
     tstring = tstring + " %} {{"
     tstring = (
-        tstring
-        + f" {macro_name}(rules_columns, rtype, rstate, sort_key, sort_order, search_query, group_op) "
-        + "}}"
+        tstring + f" {macro_name}(rules_columns, rtype, rstate, sort_key, sort_order, search_query, group_op) " + "}}"
     )
 
     dashboard_table_head = render_template_string(
@@ -232,9 +213,7 @@ def create_dashboard_table_head(
     return dashboard_table_head
 
 
-def create_dashboard_table_foot(
-    colspan=10, macro_file="macros.html", macro_name="build_group_buttons_tfoot"
-):
+def create_dashboard_table_foot(colspan=10, macro_file="macros.html", macro_name="build_group_buttons_tfoot"):
     """
     create the table foot for the dashboard using a jinja2 macro
     :param colspan:  the number of columns
@@ -276,9 +255,7 @@ def create_admin_response(
     :return:
     """
 
-    dashboard_table_body = create_dashboard_table_body(
-        rules, rtype, macro_file=macro_file, macro_name=macro_tbody
-    )
+    dashboard_table_body = create_dashboard_table_body(rules, rtype, macro_file=macro_file, macro_name=macro_tbody)
 
     dashboard_table_head = create_dashboard_table_head(
         rules_columns=table_columns,
@@ -345,16 +322,12 @@ def create_user_response(
     net_ranges = models.get_user_nets(session["user_id"])
 
     if rtype == "rtbh":
-        rules_editable, read_only_rules = validators.split_rtbh_rules_for_user(
-            net_ranges, rules
-        )
+        rules_editable, read_only_rules = validators.split_rtbh_rules_for_user(net_ranges, rules)
     else:
         user_rules, read_only_rules = validators.split_rules_for_user(net_ranges, rules)
         user_actions = models.get_user_actions(session["user_role_ids"])
         user_actions = [act[0] for act in user_actions]
-        rules_editable, rules_visible = flowspec.filter_rules_action(
-            user_actions, user_rules
-        )
+        rules_editable, rules_visible = flowspec.filter_rules_action(user_actions, user_rules)
         read_only_rules = read_only_rules + rules_visible
 
     # we don't want the read only rules if they are not active

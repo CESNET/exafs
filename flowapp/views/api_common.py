@@ -28,12 +28,7 @@ from flowapp.utils import (
     output_date_format,
 )
 from flowapp.auth import check_access_rights
-from flowapp.output import (
-    RULE_TYPES,
-    announce_route,
-    log_route,
-    log_withdraw,
-)
+from flowapp.output import RuleTypes, announce_route, log_route, log_withdraw, Route, RouteSources
 
 
 from flowapp import db, validators, flowspec, messages
@@ -242,15 +237,20 @@ def create_ipv4(current_user):
 
     # announce route if model is in active state
     if model.rstate_id == 1:
-        route = messages.create_ipv4(model, ANNOUNCE)
+        command = messages.create_ipv4(model, ANNOUNCE)
+        route = Route(
+            author=f"{current_user['uuid']} / {current_user['org']}",
+            source=RouteSources.API,
+            command=command,
+        )
         announce_route(route)
 
     # log changes
     log_route(
         current_user["id"],
         model,
-        RULE_TYPES["IPv4"],
-        "{} / {}".format(current_user["uuid"], current_user["org"]),
+        RuleTypes.IPv4,
+        f"{current_user['uuid']} / {current_user['org']}",
     )
 
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
@@ -304,15 +304,20 @@ def create_ipv6(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_ipv6(model, ANNOUNCE)
+        command = messages.create_ipv6(model, ANNOUNCE)
+        route = Route(
+            author=f"{current_user['uuid']} / {current_user['org']}",
+            source=RouteSources.API,
+            command=command,
+        )
         announce_route(route)
 
     # log changes
     log_route(
         current_user["id"],
         model,
-        RULE_TYPES["IPv6"],
-        "{} / {}".format(current_user["uuid"], current_user["org"]),
+        RuleTypes.IPv6,
+        f"{current_user['uuid']} / {current_user['org']}",
     )
 
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
@@ -360,14 +365,19 @@ def create_rtbh(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_rtbh(model, ANNOUNCE)
+        command = messages.create_rtbh(model, ANNOUNCE)
+        route = Route(
+            author=f"{current_user['uuid']} / {current_user['org']}",
+            source=RouteSources.API,
+            command=command,
+        )
         announce_route(route)
     # log changes
     log_route(
         current_user["id"],
         model,
-        RULE_TYPES["RTBH"],
-        "{} / {}".format(current_user["uuid"], current_user["org"]),
+        RuleTypes.RTBH,
+        f"{current_user['uuid']} / {current_user['org']}",
     )
 
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
@@ -467,7 +477,12 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
     if model:
         if check_access_rights(current_user, model.user_id):
             # withdraw route
-            route = route_model(model, WITHDRAW)
+            command = route_model(model, WITHDRAW)
+            route = Route(
+                author=f"{current_user['uuid']} / {current_user['org']}",
+                source=RouteSources.API,
+                command=command,
+            )
             announce_route(route)
 
             log_withdraw(
@@ -475,7 +490,7 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
                 route,
                 rule_type,
                 model.id,
-                "{} / {}".format(current_user["uuid"], current_user["org"]),
+                f"{current_user['uuid']} / {current_user['org']}",
             )
             # delete from db
             db.session.delete(model)
