@@ -55,7 +55,7 @@ class MultiFormatDateTimeLocalField(DateTimeField):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("format", "%Y-%m-%dT%H:%M")
-        self.unlimited = kwargs.pop('unlimited', False)
+        self.unlimited = kwargs.pop("unlimited", False)
         self.pref_format = None
         super().__init__(*args, **kwargs)
 
@@ -92,9 +92,7 @@ class UserForm(FlaskForm):
         ],
     )
 
-    email = StringField(
-        "Email", validators=[Optional(), Email("Please provide valid email")]
-    )
+    email = StringField("Email", validators=[Optional(), Email("Please provide valid email")])
 
     comment = StringField("Notice", validators=[Optional()])
 
@@ -102,9 +100,7 @@ class UserForm(FlaskForm):
 
     phone = StringField("Contact phone", validators=[Optional()])
 
-    role_ids = SelectMultipleField(
-        "Role", coerce=int, validators=[DataRequired("Select at last one role")]
-    )
+    role_ids = SelectMultipleField("Role", coerce=int, validators=[DataRequired("Select at last one role")])
 
     org_ids = SelectMultipleField(
         "Organization",
@@ -124,13 +120,13 @@ class ApiKeyForm(FlaskForm):
         validators=[DataRequired(), IPAddress(message="provide valid IP address")],
     )
 
-    comment = TextAreaField(
-        "Your comment for this key", validators=[Optional(), Length(max=255)]
-    )
+    comment = TextAreaField("Your comment for this key", validators=[Optional(), Length(max=255)])
 
     expires = MultiFormatDateTimeLocalField(
         "Key expiration. Leave blank for non expring key (not-recomended).",
-        format=FORM_TIME_PATTERN, validators=[Optional()], unlimited=True
+        format=FORM_TIME_PATTERN,
+        validators=[Optional()],
+        unlimited=True,
     )
 
     readonly = BooleanField("Read only key", default=False)
@@ -150,13 +146,13 @@ class MachineApiKeyForm(FlaskForm):
         validators=[DataRequired(), IPAddress(message="provide valid IP address")],
     )
 
-    comment = TextAreaField(
-        "Your comment for this key", validators=[Optional(), Length(max=255)]
-    )
+    comment = TextAreaField("Your comment for this key", validators=[Optional(), Length(max=255)])
 
     expires = MultiFormatDateTimeLocalField(
         "Key expiration. Leave blank for non expring key (not-recomended).",
-        format=FORM_TIME_PATTERN, validators=[Optional()], unlimited=True
+        format=FORM_TIME_PATTERN,
+        validators=[Optional()],
+        unlimited=True,
     )
 
     readonly = BooleanField("Read only key", default=False)
@@ -171,6 +167,14 @@ class OrganizationForm(FlaskForm):
     """
 
     name = StringField("Organization name", validators=[Optional(), Length(max=150)])
+
+    rule_limit = IntegerField(
+        "Maximum number of rules, 0 for unlimited",
+        validators=[
+            Optional(),
+            NumberRange(min=0, max=1000, message="invalid mask value (0-1000)"),
+        ],
+    )
 
     arange = TextAreaField(
         "Organization Adress Range - one range per row",
@@ -214,9 +218,7 @@ class CommunityForm(FlaskForm):
     used in Admin
     """
 
-    name = StringField(
-        "Community short name", validators=[Length(max=120), DataRequired()]
-    )
+    name = StringField("Community short name", validators=[Length(max=120), DataRequired()])
 
     comm = StringField("Community value", validators=[Length(max=2046)])
 
@@ -320,31 +322,19 @@ class RTBHForm(FlaskForm):
         # if none is set, validation fails
         # if one is set, validation passes
         if self.ipv4.data and self.ipv6.data:
+            self.ipv4.errors.append("IPv4 and IPv6 are mutually exclusive in RTBH rule.")
+            self.ipv6.errors.append("IPv4 and IPv6 are mutually exclusive in RTBH rule.")
+            result = False
+
+        if self.ipv4.data and not address_with_mask(self.ipv4.data, self.ipv4_mask.data):
             self.ipv4.errors.append(
-                "IPv4 and IPv6 are mutually exclusive in RTBH rule."
-            )
-            self.ipv6.errors.append(
-                "IPv4 and IPv6 are mutually exclusive in RTBH rule."
+                "This is not valid combination of address {} and mask {}.".format(self.ipv4.data, self.ipv4_mask.data)
             )
             result = False
 
-        if self.ipv4.data and not address_with_mask(
-            self.ipv4.data, self.ipv4_mask.data
-        ):
-            self.ipv4.errors.append(
-                "This is not valid combination of address {} and mask {}.".format(
-                    self.ipv4.data, self.ipv4_mask.data
-                )
-            )
-            result = False
-
-        if self.ipv6.data and not address_with_mask(
-            self.ipv6.data, self.ipv6_mask.data
-        ):
+        if self.ipv6.data and not address_with_mask(self.ipv6.data, self.ipv6_mask.data):
             self.ipv6.errors.append(
-                "This is not valid combination of address {} and mask {}.".format(
-                    self.ipv6.data, self.ipv6_mask.data
-                )
+                "This is not valid combination of address {} and mask {}.".format(self.ipv6.data, self.ipv6_mask.data)
             )
             result = False
 
@@ -352,16 +342,8 @@ class RTBHForm(FlaskForm):
         ipv4_in_range = address_in_range(self.ipv4.data, self.net_ranges)
 
         if not (ipv6_in_range or ipv4_in_range):
-            self.ipv6.errors.append(
-                "IPv4 or IPv6 address must be in organization range : {}.".format(
-                    self.net_ranges
-                )
-            )
-            self.ipv4.errors.append(
-                "IPv4 or IPv6 address must be in organization range : {}.".format(
-                    self.net_ranges
-                )
-            )
+            self.ipv6.errors.append("IPv4 or IPv6 address must be in organization range : {}.".format(self.net_ranges))
+            self.ipv4.errors.append("IPv4 or IPv6 address must be in organization range : {}.".format(self.net_ranges))
             result = False
 
         return result
@@ -381,9 +363,7 @@ class IPForm(FlaskForm):
     source_mask = None
     dest = None
     dest_mask = None
-    flags = SelectMultipleField(
-        "TCP flag(s)", choices=TCP_FLAGS, validators=[Optional()]
-    )
+    flags = SelectMultipleField("TCP flag(s)", choices=TCP_FLAGS, validators=[Optional()])
 
     source_port = StringField(
         "Source port(s) -  ; separated ",
@@ -406,9 +386,7 @@ class IPForm(FlaskForm):
         validators=[DataRequired(message="Please select an action for the rule.")],
     )
 
-    expires = MultiFormatDateTimeLocalField(
-        "Expires", format="%Y-%m-%dT%H:%M", validators=[InputRequired()]
-    )
+    expires = MultiFormatDateTimeLocalField("Expires", format="%Y-%m-%dT%H:%M", validators=[InputRequired()])
 
     comment = arange = TextAreaField("Comments")
 
@@ -434,9 +412,7 @@ class IPForm(FlaskForm):
         validate source address, set error message if validation fails
         :return: boolean validation result
         """
-        if self.source.data and not address_with_mask(
-            self.source.data, self.source_mask.data
-        ):
+        if self.source.data and not address_with_mask(self.source.data, self.source_mask.data):
             self.source.errors.append(
                 "This is not valid combination of address {} and mask {}.".format(
                     self.source.data, self.source_mask.data
@@ -451,13 +427,9 @@ class IPForm(FlaskForm):
         validate dest address, set error message if validation fails
         :return: boolean validation result
         """
-        if self.dest.data and not address_with_mask(
-            self.dest.data, self.dest_mask.data
-        ):
+        if self.dest.data and not address_with_mask(self.dest.data, self.dest_mask.data):
             self.dest.errors.append(
-                "This is not valid combination of address {} and mask {}.".format(
-                    self.dest.data, self.dest_mask.data
-                )
+                "This is not valid combination of address {} and mask {}.".format(self.dest.data, self.dest_mask.data)
             )
             return False
 
@@ -473,35 +445,15 @@ class IPForm(FlaskForm):
         if not (self.source.data or self.dest.data):
             whole_world_member = whole_world_range(self.net_ranges, self.zero_address)
             if not whole_world_member:
-                self.source.errors.append(
-                    "Source or dest must be in organization range : {}.".format(
-                        self.net_ranges
-                    )
-                )
-                self.dest.errors.append(
-                    "Source or dest must be in organization range : {}.".format(
-                        self.net_ranges
-                    )
-                )
+                self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
                 return False
         else:
-            source_in_range = network_in_range(
-                self.source.data, self.source_mask.data, self.net_ranges
-            )
-            dest_in_range = network_in_range(
-                self.dest.data, self.dest_mask.data, self.net_ranges
-            )
+            source_in_range = network_in_range(self.source.data, self.source_mask.data, self.net_ranges)
+            dest_in_range = network_in_range(self.dest.data, self.dest_mask.data, self.net_ranges)
             if not (source_in_range or dest_in_range):
-                self.source.errors.append(
-                    "Source or dest must be in organization range : {}.".format(
-                        self.net_ranges
-                    )
-                )
-                self.dest.errors.append(
-                    "Source or dest must be in organization range : {}.".format(
-                        self.net_ranges
-                    )
-                )
+                self.source.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
+                self.dest.errors.append("Source or dest must be in organization range : {}.".format(self.net_ranges))
                 return False
 
         return True
@@ -567,17 +519,8 @@ class IPv4Form(IPForm):
         :return: boolean validation result
         """
 
-        if (
-            self.flags.data
-            and self.protocol.data
-            and len(self.flags.data) > 0
-            and self.protocol.data != "tcp"
-        ):
-            self.flags.errors.append(
-                "Can not set TCP flags for protocol {} !".format(
-                    self.protocol.data.upper()
-                )
-            )
+        if self.flags.data and self.protocol.data and len(self.flags.data) > 0 and self.protocol.data != "tcp":
+            self.flags.errors.append("Can not set TCP flags for protocol {} !".format(self.protocol.data.upper()))
             return False
         return True
 
@@ -630,11 +573,7 @@ class IPv6Form(IPForm):
         :return: boolean validation result
         """
         if len(self.flags.data) > 0 and self.next_header.data != "tcp":
-            self.flags.errors.append(
-                "Can not set TCP flags for next-header {} !".format(
-                    self.next_header.data.upper()
-                )
-            )
+            self.flags.errors.append("Can not set TCP flags for next-header {} !".format(self.next_header.data.upper()))
             return False
 
         return True

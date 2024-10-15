@@ -213,7 +213,7 @@ def organization():
         # test if user is unique
         exist = db.session.query(Organization).filter_by(name=form.name.data).first()
         if not exist:
-            org = Organization(name=form.name.data, arange=form.arange.data)
+            org = Organization(name=form.name.data, arange=form.arange.data, rule_limit=form.rule_limit.data)
             db.session.add(org)
             db.session.commit()
             flash("Organization saved")
@@ -240,7 +240,7 @@ def edit_organization(org_id):
     if request.method == "POST" and form.validate():
         form.populate_obj(org)
         db.session.commit()
-        flash("Organization updated")
+        flash("Organization updated", "alert-success")
         return redirect(url_for("admin.organizations"))
 
     action_url = url_for("admin.edit_organization", org_id=org.id)

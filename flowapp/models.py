@@ -128,9 +128,10 @@ class Organization(db.Model):
     arange = db.Column(db.Text)
     rule_limit = db.Column(db.Integer, default=0)
 
-    def __init__(self, name, arange):
+    def __init__(self, name, arange, rule_limit=0):
         self.name = name
         self.arange = arange
+        self.rule_limit = rule_limit
 
     def __repr__(self):
         return self.name

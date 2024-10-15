@@ -4,12 +4,14 @@
     <table class="table table-hover">
     <tr>
     <th>Name</th>
+    <th>Limit for rules</th>
     <th>Adress Ranges</th>
     <th>action</th>
     </tr>
     {% for org in orgs %}
         <tr>
         <td>{{ org.name }}</td>
+        <td>{{ "unlimited" if org.rule_limit == 0 else org.rule_limit }}</td>
         <td>
             {% set rows = org.arange.split() %}
             <ul class="list-group">
