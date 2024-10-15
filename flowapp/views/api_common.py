@@ -487,7 +487,7 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
 
             log_withdraw(
                 current_user["id"],
-                route,
+                route.command,
                 rule_type,
                 model.id,
                 f"{current_user['uuid']} / {current_user['org']}",

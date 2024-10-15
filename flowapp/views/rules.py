@@ -120,7 +120,7 @@ def reactivate_rule(rule_type, rule_id):
             # log changes
             log_withdraw(
                 session["user_id"],
-                route,
+                route.command,
                 rule_type,
                 model.id,
                 "{} / {}".format(session["user_email"], session["user_orgs"]),
@@ -183,7 +183,7 @@ def delete_rule(rule_type, rule_id):
 
         log_withdraw(
             session["user_id"],
-            route,
+            route.command,
             rule_type,
             model.id,
             "{} / {}".format(session["user_email"], session["user_orgs"]),
@@ -262,7 +262,7 @@ def group_delete():
 
             log_withdraw(
                 session["user_id"],
-                route,
+                route.command,
                 rule_type_int,
                 model.id,
                 "{} / {}".format(session["user_email"], session["user_orgs"]),
@@ -401,7 +401,7 @@ def group_update_save(rule_type):
             # log changes
             log_withdraw(
                 session["user_id"],
-                route,
+                route.command,
                 rule_type,
                 model.id,
                 "{} / {}".format(session["user_email"], session["user_orgs"]),
