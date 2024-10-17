@@ -13,12 +13,18 @@ def auth_required(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not check_auth(get_user()):
+        user = session.get("user_uuid", False)
+        if not user:
             if current_app.config.get("SSO_AUTH"):
                 current_app.logger.warning("SSO AUTH SET BUT FAILS")
-                return redirect("/login")
-            elif current_app.config.get("HEADER_AUTH", False):
-                return redirect("/ext-login")
+                return redirect(url_for("login"))
+
+            if current_app.config.get("HEADER_AUTH", False):
+                return redirect(url_for("ext_login"))
+
+            if current_app.config.get("LOCAL_AUTH"):
+                return redirect(url_for("local_login"))
+
         return f(*args, **kwargs)
 
     return decorated
@@ -70,18 +76,6 @@ def localhost_only(f):
     return decorated
 
 
-def get_user():
-    """
-    get user from session
-    """
-    try:
-        uuid = session["user_uuid"]
-    except KeyError:
-        uuid = False
-
-    return uuid
-
-
 def check_auth(uuid):
     """
     This function is every time when someone accessing the endpoint
@@ -93,30 +87,25 @@ def check_auth(uuid):
 
     session["app_version"] = __version__
 
-    if current_app.config.get("SSO_AUTH"):
-        current_app.logger.warning("CHECK AUTH, SS AUTH SET", uuid)
-        # SSO AUTH
-        exist = False
-        if uuid:
-            exist = db.session.query(User).filter_by(uuid=uuid).first()
-        return exist
-    elif current_app.config.get("HEADER_AUTH", False):
+    if current_app.config.get("HEADER_AUTH", False):
         # External auth (for example apache)
         header_name = current_app.config.get("AUTH_HEADER_NAME", "X-Authenticated-User")
         if header_name not in request.headers or not session.get("user_uuid"):
             return False
         return db.session.query(User).filter_by(uuid=request.headers.get(header_name))
-    else:
-        # Localhost login / no check / works only in development environment
-        session["user_email"] = current_app.config["LOCAL_USER_UUID"]
-        session["user_id"] = current_app.config["LOCAL_USER_ID"]
-        session["user_roles"] = current_app.config["LOCAL_USER_ROLES"]
-        session["user_orgs"] = ", ".join(org["name"] for org in current_app.config["LOCAL_USER_ORGS"])
-        session["user_role_ids"] = current_app.config["LOCAL_USER_ROLE_IDS"]
-        session["user_org_ids"] = current_app.config["LOCAL_USER_ORG_IDS"]
-        roles = [i > 1 for i in session["user_role_ids"]]
-        session["can_edit"] = True if all(roles) and roles else []
-        return True
+
+    if current_app.config.get("SSO_AUTH"):
+        current_app.logger.warning("CHECK AUTH, SSO AUTH SET UUID : {uuid}")
+    elif current_app.config.get("LOCAL_AUTH"):
+        uuid = current_app.config.get("LOCAL_USER_UUID", False)
+        current_app.logger.warning(f"CHECK AUTH, LOCAL AUTH SET UUID: {uuid}")
+
+    exist = False
+    if uuid:
+        exist = db.session.query(User).filter_by(uuid=uuid).first()
+
+    current_app.logger.debug(f"CHECK AUTH RETURN, UUID: {uuid}, EXIST: {exist}")
+    return exist
 
 
 def check_access_rights(current_user, model_id):

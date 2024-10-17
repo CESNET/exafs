@@ -1,0 +1,23 @@
+{% extends 'layouts/default.html' %}
+{% block title %}ExaFS - choose our organization{% endblock %}
+{% block content %}
+
+<div class="modal modal-sheet position-static d-block bg-body-secondary p-4 py-md-5" tabindex="-1" role="dialog" id="modalSheet">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header border-bottom-0">
+          <h1 class="modal-title fs-5">Select Organization</h1>
+        </div>
+        <div class="modal-body py-0">
+          <p>You are a member of more than one organisation. Please select an organization for this session, due to the rules counting towards the organization limit.</p>
+        </div>
+        <div class="modal-footer flex-column align-items-stretch w-100 gap-2 pb-3 border-top-0">
+            {% for org in orgs %}
+            <a class="btn btn-primary" href="{{ url_for('select_org', org_id=org.id) }}" role="button">{{ org.name }}</a>
+            {% endfor %}
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endblock %}  

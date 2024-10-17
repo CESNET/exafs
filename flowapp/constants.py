@@ -56,3 +56,9 @@ TCP_FLAGS = [
 ]
 
 FORM_TIME_PATTERN = "%Y-%m-%dT%H:%M"
+
+
+class RuleTypes:
+    RTBH = 1
+    IPv4 = 4
+    IPv6 = 6

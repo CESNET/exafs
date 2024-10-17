@@ -20,12 +20,6 @@ ROUTE_MODELS = {
 }
 
 
-class RuleTypes:
-    RTBH = 1
-    IPv4 = 4
-    IPv6 = 6
-
-
 class RouteSources:
     UI = "UI"
     API = "API"

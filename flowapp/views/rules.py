@@ -12,6 +12,7 @@ from flowapp.auth import (
     localhost_only,
     user_or_admin_required,
 )
+from flowapp.constants import RuleTypes
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
 from flowapp.models import (
     RTBH,
@@ -19,15 +20,19 @@ from flowapp.models import (
     Community,
     Flowspec4,
     Flowspec6,
+    User,
     get_ipv4_model_if_exists,
     get_ipv6_model_if_exists,
     get_rtbh_model_if_exists,
     get_user_actions,
     get_user_communities,
     get_user_nets,
+    get_user_orgs_choices,
+    get_user_orgs_limits,
+    increment_rule_count,
     insert_initial_communities,
 )
-from flowapp.output import ROUTE_MODELS, RuleTypes, announce_route, log_route, log_withdraw, RouteSources, Route
+from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
 from flowapp.utils import (
     flash_errors,
     get_state_by_time,
@@ -433,17 +438,27 @@ def ipv4_rule():
     user_actions = [
         (0, "---- select action ----"),
     ] + user_actions
+    user_orgs = get_user_orgs_choices(session["user_id"])
+
     form.action.choices = user_actions
     form.action.default = 0
     form.net_ranges = net_ranges
+    form.organization.choices = user_orgs
+    current_app.logger.debug("User orgs: %s", user_orgs)
+    user = db.session.query(User).get(session["user_id"])
+    for org in user.organization:
+        count = org.count_rules(RuleTypes.IPv4)
+        current_app.logger.debug(f"Org: {org.name}, Count: {count}")
 
     if request.method == "POST" and form.validate():
         model = get_ipv4_model_if_exists(form.data, 1)
 
         if model:
+            increment = False
             model.expires = round_to_ten_minutes(form.expires.data)
             flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
         else:
+            increment = True
             model = Flowspec4(
                 source=form.source.data,
                 source_mask=form.source_mask.data,
@@ -466,6 +481,10 @@ def ipv4_rule():
 
         db.session.commit()
         flash(flash_message, "alert-success")
+
+        # increment counter if new rule was added
+        if increment:
+            increment_rule_count(RuleTypes.IPv4, form.organization.data)
 
         # announce route if model is in active state
         if model.rstate_id == 1:

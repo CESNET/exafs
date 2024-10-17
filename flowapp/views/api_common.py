@@ -5,7 +5,7 @@ from flask import request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, timedelta
 
-from flowapp.constants import WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG
+from flowapp.constants import WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG, RuleTypes
 from flowapp.models import (
     RTBH,
     Flowspec4,
@@ -28,7 +28,7 @@ from flowapp.utils import (
     output_date_format,
 )
 from flowapp.auth import check_access_rights
-from flowapp.output import RuleTypes, announce_route, log_route, log_withdraw, Route, RouteSources
+from flowapp.output import announce_route, log_route, log_withdraw, Route, RouteSources
 
 
 from flowapp import db, validators, flowspec, messages

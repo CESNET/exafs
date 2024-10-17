@@ -386,6 +386,12 @@ class IPForm(FlaskForm):
         validators=[DataRequired(message="Please select an action for the rule.")],
     )
 
+    organization = SelectField(
+        "Organization",
+        coerce=int,
+        validators=[DataRequired(message="Please select one of your organizations.")],
+    )
+
     expires = MultiFormatDateTimeLocalField("Expires", format="%Y-%m-%dT%H:%M", validators=[InputRequired()])
 
     comment = arange = TextAreaField("Comments")

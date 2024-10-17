@@ -2,6 +2,7 @@ import json
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
+from flowapp.constants import RuleTypes
 
 # models and tables
 
@@ -127,6 +128,9 @@ class Organization(db.Model):
     name = db.Column(db.String(150), unique=True)
     arange = db.Column(db.Text)
     rule_limit = db.Column(db.Integer, default=0)
+    ipv4count = db.Column(db.Integer, default=0)
+    ipv6count = db.Column(db.Integer, default=0)
+    rtbhcount = db.Column(db.Integer, default=0)
 
     def __init__(self, name, arange, rule_limit=0):
         self.name = name
@@ -135,6 +139,31 @@ class Organization(db.Model):
 
     def __repr__(self):
         return self.name
+
+    def get_users(self):
+        """
+        Returns all users associated with this organization.
+        """
+        # self.user is the backref from the user_organization relationship
+        return self.user
+
+    def count_rules(self, rule_type):
+        """
+        Count the number of rules of a certain type for this organization
+        :param rule_type: RuleTypes
+        :return: integer
+        """
+        if rule_type == RuleTypes.IPv4:
+            ctr = 0
+            for user in self.user:
+                for rule in user.flowspec4:
+                    if rule.rstate_id == 1:
+                        ctr += 1
+            return ctr
+        if rule_type == RuleTypes.IPv6:
+            return self.ipv6count
+        if rule_type == RuleTypes.RTBH:
+            return self.rtbhcount
 
 
 class ASPath(db.Model):
@@ -719,6 +748,37 @@ def insert_initial_rulestates(table, conn, *args, **kwargs):
 
 
 # Misc functions
+def check_rule_limit(org_id: int, rule_type: RuleTypes):
+    """
+    Check if the organization has reached the rule limit
+    :param org_id: integer organization id
+    :param rule_type: RuleType rule type
+    :return: boolean
+    """
+    org = Organization.query.filter_by(id=org_id).first()
+    if rule_type == RuleTypes.IPv4:
+        return org.ipv4count >= org.rule_limit
+    if rule_type == RuleTypes.IPv6:
+        return org.ipv6count >= org.rule_limit
+    if rule_type == RuleTypes.RTBH:
+        return org.rtbhcount >= org.rule_limit
+
+
+def increment_rule_count(rule_type: RuleTypes, org_id: int):
+    """
+    Increment rule count for organization
+    :param rule_type: RuleType rule type
+    :param org_id: integer organization id
+    :return: None
+    """
+    org = Organization.query.filter_by(id=org_id).first()
+    if rule_type == RuleTypes.IPv4:
+        org.ipv4count += 1
+    if rule_type == RuleTypes.IPv6:
+        org.ipv6count += 1
+    if rule_type == RuleTypes.RTBH:
+        org.rtbhcount += 1
+    db.session.commit()
 
 
 def get_ipv4_model_if_exists(form_data, rstate_id=1):
@@ -853,6 +913,26 @@ def get_user_nets(user_id):
         result.extend(org.arange.split())
 
     return result
+
+
+def get_user_orgs_choices(user_id):
+    """
+    Return list of orgs as choices for form
+    """
+    user = db.session.query(User).filter_by(id=user_id).first()
+    orgs = user.organization
+
+    return [(g.id, g.name) for g in orgs]
+
+
+def get_user_orgs_limits(user_id):
+    """
+    Return list of orgs as choices for form
+    """
+    user = db.session.query(User).filter_by(id=user_id).first()
+    orgs = user.organization
+
+    return [(g.id, g.name) for g in orgs]
 
 
 def get_user_actions(user_roles):

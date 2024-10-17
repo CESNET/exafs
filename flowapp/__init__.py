@@ -86,13 +86,9 @@ def create_app(config_object=None):
             uuid = user_info.get("eppn")
         except KeyError:
             uuid = False
-            return redirect("/")
-        else:
-            try:
-                _register_user_to_session(uuid)
-            except AttributeError:
-                pass
-            return redirect("/")
+            return render_template("errors/401.html")
+
+        return _handle_login(uuid)
 
     @app.route("/logout")
     def logout():
@@ -108,18 +104,30 @@ def create_app(config_object=None):
             return render_template("errors/401.html")
 
         uuid = request.headers.get(header_name)
-        if uuid:
-            try:
-                _register_user_to_session(uuid)
-            except AttributeError:
-                return render_template("errors/401.html")
-        return redirect("/")
+        if not uuid:
+            return render_template("errors/401.html")
+
+        return _handle_login(uuid)
+
+    @app.route("/local-login")
+    def local_login():
+        print("Local login started")
+        if not app.config.get("LOCAL_AUTH", False):
+            print("Local auth not enabled")
+            return render_template("errors/401.html")
+
+        uuid = app.config.get("LOCAL_USER_UUID", False)
+        if not uuid:
+            print("Local user not set")
+            return render_template("errors/401.html")
+
+        print(f"Local login with {uuid}")
+        return _handle_login(uuid)
 
     @app.route("/")
     @auth_required
     def index():
 
-        logger.debug("That's it, beautiful and simple logging!")
         try:
             rtype = session[constants.TYPE_ARG]
         except KeyError:
@@ -149,6 +157,20 @@ def create_app(config_object=None):
                 order=orderer,
             )
         )
+
+    @app.route("/select_org", defaults={"org_id": None})
+    @app.route("/select_org/<int:org_id>")
+    def select_org(org_id=None):
+        uuid = session.get("user_uuid")
+        user = db.session.query(models.User).filter_by(uuid=uuid).first()
+        orgs = user.organization
+        if org_id:
+            org = db.session.query(models.Organization).filter_by(id=org_id).first()
+            session["user_org_id"] = org.id
+            session["user_org"] = org.name
+            return redirect("/")
+
+        return render_template("pages/org_modal.html", orgs=orgs)
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
@@ -198,18 +220,41 @@ def create_app(config_object=None):
         format = "y/MM/dd HH:mm"
         return babel.dates.format_datetime(value, format)
 
+    def _handle_login(uuid: str):
+        """
+        handles rest of login process
+        """
+        multiple_orgs = False
+        try:
+            user, multiple_orgs = _register_user_to_session(uuid)
+        except AttributeError as e:
+            app.logger.exception(e)
+            return render_template("errors/401.html")
+
+        if multiple_orgs:
+            return redirect(url_for("select_org", org_id=None))
+
+        # set user org to session
+        user_org = user.organization.first()
+        session["user_org"] = user_org.name
+        session["user_org_id"] = user_org.id
+
+        return redirect("/")
+
     def _register_user_to_session(uuid: str):
         print(f"Registering user {uuid} to session")
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
+        print(f"Got user {user} from DB")
         session["user_uuid"] = user.uuid
         session["user_email"] = user.uuid
         session["user_name"] = user.name
         session["user_id"] = user.id
         session["user_roles"] = [role.name for role in user.role.all()]
-        session["user_orgs"] = ", ".join(org.name for org in user.organization.all())
         session["user_role_ids"] = [role.id for role in user.role.all()]
-        session["user_org_ids"] = [org.id for org in user.organization.all()]
         roles = [i > 1 for i in session["user_role_ids"]]
         session["can_edit"] = True if all(roles) and roles else []
+        # check if user has multiple organizations and return True if so
+        print(f"DEBUG SESSION {session}")
+        return user, len(user.organization.all()) > 1
 
     return app
