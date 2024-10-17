@@ -438,13 +438,11 @@ def ipv4_rule():
     user_actions = [
         (0, "---- select action ----"),
     ] + user_actions
-    user_orgs = get_user_orgs_choices(session["user_id"])
 
     form.action.choices = user_actions
     form.action.default = 0
     form.net_ranges = net_ranges
-    form.organization.choices = user_orgs
-    current_app.logger.debug("User orgs: %s", user_orgs)
+
     user = db.session.query(User).get(session["user_id"])
     for org in user.organization:
         count = org.count_rules(RuleTypes.IPv4)

@@ -105,7 +105,7 @@ class UserForm(FlaskForm):
     org_ids = SelectMultipleField(
         "Organization",
         coerce=int,
-        validators=[DataRequired("Select at last one Organization")],
+        validators=[DataRequired("We prefer one Organization per user, but it's possible select more")],
     )
 
 
@@ -168,8 +168,24 @@ class OrganizationForm(FlaskForm):
 
     name = StringField("Organization name", validators=[Optional(), Length(max=150)])
 
-    rule_limit = IntegerField(
-        "Maximum number of rules, 0 for unlimited",
+    limit_flowspec4 = IntegerField(
+        "Maximum number of IPv4 rules, 0 for unlimited",
+        validators=[
+            Optional(),
+            NumberRange(min=0, max=1000, message="invalid mask value (0-1000)"),
+        ],
+    )
+
+    limit_flowspec6 = IntegerField(
+        "Maximum number of IPv6 rules, 0 for unlimited",
+        validators=[
+            Optional(),
+            NumberRange(min=0, max=1000, message="invalid mask value (0-1000)"),
+        ],
+    )
+
+    limit_rtbh = IntegerField(
+        "Maximum number of RTBH rules, 0 for unlimited",
         validators=[
             Optional(),
             NumberRange(min=0, max=1000, message="invalid mask value (0-1000)"),
@@ -384,12 +400,6 @@ class IPForm(FlaskForm):
         "Action",
         coerce=int,
         validators=[DataRequired(message="Please select an action for the rule.")],
-    )
-
-    organization = SelectField(
-        "Organization",
-        coerce=int,
-        validators=[DataRequired(message="Please select one of your organizations.")],
     )
 
     expires = MultiFormatDateTimeLocalField("Expires", format="%Y-%m-%dT%H:%M", validators=[InputRequired()])

@@ -220,6 +220,10 @@ def create_app(config_object=None):
         format = "y/MM/dd HH:mm"
         return babel.dates.format_datetime(value, format)
 
+    @app.template_filter("unlimited")
+    def unlimited_filter(value):
+        return "unlimited" if value == 0 else value
+
     def _handle_login(uuid: str):
         """
         handles rest of login process

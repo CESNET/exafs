@@ -1,5 +1,5 @@
 {% extends 'layouts/default.html' %}
-{% block title %}Flowspec Organziations{% endblock %}
+{% block title %}Flowspec Organizations{% endblock %}
 {% block content %}
     <table class="table table-hover">
     <tr>
@@ -10,9 +10,13 @@
     </tr>
     {% for org in orgs %}
         <tr>
-        <td>{{ org.name }}</td>
-        <td>{{ "unlimited" if org.rule_limit == 0 else org.rule_limit }}</td>
-        <td>
+        <td width="20%">{{ org.name }}</td>
+        <td width="20%">
+            IPv4: {{ org.limit_flowspec4 | unlimited }}<br />
+            IPv6: {{ org.limit_flowspec6 | unlimited }}<br />
+            RTBH: {{ org.limit_rtbh | unlimited }}
+        </td>
+        <td width="40%">
             {% set rows = org.arange.split() %}
             <ul class="list-group">
             {% for row in rows %}
@@ -20,7 +24,7 @@
             {% endfor %}
             </ul>
         </td>
-        <td>
+        <td width="20%">
         <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_organization', org_id=org.id) }}" role="button">
             <i class="bi bi-pen"></i>
         </a>

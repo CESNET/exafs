@@ -127,15 +127,16 @@ class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=True)
     arange = db.Column(db.Text)
-    rule_limit = db.Column(db.Integer, default=0)
-    ipv4count = db.Column(db.Integer, default=0)
-    ipv6count = db.Column(db.Integer, default=0)
-    rtbhcount = db.Column(db.Integer, default=0)
+    limit_flowspec4 = db.Column(db.Integer, default=0)
+    limit_flowspec6 = db.Column(db.Integer, default=0)
+    limit_rtbh = db.Column(db.Integer, default=0)
 
-    def __init__(self, name, arange, rule_limit=0):
+    def __init__(self, name, arange, limit_flowspec4=0, limit_flowspec6=0, limit_rtbh=0):
         self.name = name
         self.arange = arange
-        self.rule_limit = rule_limit
+        self.limit_flowspec4 = limit_flowspec4
+        self.limit_flowspec6 = limit_flowspec6
+        self.limit_rtbh = limit_rtbh
 
     def __repr__(self):
         return self.name
@@ -146,24 +147,6 @@ class Organization(db.Model):
         """
         # self.user is the backref from the user_organization relationship
         return self.user
-
-    def count_rules(self, rule_type):
-        """
-        Count the number of rules of a certain type for this organization
-        :param rule_type: RuleTypes
-        :return: integer
-        """
-        if rule_type == RuleTypes.IPv4:
-            ctr = 0
-            for user in self.user:
-                for rule in user.flowspec4:
-                    if rule.rstate_id == 1:
-                        ctr += 1
-            return ctr
-        if rule_type == RuleTypes.IPv6:
-            return self.ipv6count
-        if rule_type == RuleTypes.RTBH:
-            return self.rtbhcount
 
 
 class ASPath(db.Model):
@@ -250,6 +233,8 @@ class RTBH(db.Model):
     created = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref="rtbh")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="rtbh")
     rstate_id = db.Column(db.Integer, db.ForeignKey("rstate.id"), nullable=False)
     rstate = db.relationship("Rstate", backref="RTBH")
 
@@ -380,6 +365,8 @@ class Flowspec4(db.Model):
     action = db.relationship("Action", backref="flowspec4")
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref="flowspec4")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="flowspec4")
     rstate_id = db.Column(db.Integer, db.ForeignKey("rstate.id"), nullable=False)
     rstate = db.relationship("Rstate", backref="flowspec4")
 
@@ -534,6 +521,8 @@ class Flowspec6(db.Model):
     action = db.relationship("Action", backref="flowspec6")
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref="flowspec6")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="flowspec6")
     rstate_id = db.Column(db.Integer, db.ForeignKey("rstate.id"), nullable=False)
     rstate = db.relationship("Rstate", backref="flowspec6")
 
@@ -650,14 +639,16 @@ class Log(db.Model):
     rule_type = db.Column(db.Integer)
     rule_id = db.Column(db.Integer)
     user_id = db.Column(db.Integer)
+    org_id = db.Column(db.Integer, nullable=True)
 
-    def __init__(self, time, task, user_id, rule_type, rule_id, author):
+    def __init__(self, time, task, user_id, rule_type, rule_id, author, org_id=None):
         self.time = time
         self.task = task
         self.rule_type = rule_type
         self.rule_id = rule_id
         self.user_id = user_id
         self.author = author
+        self.org_id = org_id
 
 
 # DDL

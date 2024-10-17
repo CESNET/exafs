@@ -213,7 +213,13 @@ def organization():
         # test if user is unique
         exist = db.session.query(Organization).filter_by(name=form.name.data).first()
         if not exist:
-            org = Organization(name=form.name.data, arange=form.arange.data, rule_limit=form.rule_limit.data)
+            org = Organization(
+                name=form.name.data,
+                arange=form.arange.data,
+                limit_flowspec4=form.limit_flowspec4.data,
+                limit_flowspec6=form.limit_flowspec6.data,
+                limit_rtbh=form.limit_rtbh.data,
+            )
             db.session.add(org)
             db.session.commit()
             flash("Organization saved")
@@ -223,7 +229,7 @@ def organization():
 
     action_url = url_for("admin.organization")
     return render_template(
-        "forms/simple_form.html",
+        "forms/org.html",
         title="Add new organization to Flowspec",
         form=form,
         action_url=action_url,
@@ -245,7 +251,7 @@ def edit_organization(org_id):
 
     action_url = url_for("admin.edit_organization", org_id=org.id)
     return render_template(
-        "forms/simple_form.html",
+        "forms/org.html",
         title="Editing {}".format(org.name),
         form=form,
         action_url=action_url,
