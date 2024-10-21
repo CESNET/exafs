@@ -543,4 +543,42 @@ def test_update_existing_v4rule_with_timestamp_limit(client, db, app, jwt_token)
     assert req.status_code == 403
     data = json.loads(req.data)
     assert data["message"]
-    assert data["message"].startswith("rule limit reached for")
+    assert data["message"].startswith("Rule limit")
+
+
+def test_overall_limit(client, db, app, jwt_token):
+    """
+    test that update with different data passes
+    """
+    app.config.update({"FLOWSPEC_MAX_RULES": 5, "RTBH_MAX_RULES": 5})
+
+    with app.app_context():
+        # count
+
+        org = db.session.query(Organization).filter_by(id=1).first()
+        org.limit_flowspec4 = 20
+        db.session.commit()
+
+    sources = ["147.230.42.1", "147.230.42.2", "147.230.42.3", "147.230.42.4"]
+    codes = [201, 201, 201, 403]
+
+    for source, code in zip(sources, codes):
+        data = {
+            "action": 1,
+            "protocol": "tcp",
+            "source": source,
+            "source_mask": 32,
+            "source_port": "",
+            "expires": "10/15/2050 14:46",
+        }
+        req = client.post(
+            f"{V_PREFIX}/rules/ipv4",
+            headers={"x-access-token": jwt_token},
+            json=data,
+        )
+        print(source)
+        assert req.status_code == code
+
+    data = json.loads(req.data)
+    assert data["message"]
+    assert data["message"].startswith("System limit")

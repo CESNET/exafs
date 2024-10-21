@@ -1,6 +1,7 @@
 # flowapp/views/admin.py
 from datetime import datetime, timedelta
 from operator import ge, lt
+from collections import namedtuple
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
@@ -21,6 +22,7 @@ from flowapp.models import (
     Flowspec4,
     Flowspec6,
     Organization,
+    check_global_rule_limit,
     check_rule_limit,
     get_ipv4_model_if_exists,
     get_ipv6_model_if_exists,
@@ -87,6 +89,12 @@ def reactivate_rule(rule_type, rule_id):
     if request.method == "POST":
         # check if rule will be reactivated
         state = get_state_by_time(form.expires.data)
+
+        # check global limit
+        check_gl = check_global_rule_limit(rule_type)
+        if state == 1 and check_gl:
+            return redirect(url_for("rules.global_limit_reached", rule_type=rule_type))
+        # check org limit
         if state == 1 and check_rule_limit(session["user_org_id"], rule_type=rule_type):
             return redirect(url_for("rules.limit_reached", rule_type=rule_type))
 
@@ -379,6 +387,11 @@ def group_update_save(rule_type):
     route_model = ROUTE_MODELS[rule_type]
 
     for rule_id in to_update:
+        # check global limit
+        check_gl = check_global_rule_limit(rule_type)
+        if rstate_id == 1 and check_gl:
+            return redirect(url_for("rules.global_limit_reached", rule_type=rule_type))
+
         # check if rule will be reactivated
         check = check_rule_limit(session["user_org_id"], rule_type=rule_type)
         if rstate_id == 1 and check:
@@ -443,6 +456,9 @@ def group_update_save(rule_type):
 @auth_required
 @user_or_admin_required
 def ipv4_rule():
+    if check_global_rule_limit(RuleTypes.IPv4):
+        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.IPv4))
+
     if check_rule_limit(session["user_org_id"], RuleTypes.IPv4):
         return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv4))
 
@@ -524,6 +540,9 @@ def ipv4_rule():
 @auth_required
 @user_or_admin_required
 def ipv6_rule():
+    if check_global_rule_limit(RuleTypes.IPv6):
+        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.IPv6))
+
     if check_rule_limit(session["user_org_id"], RuleTypes.IPv6):
         return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv6))
 
@@ -603,6 +622,9 @@ def ipv6_rule():
 @auth_required
 @user_or_admin_required
 def rtbh_rule():
+    if check_global_rule_limit(RuleTypes.RTBH):
+        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.RTBH))
+
     if check_rule_limit(session["user_org_id"], RuleTypes.RTBH):
         return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.RTBH))
 
@@ -683,11 +705,38 @@ def limit_reached(rule_type):
     org = db.session.query(Organization).get(session["user_org_id"])
     return render_template(
         "pages/limit_reached.html",
+        message="Your organization limit has been reached.",
         rule_type=rule_type,
         count_4=count_4,
         count_6=count_6,
         count_rtbh=count_rtbh,
         org=org,
+    )
+
+
+@rules.route("/global_limit_reached/<rule_type>")
+@auth_required
+def global_limit_reached(rule_type):
+    rule_type = constants.RULE_NAMES_DICT[int(rule_type)]
+    count_4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+    count_6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+    count_rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
+
+    Limit = namedtuple("Limit", ["limit_flowspec4", "limit_flowspec6", "limit_rtbh"])
+    limit = Limit(
+        limit_flowspec4=current_app.config["FLOWSPEC_MAX_RULES"],
+        limit_flowspec6=current_app.config["FLOWSPEC_MAX_RULES"],
+        limit_rtbh=current_app.config["RTBH_MAX_RULES"],
+    )
+
+    return render_template(
+        "pages/limit_reached.html",
+        message="Global system limit has been reached. Please contact your administrator.",
+        rule_type=rule_type,
+        count_4=count_4,
+        count_6=count_6,
+        count_rtbh=count_rtbh,
+        org=limit,
     )
 
 

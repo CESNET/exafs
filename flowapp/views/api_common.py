@@ -5,7 +5,7 @@ from flask import request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, timedelta
 
-from flowapp.constants import WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG, RuleTypes
+from flowapp.constants import RULE_NAMES_DICT, WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG, RuleTypes
 from flowapp.models import (
     RTBH,
     Flowspec4,
@@ -13,6 +13,8 @@ from flowapp.models import (
     ApiKey,
     MachineApiKey,
     Community,
+    Organization,
+    check_global_rule_limit,
     check_rule_limit,
     get_user_nets,
     get_user_actions,
@@ -188,8 +190,35 @@ def all_communities(current_user):
         return jsonify({"message": "no actions for this user?"}), 404
 
 
-def limit_reached(rule_type):
-    return jsonify({"message": f"rule limit reached for {rule_type}"}), 403
+def limit_reached(count, rule_type, org_id):
+    rule_name = RULE_NAMES_DICT[int(rule_type)]
+    org = db.session.query(Organization).get(org_id)
+    if rule_type == RuleTypes.IPv4:
+        limit = org.limit_flowspec4
+    elif rule_type == RuleTypes.IPv6:
+        limit = org.limit_flowspec6
+    elif rule_type == RuleTypes.RTBH:
+        limit = org.rtbh
+
+    return (
+        jsonify({"message": f"Rule limit {limit} reached for {rule_name}, currently you have {count} active rules."}),
+        403,
+    )
+
+
+def global_limit_reached(count, rule_type):
+    rule_name = RULE_NAMES_DICT[int(rule_type)]
+    if rule_type == RuleTypes.IPv4 or rule_type == RuleTypes.IPv6:
+        limit = current_app.config.get("FLOWSPEC_MAX_RULES")
+    elif rule_type == RuleTypes.RTBH:
+        limit = current_app.config.get("RTBH_MAX_RULES")
+
+    return (
+        jsonify(
+            {"message": f"System limit {limit} reached for {rule_name}. Currently there are {count} active rules."}
+        ),
+        403,
+    )
 
 
 def create_ipv4(current_user):
@@ -199,8 +228,13 @@ def create_ipv4(current_user):
     :param current_user: data from jwt token
     :return: json response
     """
+    if check_global_rule_limit(RuleTypes.IPv4):
+        count = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+        return global_limit_reached(count=count, rule_type=RuleTypes.IPv4)
+
     if check_rule_limit(current_user["org_id"], RuleTypes.IPv4):
-        return limit_reached(rule_type=RuleTypes.IPv4)
+        count = db.session.query(Flowspec4).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        return limit_reached(count=count, rule_type=RuleTypes.IPv4, org_id=current_user["org_id"])
 
     net_ranges = get_user_nets(current_user["id"])
     json_request_data = request.get_json()
@@ -273,8 +307,13 @@ def create_ipv6(current_user):
     :param current_user: data from jwt token
     :return:
     """
+    if check_global_rule_limit(RuleTypes.IPv6):
+        count = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+        return global_limit_reached(count=count, rule_type=RuleTypes.IPv6)
+
     if check_rule_limit(current_user["org_id"], RuleTypes.IPv6):
-        return limit_reached(rule_type=RuleTypes.IPv6)
+        count = db.session.query(Flowspec6).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        return limit_reached(count=count, rule_type=RuleTypes.IPv6, org_id=current_user["org_id"])
 
     net_ranges = get_user_nets(current_user["id"])
     json_request_data = request.get_json()
@@ -341,9 +380,14 @@ def create_rtbh(current_user):
     """
     Create new RTBH rule
     """
+    if check_global_rule_limit(RuleTypes.RTBH):
+        count = db.session.query(RTBH).filter_by(rstate_id=1).count()
+        return global_limit_reached(count=count, rule_type=RuleTypes.RTBH)
+
     # check limit
     if check_rule_limit(current_user["org_id"], RuleTypes.RTBH):
-        return limit_reached(rule_type=RuleTypes.RTBH)
+        count = db.session.query(RTBH).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        return limit_reached(count=count, rule_type=RuleTypes.RTBH, org_id=current_user["org_id"])
 
     all_com = db.session.query(Community).all()
     if not all_com:

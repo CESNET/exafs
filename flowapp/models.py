@@ -749,7 +749,7 @@ def insert_initial_rulestates(table, conn, *args, **kwargs):
 
 
 # Misc functions
-def check_rule_limit(org_id: int, rule_type: RuleTypes):
+def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
     """
     Check if the organization has reached the rule limit
     :param org_id: integer organization id
@@ -773,7 +773,17 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes):
     if rule_type == RuleTypes.RTBH and org.limit_rtbh > 0:
         count = db.session.query(RTBH).filter_by(org_id=org_id, rstate_id=1).count()
         return count >= org.limit_rtbh or rtbh >= rtbh_limit
+
+
+def check_global_rule_limit(rule_type: RuleTypes) -> bool:
+    flowspec_limit = current_app.config.get("FLOWSPEC_MAX_RULES", 9000)
+    rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
+    fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+    fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+    rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
+
     # check the global limits if the organization limits are not set
+
     if rule_type == RuleTypes.IPv4:
         return fs4 >= flowspec_limit
     if rule_type == RuleTypes.IPv6:
