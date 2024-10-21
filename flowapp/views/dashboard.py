@@ -59,8 +59,10 @@ def index(rtype=None, rstate="active"):
 
     # params sanitization
     if rtype not in current_app.config["DASHBOARD"].keys():
+        print("DEBUG rtype not in dashboard keys config")
         return abort(404)
     if rstate not in COMP_FUNCS.keys():
+        print("DEBUG rstate not in dashboard keys config")
         return abort(404)
     if sum(session["user_role_ids"]) == 1:
         rstate = "active"

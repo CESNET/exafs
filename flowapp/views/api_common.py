@@ -13,6 +13,7 @@ from flowapp.models import (
     ApiKey,
     MachineApiKey,
     Community,
+    check_rule_limit,
     get_user_nets,
     get_user_actions,
     get_ipv4_model_if_exists,
@@ -86,9 +87,9 @@ def authorize(user_key):
                 "id": model.user.id,
                 "readonly": model.readonly,
                 "roles": [role.name for role in model.user.role.all()],
-                "org": [org.name for org in model.user.organization.all()],
+                "org": model.org.name,
+                "org_id": model.org.id,
                 "role_ids": [role.id for role in model.user.role.all()],
-                "org_ids": [org.id for org in model.user.organization.all()],
             },
             "exp": datetime.now() + timedelta(minutes=30),
         }
@@ -187,6 +188,10 @@ def all_communities(current_user):
         return jsonify({"message": "no actions for this user?"}), 404
 
 
+def limit_reached(rule_type):
+    return jsonify({"message": f"rule limit reached for {rule_type}"}), 403
+
+
 def create_ipv4(current_user):
     """
     Api method for new IPv4 rule
@@ -194,6 +199,9 @@ def create_ipv4(current_user):
     :param current_user: data from jwt token
     :return: json response
     """
+    if check_rule_limit(current_user["org_id"], RuleTypes.IPv4):
+        return limit_reached(rule_type=RuleTypes.IPv4)
+
     net_ranges = get_user_nets(current_user["id"])
     json_request_data = request.get_json()
     form = IPv4Form(data=json_request_data, meta={"csrf": False})
@@ -228,6 +236,7 @@ def create_ipv4(current_user):
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user["id"],
+            org_id=current_user["org_id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
         flash_message = "IPv4 Rule saved"
@@ -252,9 +261,9 @@ def create_ipv4(current_user):
         RuleTypes.IPv4,
         f"{current_user['uuid']} / {current_user['org']}",
     )
-
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
-    return jsonify({"message": flash_message, "rule": model.to_dict(pref_format)}), 201
+    response = {"message": flash_message, "rule": model.to_dict(pref_format)}
+    return jsonify(response), 201
 
 
 def create_ipv6(current_user):
@@ -264,6 +273,9 @@ def create_ipv6(current_user):
     :param current_user: data from jwt token
     :return:
     """
+    if check_rule_limit(current_user["org_id"], RuleTypes.IPv6):
+        return limit_reached(rule_type=RuleTypes.IPv6)
+
     net_ranges = get_user_nets(current_user["id"])
     json_request_data = request.get_json()
     form = IPv6Form(data=json_request_data, meta={"csrf": False})
@@ -295,6 +307,7 @@ def create_ipv6(current_user):
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user["id"],
+            org_id=current_user["org_id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
         flash_message = "IPv6 Rule saved"
@@ -325,6 +338,13 @@ def create_ipv6(current_user):
 
 
 def create_rtbh(current_user):
+    """
+    Create new RTBH rule
+    """
+    # check limit
+    if check_rule_limit(current_user["org_id"], RuleTypes.RTBH):
+        return limit_reached(rule_type=RuleTypes.RTBH)
+
     all_com = db.session.query(Community).all()
     if not all_com:
         insert_initial_communities()
@@ -357,6 +377,7 @@ def create_rtbh(current_user):
             expires=form.expires.data,
             comment=quote_to_ent(form.comment.data),
             user_id=current_user["id"],
+            org_id=current_user["org_id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
         db.session.add(model)

@@ -24,6 +24,7 @@ TIME_STMP = "timestamp"
 RULES_KEY = "rules"
 
 RULE_TYPES_DICT = {"ipv4": 4, "ipv6": 6, "rtbh": 1}
+RULE_NAMES_DICT = {4: "ipv4", 6: "ipv6", 1: "rtbh"}
 DEFAULT_COUNT_MATCH = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
 
 ANNOUNCE = 1

@@ -3,6 +3,7 @@ from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
 from flowapp.constants import RuleTypes
+from flask import current_app
 
 # models and tables
 
@@ -85,6 +86,8 @@ class ApiKey(db.Model):
     comment = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", back_populates="apikeys")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="apikey")
 
     def is_expired(self):
         if self.expires is None:
@@ -102,6 +105,8 @@ class MachineApiKey(db.Model):
     comment = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", back_populates="machineapikeys")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="machineapikey")
 
     def is_expired(self):
         if self.expires is None:
@@ -247,6 +252,7 @@ class RTBH(db.Model):
         community_id,
         expires,
         user_id,
+        org_id,
         comment=None,
         created=None,
         rstate_id=1,
@@ -258,6 +264,7 @@ class RTBH(db.Model):
         self.community_id = community_id
         self.expires = expires
         self.user_id = user_id
+        self.org_id = org_id
         self.comment = comment
         if created is None:
             created = datetime.now()
@@ -384,6 +391,7 @@ class Flowspec4(db.Model):
         fragment,
         expires,
         user_id,
+        org_id,
         action_id,
         created=None,
         comment=None,
@@ -402,6 +410,7 @@ class Flowspec4(db.Model):
         self.comment = comment
         self.expires = expires
         self.user_id = user_id
+        self.org_id = org_id
         self.action_id = action_id
         if created is None:
             created = datetime.now()
@@ -539,6 +548,7 @@ class Flowspec6(db.Model):
         packet_len,
         expires,
         user_id,
+        org_id,
         action_id,
         created=None,
         comment=None,
@@ -556,6 +566,7 @@ class Flowspec6(db.Model):
         self.comment = comment
         self.expires = expires
         self.user_id = user_id
+        self.org_id = org_id
         self.action_id = action_id
         if created is None:
             created = datetime.now()
@@ -727,7 +738,6 @@ def insert_initial_roles(table, conn, *args, **kwargs):
 
 @event.listens_for(Organization.__table__, "after_create")
 def insert_initial_organizations(table, conn, *args, **kwargs):
-    conn.execute(table.insert().values(name="TU Liberec", arange="147.230.0.0/16\n2001:718:1c01::/48"))
     conn.execute(table.insert().values(name="Cesnet", arange="147.230.0.0/16\n2001:718:1c01::/48"))
 
 
@@ -746,30 +756,30 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes):
     :param rule_type: RuleType rule type
     :return: boolean
     """
-    org = Organization.query.filter_by(id=org_id).first()
-    if rule_type == RuleTypes.IPv4:
-        return org.ipv4count >= org.rule_limit
-    if rule_type == RuleTypes.IPv6:
-        return org.ipv6count >= org.rule_limit
-    if rule_type == RuleTypes.RTBH:
-        return org.rtbhcount >= org.rule_limit
+    flowspec_limit = current_app.config.get("FLOWSPEC_MAX_RULES", 9000)
+    rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
+    fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+    fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+    rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
 
-
-def increment_rule_count(rule_type: RuleTypes, org_id: int):
-    """
-    Increment rule count for organization
-    :param rule_type: RuleType rule type
-    :param org_id: integer organization id
-    :return: None
-    """
+    # check the organization limits
     org = Organization.query.filter_by(id=org_id).first()
+    if rule_type == RuleTypes.IPv4 and org.limit_flowspec4 > 0:
+        count = db.session.query(Flowspec4).filter_by(org_id=org_id, rstate_id=1).count()
+        return count >= org.limit_flowspec4 or fs4 >= flowspec_limit
+    if rule_type == RuleTypes.IPv6 and org.limit_flowspec6 > 0:
+        count = db.session.query(Flowspec6).filter_by(org_id=org_id, rstate_id=1).count()
+        return count >= org.limit_flowspec6 or fs6 >= flowspec_limit
+    if rule_type == RuleTypes.RTBH and org.limit_rtbh > 0:
+        count = db.session.query(RTBH).filter_by(org_id=org_id, rstate_id=1).count()
+        return count >= org.limit_rtbh or rtbh >= rtbh_limit
+    # check the global limits if the organization limits are not set
     if rule_type == RuleTypes.IPv4:
-        org.ipv4count += 1
+        return fs4 >= flowspec_limit
     if rule_type == RuleTypes.IPv6:
-        org.ipv6count += 1
+        return fs6 >= flowspec_limit
     if rule_type == RuleTypes.RTBH:
-        org.rtbhcount += 1
-    db.session.commit()
+        return rtbh >= rtbh_limit
 
 
 def get_ipv4_model_if_exists(form_data, rstate_id=1):
@@ -907,16 +917,6 @@ def get_user_nets(user_id):
 
 
 def get_user_orgs_choices(user_id):
-    """
-    Return list of orgs as choices for form
-    """
-    user = db.session.query(User).filter_by(id=user_id).first()
-    orgs = user.organization
-
-    return [(g.id, g.name) for g in orgs]
-
-
-def get_user_orgs_limits(user_id):
     """
     Return list of orgs as choices for form
     """

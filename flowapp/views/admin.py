@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta
 import secrets
 
+from sqlalchemy import func
 from flask import Blueprint, render_template, redirect, flash, request, session, url_for, current_app
 from sqlalchemy.exc import IntegrityError
 
@@ -18,6 +19,9 @@ from ..models import (
     Community,
     get_existing_community,
     Log,
+    Flowspec4,
+    Flowspec6,
+    RTBH,
 )
 from ..auth import auth_required, admin_required
 from flowapp import db
@@ -161,7 +165,7 @@ def edit_user(user_id):
 
     return render_template(
         "forms/simple_form.html",
-        title="Editing {}".format(user.email),
+        title=f"Editing {user.email}",
         form=form,
         action_url=action_url,
     )
@@ -179,8 +183,8 @@ def delete_user(user_id):
     alert_type = "alert-success"
     try:
         db.session.commit()
-    except IntegrityError as e:
-        message = "User {} owns some rules, can not be deleted!".format(username)
+    except IntegrityError:
+        message = f"User {username} owns some rules, can not be deleted!"
         alert_type = "alert-danger"
 
     flash(message, alert_type)
@@ -199,8 +203,51 @@ def users():
 @auth_required
 @admin_required
 def organizations():
-    orgs = db.session.query(Organization).all()
-    return render_template("pages/orgs.html", orgs=orgs)
+    # Query all organizations and eager load RTBH relationships
+    orgs = db.session.query(Organization).options(db.joinedload(Organization.rtbh)).all()
+
+    # Get RTBH counts with rstate_id=1 for all organizations in one query
+    rtbh_counts_query = (
+        db.session.query(RTBH.org_id, func.count(RTBH.id)).filter(RTBH.rstate_id == 1).group_by(RTBH.org_id).all()
+    )
+
+    flowspec4_count_query = (
+        db.session.query(Flowspec4.org_id, func.count(Flowspec4.id))
+        .filter(Flowspec4.rstate_id == 1)
+        .group_by(Flowspec4.org_id)
+        .all()
+    )
+
+    flowspec6_count_query = (
+        db.session.query(Flowspec6.org_id, func.count(Flowspec6.id))
+        .filter(Flowspec6.rstate_id == 1)
+        .group_by(Flowspec6.org_id)
+        .all()
+    )
+
+    flowspec4_all_count = db.session.query(Flowspec4).filter(Flowspec4.rstate_id == 1).count()
+    flowspec6_all_count = db.session.query(Flowspec6).filter(Flowspec6.rstate_id == 1).count()
+    rtbh_all_count = db.session.query(RTBH).filter(RTBH.rstate_id == 1).count()
+    flowspec_limit = current_app.config.get("FLOWSPEC_MAX_RULES", 9000)
+    rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
+
+    # Convert query result to a dictionary {org_id: count}
+    rtbh_counts = {org_id: count for org_id, count in rtbh_counts_query}
+    flowspec4_counts = {org_id: count for org_id, count in flowspec4_count_query}
+    flowspec6_counts = {org_id: count for org_id, count in flowspec6_count_query}
+
+    return render_template(
+        "pages/orgs.html",
+        orgs=orgs,
+        rtbh_counts=rtbh_counts,
+        flowspec4_counts=flowspec4_counts,
+        flowspec6_counts=flowspec6_counts,
+        rtbh_all_count=rtbh_all_count,
+        flowspec4_all_count=flowspec4_all_count,
+        flowspec6_all_count=flowspec6_all_count,
+        flowspec_limit=flowspec_limit,
+        rtbh_limit=rtbh_limit,
+    )
 
 
 @admin.route("/organization", methods=["GET", "POST"])
@@ -516,3 +563,32 @@ def delete_community(community_id):
 
     flash(message, alert_type)
     return redirect(url_for("admin.communities"))
+
+
+@admin.route("/set-org-for-rules", methods=["GET"])
+@auth_required
+@admin_required
+def update_rules_set_org():
+
+    # Get all flowspec records where org_id is NULL (if this is needed)
+    models = [Flowspec4, Flowspec6, RTBH]
+    user_with_multiple_orgs = {}
+    for model in models:
+        rules = model.query.filter(model.org_id == 0).all()
+        print(f"Found {len(rules)} records with org_id NULL in {model.__name__}")
+        # Loop through each flowspec record and update org_id based on the user's organization
+        updated = 0
+        for rule in rules:
+            orgs = rule.user.organization.all()
+            if len(orgs) == 1:
+                user_org = orgs[0]
+                if user_org:
+                    rule.org_id = user_org.id
+                    updated += 1
+            else:
+                print(f"User {rule.user.email} has multiple organizations")
+                user_with_multiple_orgs[rule.user.email] = [org.name for org in orgs]
+        # Commit the changes
+        db.session.commit()
+
+    return render_template("pages/user_list.html", users=user_with_multiple_orgs, updated=updated)

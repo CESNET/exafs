@@ -13,7 +13,7 @@ def auth_required(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        user = session.get("user_uuid", False)
+        user = get_user()
         if not user:
             if current_app.config.get("SSO_AUTH"):
                 current_app.logger.warning("SSO AUTH SET BUT FAILS")
@@ -155,3 +155,10 @@ def is_admin(current_user_roles):
         return True
 
     return False
+
+
+def get_user():
+    """
+    get user from session or return None
+    """
+    return session.get("user_uuid", None)

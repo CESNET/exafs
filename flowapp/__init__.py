@@ -160,9 +160,14 @@ def create_app(config_object=None):
 
     @app.route("/select_org", defaults={"org_id": None})
     @app.route("/select_org/<int:org_id>")
+    @auth_required
     def select_org(org_id=None):
         uuid = session.get("user_uuid")
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
+
+        if user is None:
+            return render_template("errors/404.html"), 404  # Handle missing user gracefully
+
         orgs = user.organization
         if org_id:
             org = db.session.query(models.Organization).filter_by(id=org_id).first()

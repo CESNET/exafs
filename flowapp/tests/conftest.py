@@ -1,6 +1,7 @@
 """
 PyTest configuration file for all tests
 """
+
 import os
 import json
 import pytest
@@ -11,6 +12,7 @@ from flowapp import create_app
 from flowapp import db as _db
 from datetime import datetime
 import flowapp.models
+
 
 TESTDB = "test_project.db"
 TESTDB_PATH = "/tmp/{}".format(TESTDB)
@@ -63,20 +65,11 @@ def app(request):
         JWT_SECRET="testing",
         API_KEY="testkey",
         SECRET_KEY="testkeysession",
-        LOCAL_USER_UUID="jiri.vrany@tul.cz",
-        LOCAL_USER_ID=1,
-        LOCAL_USER_ROLES=["admin"],
-        LOCAL_USER_ORGS=[
-            {"name": "TU Liberec", "arange": "147.230.0.0/16\n2001:718:1c01::/48"}
-        ],
-        # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
-        LOCAL_USER_ROLE_IDS=[3],
-        # Defined in Organization model
-        LOCAL_USER_ORG_IDS=[1],
+        LOCAL_USER_UUID="jiri.vrany@cesnet.cz",
+        LOCAL_AUTH=True,
     )
 
     print("\n----- CREATE FLASK APPLICATION\n")
-
     context = _app.app_context()
     context.push()
     yield _app
@@ -115,9 +108,8 @@ def db(app, request):
         _db.create_all()
 
         users = [
-            {"name": "jiri.vrany@tul.cz", "role_id": 3, "org_id": 1},
-            {"name": "petr.adamec@tul.cz", "role_id": 3, "org_id": 1},
-            {"name": "adamec@cesnet.cz", "role_id": 3, "org_id": 2},
+            {"name": "jiri.vrany@cesnet.cz", "role_id": 3, "org_id": 1},
+            {"name": "petr.adamec@cesnet.cz", "role_id": 3, "org_id": 1},
         ]
         print("#: inserting users")
         flowapp.models.insert_users(users)
@@ -139,7 +131,7 @@ def jwt_token(client, app, db, request):
     mkey = "testkey"
 
     with app.app_context():
-        model = flowapp.models.ApiKey(machine="127.0.0.1", key=mkey, user_id=1)
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=mkey, user_id=1, org_id=1)
         db.session.add(model)
         db.session.commit()
 
@@ -159,7 +151,7 @@ def expired_auth_token(client, app, db, request):
     test_key = "expired_test_key"
     expired_date = datetime.strptime("2019-01-01", "%Y-%m-%d")
     with app.app_context():
-        model = flowapp.models.ApiKey(machine="127.0.0.1", key=test_key, user_id=1, expires=expired_date)
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=test_key, user_id=1, expires=expired_date, org_id=1)
         db.session.add(model)
         db.session.commit()
 
@@ -173,7 +165,7 @@ def readonly_jwt_token(client, app, db, request):
     """
     readonly_key = "readonly-testkey"
     with app.app_context():
-        model = flowapp.models.ApiKey(machine="127.0.0.1", key=readonly_key, user_id=1, readonly=True)
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=readonly_key, user_id=1, readonly=True, org_id=1)
         db.session.add(model)
         db.session.commit()
 
@@ -183,3 +175,13 @@ def readonly_jwt_token(client, app, db, request):
     token = client.get(url, headers=headers)
     data = json.loads(token.data)
     return data["token"]
+
+
+@pytest.fixture(scope="session")
+def auth_client(client):
+    """
+    Get the test_client from the app, for the whole test session.
+    """
+    print("\n----- CREATE AUTHENTICATED FLASK TEST CLIENT\n")
+    client.get("/local-login")
+    return client

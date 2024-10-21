@@ -63,6 +63,7 @@ def add():
             readonly=form.readonly.data,
             comment=form.comment.data,
             user_id=session["user_id"],
+            org_id=session["user_org_id"],
         )
 
         db.session.add(model)

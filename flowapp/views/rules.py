@@ -20,16 +20,14 @@ from flowapp.models import (
     Community,
     Flowspec4,
     Flowspec6,
-    User,
+    Organization,
+    check_rule_limit,
     get_ipv4_model_if_exists,
     get_ipv6_model_if_exists,
     get_rtbh_model_if_exists,
     get_user_actions,
     get_user_communities,
     get_user_nets,
-    get_user_orgs_choices,
-    get_user_orgs_limits,
-    increment_rule_count,
     insert_initial_communities,
 )
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
@@ -87,6 +85,11 @@ def reactivate_rule(rule_type, rule_id):
 
     # do not need to validate - all is readonly
     if request.method == "POST":
+        # check if rule will be reactivated
+        state = get_state_by_time(form.expires.data)
+        if state == 1 and check_rule_limit(session["user_org_id"], rule_type=rule_type):
+            return redirect(url_for("rules.limit_reached", rule_type=rule_type))
+
         # set new expiration date
         model.expires = round_to_ten_minutes(form.expires.data)
         # set again the active state
@@ -101,7 +104,7 @@ def reactivate_rule(rule_type, rule_id):
             # announce route
             command = route_model(model, constants.ANNOUNCE)
             route = Route(
-                author=f"{session['user_email']} / {session['user_orgs']}",
+                author=f"{session['user_email']} / {session['user_org']}",
                 source=RouteSources.UI,
                 command=command,
             )
@@ -111,13 +114,13 @@ def reactivate_rule(rule_type, rule_id):
                 session["user_id"],
                 model,
                 rule_type,
-                f"{session['user_email']} / {session['user_orgs']}",
+                f"{session['user_email']} / {session['user_org']}",
             )
         else:
             # withdraw route
             command = route_model(model, constants.WITHDRAW)
             route = Route(
-                author=f"{session['user_email']} / {session['user_orgs']}",
+                author=f"{session['user_email']} / {session['user_org']}",
                 source=RouteSources.UI,
                 command=command,
             )
@@ -128,7 +131,7 @@ def reactivate_rule(rule_type, rule_id):
                 route.command,
                 rule_type,
                 model.id,
-                "{} / {}".format(session["user_email"], session["user_orgs"]),
+                f"{session['user_email']} / {session['user_org']}",
             )
 
         return redirect(
@@ -180,7 +183,7 @@ def delete_rule(rule_type, rule_id):
         # withdraw route
         command = route_model(model, constants.WITHDRAW)
         route = Route(
-            author=f"{session['user_email']} / {session['user_orgs']}",
+            author=f"{session['user_email']} / {session['user_org']}",
             source=RouteSources.UI,
             command=command,
         )
@@ -191,7 +194,7 @@ def delete_rule(rule_type, rule_id):
             route.command,
             rule_type,
             model.id,
-            "{} / {}".format(session["user_email"], session["user_orgs"]),
+            f"{session['user_email']} / {session['user_org']}",
         )
 
         # delete from db
@@ -259,7 +262,7 @@ def group_delete():
             model = db.session.query(model_name).get(rule_id)
             command = route_model(model, constants.WITHDRAW)
             route = Route(
-                author=f"{session['user_email']} / {session['user_orgs']}",
+                author=f"{session['user_email']} / {session['user_org']}",
                 source=RouteSources.UI,
                 command=command,
             )
@@ -270,15 +273,15 @@ def group_delete():
                 route.command,
                 rule_type_int,
                 model.id,
-                "{} / {}".format(session["user_email"], session["user_orgs"]),
+                f"{session['user_email']} / {session['user_org']}",
             )
 
         db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
         db.session.commit()
 
-        flash("Rules {} deleted".format(to_delete), "alert-success")
+        flash(f"Rules {to_delete} deleted", "alert-success")
     else:
-        flash("You can not delete rules {}".format(to_delete), "alert-warning")
+        flash(f"You can not delete rules {to_delete}", "alert-warning")
 
     return redirect(
         url_for(
@@ -376,18 +379,23 @@ def group_update_save(rule_type):
     route_model = ROUTE_MODELS[rule_type]
 
     for rule_id in to_update:
+        # check if rule will be reactivated
+        check = check_rule_limit(session["user_org_id"], rule_type=rule_type)
+        if rstate_id == 1 and check:
+            return redirect(url_for("rules.limit_reached", rule_type=rule_type))
+
         # update record
         model = db.session.query(model_name).get(rule_id)
         model.expires = expires
         model.rstate_id = rstate_id
-        model.comment = "{} {}".format(model.comment, comment)
+        model.comment = f"{model.comment} {comment}"
         db.session.commit()
 
         if model.rstate_id == 1:
             # announce route
             command = route_model(model, constants.ANNOUNCE)
             route = Route(
-                author=f"{session['user_email']} / {session['user_orgs']}",
+                author=f"{session['user_email']} / {session['user_org']}",
                 source=RouteSources.UI,
                 command=command,
             )
@@ -397,11 +405,16 @@ def group_update_save(rule_type):
                 session["user_id"],
                 model,
                 rule_type,
-                f"{session['user_email']} / {session['user_orgs']}",
+                f"{session['user_email']} / {session['user_org']}",
             )
         else:
             # withdraw route
-            route = route_model(model, constants.WITHDRAW)
+            command = route_model(model, constants.WITHDRAW)
+            route = Route(
+                author=f"{session['user_email']} / {session['user_org']}",
+                source=RouteSources.UI,
+                command=command,
+            )
             announce_route(route)
             # log changes
             log_withdraw(
@@ -409,10 +422,10 @@ def group_update_save(rule_type):
                 route.command,
                 rule_type,
                 model.id,
-                "{} / {}".format(session["user_email"], session["user_orgs"]),
+                f"{session['user_email']} / {session['user_org']}",
             )
 
-    flash("Rules {} successfully updated".format(to_update), "alert-success")
+    flash(f"Rules {to_update} successfully updated", "alert-success")
 
     return redirect(
         url_for(
@@ -430,6 +443,9 @@ def group_update_save(rule_type):
 @auth_required
 @user_or_admin_required
 def ipv4_rule():
+    if check_rule_limit(session["user_org_id"], RuleTypes.IPv4):
+        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv4))
+
     net_ranges = get_user_nets(session["user_id"])
     form = IPv4Form(request.form)
 
@@ -443,20 +459,13 @@ def ipv4_rule():
     form.action.default = 0
     form.net_ranges = net_ranges
 
-    user = db.session.query(User).get(session["user_id"])
-    for org in user.organization:
-        count = org.count_rules(RuleTypes.IPv4)
-        current_app.logger.debug(f"Org: {org.name}, Count: {count}")
-
     if request.method == "POST" and form.validate():
         model = get_ipv4_model_if_exists(form.data, 1)
 
         if model:
-            increment = False
             model.expires = round_to_ten_minutes(form.expires.data)
             flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
         else:
-            increment = True
             model = Flowspec4(
                 source=form.source.data,
                 source_mask=form.source_mask.data,
@@ -472,6 +481,7 @@ def ipv4_rule():
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session["user_id"],
+                org_id=session["user_org_id"],
                 rstate_id=get_state_by_time(form.expires.data),
             )
             flash_message = "IPv4 Rule saved"
@@ -480,15 +490,11 @@ def ipv4_rule():
         db.session.commit()
         flash(flash_message, "alert-success")
 
-        # increment counter if new rule was added
-        if increment:
-            increment_rule_count(RuleTypes.IPv4, form.organization.data)
-
         # announce route if model is in active state
         if model.rstate_id == 1:
             command = messages.create_ipv4(model, constants.ANNOUNCE)
             route = Route(
-                author=f"{session['user_email']} / {session['user_orgs']}",
+                author=f"{session['user_email']} / {session['user_org']}",
                 source=RouteSources.UI,
                 command=command,
             )
@@ -499,7 +505,7 @@ def ipv4_rule():
             session["user_id"],
             model,
             RuleTypes.IPv4,
-            f"{session['user_email']} / {session['user_orgs']}",
+            f"{session['user_email']} / {session['user_org']}",
         )
 
         return redirect(url_for("index"))
@@ -518,6 +524,9 @@ def ipv4_rule():
 @auth_required
 @user_or_admin_required
 def ipv6_rule():
+    if check_rule_limit(session["user_org_id"], RuleTypes.IPv6):
+        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv6))
+
     net_ranges = get_user_nets(session["user_id"])
     form = IPv6Form(request.form)
 
@@ -551,6 +560,7 @@ def ipv6_rule():
                 comment=quote_to_ent(form.comment.data),
                 action_id=form.action.data,
                 user_id=session["user_id"],
+                org_id=session["user_org_id"],
                 rstate_id=get_state_by_time(form.expires.data),
             )
             flash_message = "IPv6 Rule saved"
@@ -563,7 +573,7 @@ def ipv6_rule():
         if model.rstate_id == 1:
             command = messages.create_ipv6(model, constants.ANNOUNCE)
             route = Route(
-                author=f"{session['user_email']} / {session['user_orgs']}",
+                author=f"{session['user_email']} / {session['user_org']}",
                 source=RouteSources.UI,
                 command=command,
             )
@@ -574,7 +584,7 @@ def ipv6_rule():
             session["user_id"],
             model,
             RuleTypes.IPv6,
-            f"{session['user_email']} / {session['user_orgs']}",
+            f"{session['user_email']} / {session['user_org']}",
         )
 
         return redirect(url_for("index"))
@@ -593,6 +603,9 @@ def ipv6_rule():
 @auth_required
 @user_or_admin_required
 def rtbh_rule():
+    if check_rule_limit(session["user_org_id"], RuleTypes.RTBH):
+        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.RTBH))
+
     all_com = db.session.query(Community).all()
     if not all_com:
         insert_initial_communities()
@@ -623,6 +636,7 @@ def rtbh_rule():
                 expires=round_to_ten_minutes(form.expires.data),
                 comment=quote_to_ent(form.comment.data),
                 user_id=session["user_id"],
+                org_id=session["user_org_id"],
                 rstate_id=get_state_by_time(form.expires.data),
             )
             db.session.add(model)
@@ -634,7 +648,7 @@ def rtbh_rule():
         if model.rstate_id == 1:
             command = messages.create_rtbh(model, constants.ANNOUNCE)
             route = Route(
-                author=f"{session['user_email']} / {session['user_orgs']}",
+                author=f"{session['user_email']} / {session['user_org']}",
                 source=RouteSources.UI,
                 command=command,
             )
@@ -644,7 +658,7 @@ def rtbh_rule():
             session["user_id"],
             model,
             RuleTypes.RTBH,
-            f"{session['user_email']} / {session['user_orgs']}",
+            f"{session['user_email']} / {session['user_org']}",
         )
 
         return redirect(url_for("index"))
@@ -657,6 +671,24 @@ def rtbh_rule():
     form.expires.data = default_expires
 
     return render_template("forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule"))
+
+
+@rules.route("/limit_reached/<rule_type>")
+@auth_required
+def limit_reached(rule_type):
+    rule_type = constants.RULE_NAMES_DICT[int(rule_type)]
+    count_4 = db.session.query(Flowspec4).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
+    count_6 = db.session.query(Flowspec6).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
+    count_rtbh = db.session.query(RTBH).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
+    org = db.session.query(Organization).get(session["user_org_id"])
+    return render_template(
+        "pages/limit_reached.html",
+        rule_type=rule_type,
+        count_4=count_4,
+        count_6=count_6,
+        count_rtbh=count_rtbh,
+        org=org,
+    )
 
 
 @rules.route("/export")
@@ -738,9 +770,11 @@ def announce_all_routes(action=constants.ANNOUNCE):
     messages_all.extend(messages_v6)
     messages_all.extend(messages_rtbh)
 
+    author_action = "announce all" if action == constants.ANNOUNCE else "withdraw all expired"
+
     for command in messages_all:
         route = Route(
-            author=f"{session['user_email']} / {session['user_orgs']}",
+            author=f"System call / {author_action} rules",
             source=RouteSources.UI,
             command=command,
         )
@@ -749,14 +783,6 @@ def announce_all_routes(action=constants.ANNOUNCE):
     if action == constants.WITHDRAW:
         for ruleset in [rules4, rules6, rules_rtbh]:
             for rule in ruleset:
-                set_withdraw_state(rule)
+                rule.rstate_id = 2
 
-
-def set_withdraw_state(rule):
-    """
-    set rule state to withdrawed in db
-    :param rule: rule to update, can be any of rule types
-    :return: none
-    """
-    rule.rstate_id = 2
-    db.session.commit()
+        db.session.commit()
