@@ -17,10 +17,10 @@ def auth_required(f):
         if not user:
             if current_app.config.get("SSO_AUTH"):
                 current_app.logger.warning("SSO AUTH SET BUT FAILS")
-                return redirect(url_for("login"))
+                return redirect("/login")
 
             if current_app.config.get("HEADER_AUTH", False):
-                return redirect(url_for("ext_login"))
+                return redirect("/ext_login")
 
             if current_app.config.get("LOCAL_AUTH"):
                 return redirect(url_for("local_login"))
