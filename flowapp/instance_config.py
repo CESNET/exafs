@@ -85,6 +85,7 @@ class InstanceConfig:
                 "divide_before": True,
             },
             {"name": "Add User", "url": "admin.user"},
+            {"name": "Add Multiple Users", "url": "admin.bulk_import_users"},
             {"name": "Organizations", "url": "admin.organizations"},
             {"name": "Add Org.", "url": "admin.organization"},
             {

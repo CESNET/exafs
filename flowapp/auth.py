@@ -16,7 +16,7 @@ def auth_required(f):
         user = get_user()
         if not user:
             if current_app.config.get("SSO_AUTH"):
-                current_app.logger.warning("SSO AUTH SET BUT FAILS")
+                current_app.logger.warning("SSO AUTH SET")
                 return redirect("/login")
 
             if current_app.config.get("HEADER_AUTH", False):

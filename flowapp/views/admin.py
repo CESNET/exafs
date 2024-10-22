@@ -1,12 +1,14 @@
-# flowapp/views/admin.py
+import csv
+from io import StringIO
 from datetime import datetime, timedelta
 import secrets
 
 from sqlalchemy import func
 from flask import Blueprint, render_template, redirect, flash, request, session, url_for, current_app
+import sqlalchemy
 from sqlalchemy.exc import IntegrityError
 
-from ..forms import ASPathForm, MachineApiKeyForm, UserForm, ActionForm, OrganizationForm, CommunityForm
+from ..forms import ASPathForm, BulkUserForm, MachineApiKeyForm, UserForm, ActionForm, OrganizationForm, CommunityForm
 from ..models import (
     ASPath,
     MachineApiKey,
@@ -197,6 +199,66 @@ def delete_user(user_id):
 def users():
     users = User.query.all()
     return render_template("pages/users.html", users=users)
+
+
+@admin.route("/bulk-import-users", methods=["GET"])
+@auth_required
+@admin_required
+def bulk_import_users():
+    form = BulkUserForm(request.form)
+    return render_template("forms/bulk_user_form.html", form=form)
+
+
+@admin.route("/bulk-import-users", methods=["POST"])
+@auth_required
+@admin_required
+def bulk_import_users_save():
+    form = BulkUserForm(request.form)
+    roles = [role.id for role in db.session.query(Role).all()]
+    orgs = [org.id for org in db.session.query(Organization).all()]
+    uuids = [user.uuid for user in db.session.query(User).all()]
+    form.roles = roles
+    form.organizations = orgs
+    form.uuids = uuids
+
+    if request.method == "POST" and form.validate():
+        # Get CSV data from textarea
+        csv_data = form.users.data
+
+        # Parse CSV data
+        csv_reader = csv.DictReader(StringIO(csv_data), delimiter=",")
+        errored = False
+        for row in csv_reader:
+            try:
+                # Extract and prepare data
+                uuid = row["uuid/eppn"]
+                name = row["name"]
+                phone = row["telefon"]
+                email = row["email"]
+
+                # Convert role and organization fields to lists of integers
+                role_ids = [int(row["role"])]  # role_id should be a list
+                org_ids = [int(row["organizace"])]  # org_id should be a list
+
+                # Insert user
+                insert_user(uuid=uuid, role_ids=role_ids, org_ids=org_ids, name=name, phone=phone, email=email)
+            except KeyError as e:
+                errored = True
+                # Handle missing fields or other errors in the CSV
+                flash(f"Missing field in CSV: {e}", "alert-danger")
+            except ValueError as e:
+                errored = True
+                # Handle conversion issues (like invalid int for role/org)
+                flash(f"Data conversion error: {e}", "alert-danger")
+            except sqlalchemy.exc.IntegrityError as e:
+                errored = True
+                db.session.rollback()
+                flash(f"SQL Integrity error: {e}", "alert-danger")
+
+        if not errored:
+            return redirect(url_for("admin.users"))
+
+    return render_template("forms/bulk_user_form.html", form=form)
 
 
 @admin.route("/organizations")

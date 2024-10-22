@@ -887,7 +887,15 @@ def insert_users(users):
     db.session.commit()
 
 
-def insert_user(uuid, role_ids, org_ids, name=None, phone=None, email=None, comment=None):
+def insert_user(
+    uuid: str,
+    role_ids: list,
+    org_ids: list,
+    name: str = None,
+    phone: str = None,
+    email: str = None,
+    comment: str = None,
+):
     """
     insert new user with multiple roles and organizations
     :param uuid: string unique user id (eppn or similar)
@@ -900,7 +908,7 @@ def insert_user(uuid, role_ids, org_ids, name=None, phone=None, email=None, comm
     :return: None
     """
     u = User(uuid=uuid, name=name, phone=phone, comment=comment, email=email)
-
+    print(u)
     for role_id in role_ids:
         r = Role.query.filter_by(id=role_id).first()
         u.role.append(r)
