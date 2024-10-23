@@ -67,7 +67,7 @@ def reactivate_rule(rule_type, rule_id):
     model_name = DATA_MODELS[rule_type]
     form_name = DATA_FORMS[rule_type]
 
-    model = db.session.query(model_name).get(rule_id)
+    model = db.session.get(model_name, rule_id)
     form = form_name(request.form, obj=model)
     form.net_ranges = get_user_nets(session["user_id"])
 
@@ -186,7 +186,7 @@ def delete_rule(rule_type, rule_id):
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]
 
-    model = db.session.query(model_name).get(rule_id)
+    model = db.session.get(model_name, rule_id)
     if model.id in session[constants.RULES_KEY]:
         # withdraw route
         command = route_model(model, constants.WITHDRAW)
@@ -267,7 +267,7 @@ def group_delete():
     if set(to_delete).issubset(set(rules)) or is_admin(session["user_roles"]):
         for rule_id in to_delete:
             # withdraw route
-            model = db.session.query(model_name).get(rule_id)
+            model = db.session.get(model_name, rule_id)
             command = route_model(model, constants.WITHDRAW)
             route = Route(
                 author=f"{session['user_email']} / {session['user_org']}",
@@ -398,7 +398,7 @@ def group_update_save(rule_type):
             return redirect(url_for("rules.limit_reached", rule_type=rule_type))
 
         # update record
-        model = db.session.query(model_name).get(rule_id)
+        model = db.session.get(model_name, rule_id)
         model.expires = expires
         model.rstate_id = rstate_id
         model.comment = f"{model.comment} {comment}"
@@ -702,7 +702,7 @@ def limit_reached(rule_type):
     count_4 = db.session.query(Flowspec4).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
     count_6 = db.session.query(Flowspec6).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
     count_rtbh = db.session.query(RTBH).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
-    org = db.session.query(Organization).get(session["user_org_id"])
+    org = db.session.get(Organization, session["user_org_id"])
     return render_template(
         "pages/limit_reached.html",
         message="Your organization limit has been reached.",

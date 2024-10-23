@@ -105,7 +105,7 @@ def delete_machine_key(key_id):
     Delete api_key and machine
     :param key_id: integer
     """
-    model = db.session.query(MachineApiKey).get(key_id)
+    model = db.session.get(MachineApiKey, key_id)
     # delete from db
     db.session.delete(model)
     db.session.commit()
@@ -153,7 +153,7 @@ def user():
 @auth_required
 @admin_required
 def edit_user(user_id):
-    user = db.session.query(User).get(user_id)
+    user = db.session.get(User, user_id)
     form = UserForm(request.form, obj=user)
     form.role_ids.choices = [(g.id, g.name) for g in db.session.query(Role).order_by("name")]
     form.org_ids.choices = [(g.id, g.name) for g in db.session.query(Organization).order_by("name")]
@@ -178,7 +178,7 @@ def edit_user(user_id):
 @auth_required
 @admin_required
 def delete_user(user_id):
-    user = db.session.query(User).get(user_id)
+    user = db.session.get(User, user_id)
     username = user.email
     db.session.delete(user)
 
@@ -350,7 +350,7 @@ def organization():
 @auth_required
 @admin_required
 def edit_organization(org_id):
-    org = db.session.query(Organization).get(org_id)
+    org = db.session.get(Organization, org_id)
     form = OrganizationForm(request.form, obj=org)
 
     if request.method == "POST" and form.validate():
@@ -372,7 +372,7 @@ def edit_organization(org_id):
 @auth_required
 @admin_required
 def delete_organization(org_id):
-    org = db.session.query(Organization).get(org_id)
+    org = db.session.get(Organization, org_id)
     aname = org.name
     db.session.delete(org)
     message = "Organization {} deleted".format(aname)
@@ -428,7 +428,7 @@ def as_path():
 @auth_required
 @admin_required
 def edit_as_path(path_id):
-    pth = db.session.query(ASPath).get(path_id)
+    pth = db.session.get(ASPath, path_id)
     form = ASPathForm(request.form, obj=pth)
 
     if request.method == "POST" and form.validate():
@@ -450,7 +450,7 @@ def edit_as_path(path_id):
 @auth_required
 @admin_required
 def delete_as_path(path_id):
-    pth = db.session.query(ASPath).get(path_id)
+    pth = db.session.get(ASPath, path_id)
     db.session.delete(pth)
     message = f"AS path {pth.prefix} : {pth.as_path} deleted"
     alert_type = "alert-success"
@@ -508,7 +508,7 @@ def action():
 @auth_required
 @admin_required
 def edit_action(action_id):
-    action = db.session.query(Action).get(action_id)
+    action = db.session.get(Action, action_id)
     form = ActionForm(request.form, obj=action)
     if request.method == "POST" and form.validate():
         form.populate_obj(action)
@@ -529,7 +529,7 @@ def edit_action(action_id):
 @auth_required
 @admin_required
 def delete_action(action_id):
-    action = db.session.query(Action).get(action_id)
+    action = db.session.get(Action, action_id)
     aname = action.name
     db.session.delete(action)
 
@@ -592,7 +592,7 @@ def community():
 @auth_required
 @admin_required
 def edit_community(community_id):
-    community = db.session.query(Community).get(community_id)
+    community = db.session.get(Community, community_id)
     form = CommunityForm(request.form, obj=community)
     if request.method == "POST" and form.validate():
         form.populate_obj(community)
@@ -613,7 +613,7 @@ def edit_community(community_id):
 @auth_required
 @admin_required
 def delete_community(community_id):
-    community = db.session.query(Community).get(community_id)
+    community = db.session.get(Community, community_id)
     aname = community.name
     db.session.delete(community)
     message = "Community {} deleted".format(aname)

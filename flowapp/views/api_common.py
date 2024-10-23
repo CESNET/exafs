@@ -456,7 +456,7 @@ def ipv4_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    model = db.session.query(Flowspec4).get(rule_id)
+    model = db.session.get(Flowspec4, rule_id)
     return get_rule(current_user, model, rule_id)
 
 
@@ -467,7 +467,7 @@ def ipv6_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    model = db.session.query(Flowspec6).get(rule_id)
+    model = db.session.get(Flowspec6, rule_id)
     return get_rule(current_user, model, rule_id)
 
 

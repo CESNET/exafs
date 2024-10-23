@@ -89,7 +89,7 @@ def delete(key_id):
     key_list = request.cookies.get(COOKIE_KEY)
     key_list = jwt.decode(key_list, current_app.config.get("JWT_SECRET"), algorithms=["HS256"])
 
-    model = db.session.query(ApiKey).get(key_id)
+    model = db.session.get(ApiKey, key_id)
     if model.id not in key_list["keys"]:
         flash("You can't delete this key!", "alert-danger")
     elif model.user_id == session["user_id"] or 3 in session["user_role_ids"]:
