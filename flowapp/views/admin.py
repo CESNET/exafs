@@ -207,7 +207,8 @@ def users():
 @admin_required
 def bulk_import_users():
     form = BulkUserForm(request.form)
-    return render_template("forms/bulk_user_form.html", form=form)
+    orgs = db.session.execute(db.select(Organization).order_by(Organization.name)).scalars()
+    return render_template("forms/bulk_user_form.html", form=form, orgs=orgs)
 
 
 @admin.route("/bulk-import-users", methods=["POST"])
@@ -628,10 +629,10 @@ def delete_community(community_id):
     return redirect(url_for("admin.communities"))
 
 
-@admin.route("/set-org-for-rules", methods=["GET"])
+@admin.route("/set-org-if-zero", methods=["GET"])
 @auth_required
 @admin_required
-def update_rules_set_org():
+def update_set_org():
 
     # Get all flowspec records where org_id is NULL (if this is needed)
     models = [Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey]

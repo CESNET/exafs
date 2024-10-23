@@ -7,7 +7,25 @@
     {{ form.hidden_tag() if form.hidden_tag }}
     <div class="row">
         <div class="col-sm-6">
-            {{ render_field(form.users,) }}
+            {{ render_field(form.users, rows=12) }}
+        </div>
+        <div class="col-sm-6">
+            <table class="table table-striped">
+                <thead>
+                    <tr class="table-primary">
+                        <th>Organization name</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in orgs %}
+                    <tr>
+                        <td>{{ org.name }}</td>
+                        <td>{{ org.id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>  
     
