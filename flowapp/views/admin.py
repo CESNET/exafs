@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from ..forms import ASPathForm, BulkUserForm, MachineApiKeyForm, UserForm, ActionForm, OrganizationForm, CommunityForm
 from ..models import (
     ASPath,
+    ApiKey,
     MachineApiKey,
     User,
     Action,
@@ -633,7 +634,7 @@ def delete_community(community_id):
 def update_rules_set_org():
 
     # Get all flowspec records where org_id is NULL (if this is needed)
-    models = [Flowspec4, Flowspec6, RTBH]
+    models = [Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey]
     user_with_multiple_orgs = {}
     for model in models:
         rules = model.query.filter(model.org_id == 0).all()

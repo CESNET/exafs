@@ -550,7 +550,7 @@ def test_overall_limit(client, db, app, jwt_token):
     """
     test that update with different data passes
     """
-    app.config.update({"FLOWSPEC_MAX_RULES": 5, "RTBH_MAX_RULES": 5})
+    app.config.update({"FLOWSPEC4_MAX_RULES": 5, "FLOWSPEC6_MAX_RULES": 5, "RTBH_MAX_RULES": 5})
 
     with app.app_context():
         # count

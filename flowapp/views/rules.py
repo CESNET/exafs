@@ -724,8 +724,8 @@ def global_limit_reached(rule_type):
 
     Limit = namedtuple("Limit", ["limit_flowspec4", "limit_flowspec6", "limit_rtbh"])
     limit = Limit(
-        limit_flowspec4=current_app.config["FLOWSPEC_MAX_RULES"],
-        limit_flowspec6=current_app.config["FLOWSPEC_MAX_RULES"],
+        limit_flowspec4=current_app.config["FLOWSPEC4_MAX_RULES"],
+        limit_flowspec6=current_app.config["FLOWSPEC6_MAX_RULES"],
         limit_rtbh=current_app.config["RTBH_MAX_RULES"],
     )
 

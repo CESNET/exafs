@@ -192,7 +192,7 @@ def all_communities(current_user):
 
 def limit_reached(count, rule_type, org_id):
     rule_name = RULE_NAMES_DICT[int(rule_type)]
-    org = db.session.query(Organization).get(org_id)
+    org = db.session.get(Organization, org_id)
     if rule_type == RuleTypes.IPv4:
         limit = org.limit_flowspec4
     elif rule_type == RuleTypes.IPv6:

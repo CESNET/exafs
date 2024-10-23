@@ -776,7 +776,8 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
 
 
 def check_global_rule_limit(rule_type: RuleTypes) -> bool:
-    flowspec_limit = current_app.config.get("FLOWSPEC_MAX_RULES", 9000)
+    flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
+    flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
     fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
     fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
@@ -785,9 +786,9 @@ def check_global_rule_limit(rule_type: RuleTypes) -> bool:
     # check the global limits if the organization limits are not set
 
     if rule_type == RuleTypes.IPv4:
-        return fs4 >= flowspec_limit
+        return fs4 >= flowspec4_limit
     if rule_type == RuleTypes.IPv6:
-        return fs6 >= flowspec_limit
+        return fs6 >= flowspec6_limit
     if rule_type == RuleTypes.RTBH:
         return rtbh >= rtbh_limit
 
@@ -908,7 +909,7 @@ def insert_user(
     :return: None
     """
     u = User(uuid=uuid, name=name, phone=phone, comment=comment, email=email)
-    print(u)
+
     for role_id in role_ids:
         r = Role.query.filter_by(id=role_id).first()
         u.role.append(r)
