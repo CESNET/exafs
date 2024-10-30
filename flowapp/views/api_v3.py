@@ -91,7 +91,7 @@ def ipv4_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    return api_common.ipv4_rule_get(current_user)
+    return api_common.ipv4_rule_get(current_user, rule_id)
 
 
 @api.route("/rules/ipv6/<int:rule_id>", methods=["GET"])
@@ -103,7 +103,7 @@ def ipv6_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    return api_common.ipv6_rule_get(current_user)
+    return api_common.ipv6_rule_get(current_user, rule_id)
 
 
 @api.route("/rules/rtbh/<int:rule_id>", methods=["GET"])
@@ -115,7 +115,7 @@ def rtbh_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    return api_common.rtbh_rule_get(current_user)
+    return api_common.rtbh_rule_get(current_user, rule_id)
 
 
 @api.route("/rules/ipv4/<int:rule_id>", methods=["DELETE"])
