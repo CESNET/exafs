@@ -6,7 +6,7 @@ import secrets
 from sqlalchemy import func
 from flask import Blueprint, render_template, redirect, flash, request, session, url_for, current_app
 import sqlalchemy
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from ..forms import ASPathForm, BulkUserForm, MachineApiKeyForm, UserForm, ActionForm, OrganizationForm, CommunityForm
 from ..models import (
@@ -179,15 +179,25 @@ def edit_user(user_id):
 @admin_required
 def delete_user(user_id):
     user = db.session.get(User, user_id)
+    if not user:
+        flash("User not found.", "alert-danger")
+        return redirect(url_for("admin.users"))
+
     username = user.email
     db.session.delete(user)
 
-    message = "User {} deleted".format(username)
+    message = f"User {username} deleted"
     alert_type = "alert-success"
+
     try:
         db.session.commit()
     except IntegrityError:
-        message = f"User {username} owns some rules, can not be deleted!"
+        db.session.rollback()  # Rollback on IntegrityError
+        message = f"User {username} owns some rules, cannot be deleted! Delete rules first."
+        alert_type = "alert-danger"
+    except OperationalError:
+        db.session.rollback()  # Rollback on OperationalError
+        message = f"User {username} owns some rules, cannot be deleted! Delete rules first."
         alert_type = "alert-danger"
 
     flash(message, alert_type)
