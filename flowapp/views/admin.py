@@ -643,26 +643,43 @@ def delete_community(community_id):
 @auth_required
 @admin_required
 def update_set_org():
+    # Define the raw SQL update statement
+    update_statement = """
+        UPDATE organization 
+        SET limit_flowspec4 = 0, limit_flowspec6 = 0, limit_rtbh = 0 
+        WHERE limit_flowspec4 IS NULL OR limit_flowspec6 IS NULL OR limit_rtbh IS NULL;
+    """
+    try:
+        # Execute the update query
+        db.session.execute(update_statement)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating organizations: {e}", "alert-danger")
 
     # Get all flowspec records where org_id is NULL (if this is needed)
     models = [Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey]
     user_with_multiple_orgs = {}
     for model in models:
-        rules = model.query.filter(model.org_id == 0).all()
-        print(f"Found {len(rules)} records with org_id NULL in {model.__name__}")
+        data_records = model.query.filter(model.org_id == 0).all()
+        print(f"Found {len(data_records)} records with org_id NULL in {model.__name__}")
         # Loop through each flowspec record and update org_id based on the user's organization
         updated = 0
-        for rule in rules:
-            orgs = rule.user.organization.all()
+        for row in data_records:
+            orgs = row.user.organization.all()
             if len(orgs) == 1:
                 user_org = orgs[0]
                 if user_org:
-                    rule.org_id = user_org.id
+                    row.org_id = user_org.id
                     updated += 1
             else:
-                print(f"User {rule.user.email} has multiple organizations")
-                user_with_multiple_orgs[rule.user.email] = [org.name for org in orgs]
+                print(f"User {row.user.email} has multiple organizations")
+                user_with_multiple_orgs[row.user.email] = [org.name for org in orgs]
         # Commit the changes
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error updating {model.__name__}: {e}", "alert-danger")
 
     return render_template("pages/user_list.html", users=user_with_multiple_orgs, updated=updated)
