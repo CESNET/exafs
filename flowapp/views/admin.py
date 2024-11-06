@@ -3,7 +3,7 @@ from io import StringIO
 from datetime import datetime, timedelta
 import secrets
 
-from sqlalchemy import func
+from sqlalchemy import func, text
 from flask import Blueprint, render_template, redirect, flash, request, session, url_for, current_app
 import sqlalchemy
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -644,11 +644,13 @@ def delete_community(community_id):
 @admin_required
 def update_set_org():
     # Define the raw SQL update statement
-    update_statement = """
+    update_statement = update_statement = text(
+        """
         UPDATE organization 
         SET limit_flowspec4 = 0, limit_flowspec6 = 0, limit_rtbh = 0 
         WHERE limit_flowspec4 IS NULL OR limit_flowspec6 IS NULL OR limit_rtbh IS NULL;
     """
+    )
     try:
         # Execute the update query
         db.session.execute(update_statement)
