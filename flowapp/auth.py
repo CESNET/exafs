@@ -1,8 +1,7 @@
 from functools import wraps
 from flask import current_app, redirect, request, url_for, session, abort
 
-from flowapp import db, __version__
-from .models import User
+from flowapp import __version__
 
 
 # auth atd.
@@ -75,38 +74,6 @@ def localhost_only(f):
         return f(*args, **kwargs)
 
     return decorated
-
-
-def check_auth(uuid):
-    """
-    This function is every time when someone accessing the endpoint
-
-    Default behaviour is that uuid from SSO AUTH is used. If SSO AUTH is not used
-    default local user and roles are taken from database. In that case there is no user auth check
-    and it needs to be done outside the app - for example in Apache.
-    """
-
-    session["app_version"] = __version__
-
-    if current_app.config.get("HEADER_AUTH", False):
-        # External auth (for example apache)
-        header_name = current_app.config.get("AUTH_HEADER_NAME", "X-Authenticated-User")
-        if header_name not in request.headers or not session.get("user_uuid"):
-            return False
-        return db.session.query(User).filter_by(uuid=request.headers.get(header_name))
-
-    if current_app.config.get("SSO_AUTH"):
-        current_app.logger.warning("CHECK AUTH, SSO AUTH SET UUID : {uuid}")
-    elif current_app.config.get("LOCAL_AUTH"):
-        uuid = current_app.config.get("LOCAL_USER_UUID", False)
-        current_app.logger.warning(f"CHECK AUTH, LOCAL AUTH SET UUID: {uuid}")
-
-    exist = False
-    if uuid:
-        exist = db.session.query(User).filter_by(uuid=uuid).first()
-
-    current_app.logger.debug(f"CHECK AUTH RETURN, UUID: {uuid}, EXIST: {exist}")
-    return exist
 
 
 def check_access_rights(current_user, model_id):
