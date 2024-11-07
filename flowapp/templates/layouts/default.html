@@ -57,6 +57,8 @@
                     {% endif %}
                     <li><a class="dropdown-item" href="{{ url_for(item.url) }}">{{ item.name }}</a></li>
                   {% endfor %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><span class="dropdown-item">ExaFS version {{ session['app_version'] }}</span></li>
                 </ul>
               </li>
               {% endif %}

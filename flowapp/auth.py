@@ -14,6 +14,7 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         user = get_user()
+        session["app_version"] = __version__
         if not user:
             if current_app.config.get("SSO_AUTH"):
                 current_app.logger.warning("SSO AUTH SET")
