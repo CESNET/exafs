@@ -11,6 +11,7 @@ from flowapp.models import (
     Flowspec4,
     Flowspec6,
     ApiKey,
+    MachineApiKey,
     Community,
     get_user_nets,
     get_user_actions,
@@ -59,7 +60,7 @@ def token_required(f):
         except jwt.ExpiredSignatureError:
             return jsonify({"message": "auth token expired"}), 401
 
-        return f(current_user, *args, **kwargs)
+        return f(current_user=current_user, *args, **kwargs)
 
     return decorated
 
@@ -71,7 +72,20 @@ def authorize(user_key):
     """
     jwt_key = current_app.config.get("JWT_SECRET")
 
+    # try normal user key first
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
+    # if not found try machine key
+    if not model:
+        model = db.session.query(MachineApiKey).filter_by(key=user_key).first()
+    # if key is not found return 403
+    if not model:
+        return jsonify({"message": "auth token is invalid"}), 403
+
+    # check if the key is not expired
+    if model.is_expired():
+        return jsonify({"message": "auth token is expired"}), 401
+
+    # check if the key is not used by different machine
     if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(
         request.remote_addr
     ):
@@ -79,6 +93,7 @@ def authorize(user_key):
             "user": {
                 "uuid": model.user.uuid,
                 "id": model.user.id,
+                "readonly": model.readonly,
                 "roles": [role.name for role in model.user.role.all()],
                 "org": [org.name for org in model.user.organization.all()],
                 "role_ids": [role.id for role in model.user.role.all()],
@@ -93,6 +108,26 @@ def authorize(user_key):
     else:
         return jsonify({"message": "auth token is invalid"}), 403
 
+
+def check_readonly(func):
+    """
+    Check if the token is readonly
+    Used in api endpoints
+    """
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        # Access read only flag from first of the args
+        print("ARGS", args)
+        print("KWARGS", kwargs)
+        current_user = kwargs.get("current_user", False)
+        read_only = current_user.get("readonly", False)
+        if read_only:
+            return jsonify({"message": "read only token can't perform this action"}), 403
+        return func(*args, **kwargs)
+    return decorated_function
+
+
+# endpints
 
 def index(current_user, key_map):
     prefered_tf = (
@@ -455,7 +490,7 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
     :param route_model:
     :return:
     """
-    model = db.session.query(model_name).get(rule_id)
+    model = db.session.get(model_name, rule_id)
     if model:
         if check_access_rights(current_user, model.user_id):
             # withdraw route
@@ -486,10 +521,12 @@ def token_test_get(current_user):
     :param rule_id:
     :return:
     """
-    return (
-        jsonify({"message": "token works as expected", "uuid": current_user["uuid"]}),
-        200,
-    )
+    my_response = {
+        "message": "token works as expected",
+        "uuid": current_user["uuid"],
+        "readonly": current_user["readonly"],
+    }
+    return jsonify(my_response), 200
 
 
 def get_form_errors(form):

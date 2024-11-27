@@ -49,6 +49,7 @@ def all_communities(current_user):
 
 @api.route("/rules/ipv4", methods=["POST"])
 @api_common.token_required
+@api_common.check_readonly
 def create_ipv4(current_user):
     """
     Api method for new IPv4 rule
@@ -62,6 +63,7 @@ def create_ipv4(current_user):
 @api.route("/rules/ipv6", methods=["POST"])
 @csrf.exempt
 @api_common.token_required
+@api_common.check_readonly
 def create_ipv6(current_user):
     """
     Create new IPv6 rule
@@ -75,6 +77,7 @@ def create_ipv6(current_user):
 @api.route("/rules/rtbh", methods=["POST"])
 @csrf.exempt
 @api_common.token_required
+@api_common.check_readonly
 def create_rtbh(current_user):
     return api_common.create_rtbh(current_user)
 
@@ -88,7 +91,7 @@ def ipv4_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    return api_common.ipv4_rule_get(current_user)
+    return api_common.ipv4_rule_get(current_user, rule_id)
 
 
 @api.route("/rules/ipv6/<int:rule_id>", methods=["GET"])
@@ -100,7 +103,7 @@ def ipv6_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    return api_common.ipv6_rule_get(current_user)
+    return api_common.ipv6_rule_get(current_user, rule_id)
 
 
 @api.route("/rules/rtbh/<int:rule_id>", methods=["GET"])
@@ -112,11 +115,12 @@ def rtbh_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    return api_common.rtbh_rule_get(current_user)
+    return api_common.rtbh_rule_get(current_user, rule_id)
 
 
 @api.route("/rules/ipv4/<int:rule_id>", methods=["DELETE"])
 @api_common.token_required
+@api_common.check_readonly
 def delete_v4_rule(current_user, rule_id):
     """
     Delete rule with given id and type
@@ -127,6 +131,7 @@ def delete_v4_rule(current_user, rule_id):
 
 @api.route("/rules/ipv6/<int:rule_id>", methods=["DELETE"])
 @api_common.token_required
+@api_common.check_readonly
 def delete_v6_rule(current_user, rule_id):
     """
     Delete rule with given id and type
@@ -137,6 +142,7 @@ def delete_v6_rule(current_user, rule_id):
 
 @api.route("/rules/rtbh/<int:rule_id>", methods=["DELETE"])
 @api_common.token_required
+@api_common.check_readonly
 def delete_rtbh_rule(current_user, rule_id):
     """
     Delete rule with given id and type

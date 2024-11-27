@@ -1,12 +1,14 @@
 # flowapp/views/admin.py
 from datetime import datetime, timedelta
+import secrets
 
-from flask import Blueprint, render_template, redirect, flash, request, url_for
+from flask import Blueprint, render_template, redirect, flash, request, session, url_for
 from sqlalchemy.exc import IntegrityError
 
-from ..forms import ASPathForm, UserForm, ActionForm, OrganizationForm, CommunityForm
+from ..forms import ASPathForm, MachineApiKeyForm, UserForm, ActionForm, OrganizationForm, CommunityForm
 from ..models import (
     ASPath,
+    MachineApiKey,
     User,
     Action,
     Organization,
@@ -42,17 +44,78 @@ def log(page):
     return render_template("pages/logs.html", logs=logs)
 
 
+@admin.route("/machine_keys", methods=["GET"])
+@auth_required
+@admin_required
+def machine_keys():
+    """
+    Display all machine keys, from all admins
+    """
+    keys = db.session.query(MachineApiKey).all()
+
+    return render_template("pages/machine_api_key.html", keys=keys)
+
+
+@admin.route("/add_machine_key", methods=["GET", "POST"])
+@auth_required
+@admin_required
+def add_machine_key():
+    """
+    Add new MachnieApiKey
+    :return: form or redirect to list of keys
+    """
+    generated = secrets.token_hex(24)
+    form = MachineApiKeyForm(request.form, key=generated)
+
+    if request.method == "POST" and form.validate():
+        print("Form validated")
+        # import ipdb; ipdb.set_trace()
+        model = MachineApiKey(
+            machine=form.machine.data,
+            key=form.key.data,
+            expires=form.expires.data,
+            readonly=form.readonly.data,
+            comment=form.comment.data,
+            user_id=session["user_id"],
+        )
+
+        db.session.add(model)
+        db.session.commit()
+        flash("NewKey saved", "alert-success")
+
+        return redirect(url_for("admin.machine_keys"))
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                print("Error in the %s field - %s" % (getattr(form, field).label.text, error))
+
+    return render_template("forms/machine_api_key.html", form=form, generated_key=generated)
+
+
+@admin.route("/delete_machine_key/<int:key_id>", methods=["GET"])
+@auth_required
+@admin_required
+def delete_machine_key(key_id):
+    """
+    Delete api_key and machine
+    :param key_id: integer
+    """
+    model = db.session.query(MachineApiKey).get(key_id)
+    # delete from db
+    db.session.delete(model)
+    db.session.commit()
+    flash("Key deleted", "alert-success")
+
+    return redirect(url_for("admin.machine_keys"))
+
+
 @admin.route("/user", methods=["GET", "POST"])
 @auth_required
 @admin_required
 def user():
     form = UserForm(request.form)
-    form.role_ids.choices = [
-        (g.id, g.name) for g in db.session.query(Role).order_by("name")
-    ]
-    form.org_ids.choices = [
-        (g.id, g.name) for g in db.session.query(Organization).order_by("name")
-    ]
+    form.role_ids.choices = [(g.id, g.name) for g in db.session.query(Role).order_by("name")]
+    form.org_ids.choices = [(g.id, g.name) for g in db.session.query(Organization).order_by("name")]
 
     if request.method == "POST" and form.validate():
         # test if user is unique
@@ -87,12 +150,8 @@ def user():
 def edit_user(user_id):
     user = db.session.query(User).get(user_id)
     form = UserForm(request.form, obj=user)
-    form.role_ids.choices = [
-        (g.id, g.name) for g in db.session.query(Role).order_by("name")
-    ]
-    form.org_ids.choices = [
-        (g.id, g.name) for g in db.session.query(Organization).order_by("name")
-    ]
+    form.role_ids.choices = [(g.id, g.name) for g in db.session.query(Role).order_by("name")]
+    form.org_ids.choices = [(g.id, g.name) for g in db.session.query(Organization).order_by("name")]
 
     if request.method == "POST" and form.validate():
         user.update(form)
@@ -163,9 +222,7 @@ def organization():
             flash("Organization saved")
             return redirect(url_for("admin.organizations"))
         else:
-            flash(
-                "Organization {} already exists".format(form.name.data), "alert-danger"
-            )
+            flash("Organization {} already exists".format(form.name.data), "alert-danger")
 
     action_url = url_for("admin.organization")
     return render_template(
@@ -321,9 +378,7 @@ def action():
             return redirect(url_for("admin.actions"))
         else:
             flash(
-                "Action with name {} or command {} already exists".format(
-                    form.name.data, form.command.data
-                ),
+                "Action with name {} or command {} already exists".format(form.name.data, form.command.data),
                 "alert-danger",
             )
 
@@ -410,9 +465,7 @@ def community():
             flash("Community saved", "alert-success")
             return redirect(url_for("admin.communities"))
         else:
-            flash(
-                f"Community with name {form.name.data} already exists", "alert-danger"
-            )
+            flash(f"Community with name {form.name.data} already exists", "alert-danger")
 
     community_url = url_for("admin.community")
     return render_template(
@@ -457,9 +510,7 @@ def delete_community(community_id):
     try:
         db.session.commit()
     except IntegrityError:
-        message = "Community {} is in use in some rules, can not be deleted!".format(
-            aname
-        )
+        message = "Community {} is in use in some rules, can not be deleted!".format(aname)
         alert_type = "alert-danger"
 
     flash(message, alert_type)
