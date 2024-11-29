@@ -1,6 +1,7 @@
 """
 Author(s): 
 Jiri Vrany <vrany@cesnet.cz>
+Petr Adamec <adamec@cesnet.cz>
 Jakub Man <Jakub.Man@cesnet.cz>
 
 Setuptools configuration
