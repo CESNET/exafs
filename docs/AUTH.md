@@ -1,5 +1,4 @@
-# ExaFS tool
-## Auth mechanism
+# ExaFS Auth mechanism
 
 Since version 0.7.3, the application supports three different forms of user authorization. 
 

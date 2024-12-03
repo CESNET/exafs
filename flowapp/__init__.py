@@ -10,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_session import Session
+from flasgger import Swagger
 
 from .__about__ import __version__
 from .instance_config import InstanceConfig
@@ -20,6 +21,7 @@ migrate = Migrate()
 csrf = CSRFProtect()
 ext = SSO()
 sess = Session()
+swagger = Swagger(template_file="static/swagger.yml")
 
 
 class InterceptHandler(logging.Handler):
@@ -52,6 +54,9 @@ def create_app(config_object=None):
 
     # Init SSO
     ext.init_app(app)
+
+    # Init swagger
+    swagger.init_app(app)
 
     from flowapp import models, constants, validators
     from .views.admin import admin

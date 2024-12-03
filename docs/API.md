@@ -1,4 +1,5 @@
-# ExaFS tool
-## API 
+# ExaFS API  
 
-ExaFS API documentation can be [found on Apiary.io](https://exafs.docs.apiary.io/#).
+Local Swagger API docs is available on https://your.server.name/apidocs
+
+ExaFS API documentation can be also [found on Apiary.io](https://exafs.docs.apiary.io/#).
