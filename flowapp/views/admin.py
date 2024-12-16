@@ -240,7 +240,6 @@ def bulk_import_users_save():
         csv_reader = csv.DictReader(StringIO(csv_data), delimiter=",")
         errored = False
         for row in csv_reader:
-            print(row)
             try:
                 # Extract and prepare data
                 uuid = row["uuid-eppn"]
@@ -251,9 +250,12 @@ def bulk_import_users_save():
                 # Convert role and organization fields to lists of integers
                 role_ids = [int(row["role"])]  # role_id should be a list
                 org_ids = [int(row["organizace"])]  # org_id should be a list
+                notice = row["poznamka"]
 
                 # Insert user
-                insert_user(uuid=uuid, role_ids=role_ids, org_ids=org_ids, name=name, phone=phone, email=email)
+                insert_user(
+                    uuid=uuid, role_ids=role_ids, org_ids=org_ids, name=name, phone=phone, email=email, comment=notice
+                )
             except KeyError as e:
                 errored = True
                 # Handle missing fields or other errors in the CSV

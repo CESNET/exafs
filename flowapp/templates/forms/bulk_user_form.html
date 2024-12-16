@@ -38,14 +38,21 @@
 <div class="row">
     <div class="col-sm-6">
         <h3>Example CSV data</h3>
+        <p>CSV data must contain header row when posting</p>
         <pre>
             <code>
-uuid-eppn,name,telefon,email,role,organizace
-test@example.com,Test 1,123,test@example.com,1,1
-test-bad@example.com,Test 1,123,test-bad@example.com,4,4
-test2@example.com,Test 1,123456,test2@example.com,2,1
+uuid-eppn,name,telefon,email,role,organizace,poznamka
+view@example.com,Test View,123,view@example.com,1,1,View
+user@example.com,Test User,123456,user@example.com,2,1,User
+admin@example.com,Test Admin,+420 111 111 111,admin@example.com,3,1,Admin
             </code>
         </pre>
+        <h3>Role</h3>
+        <ul>
+            <li>1 - View</li>
+            <li>2 - User</li>
+            <li>3 - Admin</li>
+        </ul>
     </div>
 </div>      
 
