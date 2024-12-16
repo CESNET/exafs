@@ -236,14 +236,14 @@ def bulk_import_users_save():
     if request.method == "POST" and form.validate():
         # Get CSV data from textarea
         csv_data = form.users.data
-
         # Parse CSV data
         csv_reader = csv.DictReader(StringIO(csv_data), delimiter=",")
         errored = False
         for row in csv_reader:
+            print(row)
             try:
                 # Extract and prepare data
-                uuid = row["uuid/eppn"]
+                uuid = row["uuid-eppn"]
                 name = row["name"]
                 phone = row["telefon"]
                 email = row["email"]
