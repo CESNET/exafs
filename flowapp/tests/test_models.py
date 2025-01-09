@@ -22,7 +22,8 @@ def test_insert_ipv4(db):
         fragment="",
         action_id=1,
         expires=datetime.now(),
-        user_id=4,
+        user_id=1,
+        org_id=1,
         rstate_id=1,
     )
     db.session.add(model)
@@ -48,7 +49,8 @@ def test_get_ipv4_model_if_exists(db):
         packet_len="",
         action_id=1,
         expires=datetime.now(),
-        user_id=4,
+        user_id=1,
+        org_id=1,
         rstate_id=1,
     )
     db.session.add(model)
@@ -90,7 +92,8 @@ def test_get_ipv6_model_if_exists(db):
         packet_len="",
         action_id=1,
         expires=datetime.now(),
-        user_id=4,
+        user_id=1,
+        org_id=1,
         rstate_id=1,
     )
     db.session.add(model)
@@ -131,7 +134,8 @@ def test_ipv4_eq(db):
         packet_len="",
         action_id=1,
         expires="123",
-        user_id=4,
+        user_id=1,
+        org_id=1,
         rstate_id=1,
     )
 
@@ -149,6 +153,7 @@ def test_ipv4_eq(db):
         action_id=1,
         expires="123456",
         user_id=1,
+        org_id=1,
         rstate_id=1,
     )
 
@@ -172,7 +177,8 @@ def test_ipv4_ne(db):
         packet_len="",
         action_id=1,
         expires="123",
-        user_id=4,
+        user_id=1,
+        org_id=1,
         rstate_id=1,
     )
 
@@ -190,6 +196,7 @@ def test_ipv4_ne(db):
         action_id=1,
         expires="123456",
         user_id=1,
+        org_id=1,
         rstate_id=1,
     )
 
@@ -207,7 +214,8 @@ def test_rtbj_eq(db):
         ipv6_mask="",
         community_id=1,
         expires="123",
-        user_id=4,
+        user_id=1,
+        org_id=1,
         rstate_id=1,
     )
 
@@ -219,6 +227,7 @@ def test_rtbj_eq(db):
         community_id=1,
         expires="123456",
         user_id=1,
+        org_id=1,
         rstate_id=1,
     )
 

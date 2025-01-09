@@ -1,6 +1,7 @@
 """
 This module contains constant values used in application
 """
+
 from operator import ge, lt
 
 DEFAULT_SORT = "expires"
@@ -22,7 +23,8 @@ TIME_STMP = "timestamp"
 
 RULES_KEY = "rules"
 
-RULE_TYPES = {"ipv4": 4, "ipv6": 6, "rtbh": 1}
+RULE_TYPES_DICT = {"ipv4": 4, "ipv6": 6, "rtbh": 1}
+RULE_NAMES_DICT = {4: "ipv4", 6: "ipv6", 1: "rtbh"}
 DEFAULT_COUNT_MATCH = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
 
 ANNOUNCE = 1
@@ -55,3 +57,9 @@ TCP_FLAGS = [
 ]
 
 FORM_TIME_PATTERN = "%Y-%m-%dT%H:%M"
+
+
+class RuleTypes:
+    RTBH = 1
+    IPv4 = 4
+    IPv6 = 6

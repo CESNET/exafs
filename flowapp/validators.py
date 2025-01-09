@@ -30,9 +30,9 @@ def split_rules_for_user(net_ranges, rules):
     user_rules = []
     rest_rules = []
     for rule in rules:
-        if network_in_range(
-            rule.source, rule.source_mask, net_ranges
-        ) or network_in_range(rule.dest, rule.dest_mask, net_ranges):
+        if network_in_range(rule.source, rule.source_mask, net_ranges) or network_in_range(
+            rule.dest, rule.dest_mask, net_ranges
+        ):
             user_rules.append(rule)
         else:
             rest_rules.append(rule)
@@ -85,9 +85,7 @@ def address_in_range(address, net_ranges):
     result = False
     for adr_range in net_ranges:
         try:
-            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(
-                adr_range
-            )
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
         except ValueError:
             return False
 
@@ -105,9 +103,7 @@ def network_in_range(address, mask, net_ranges):
     network = "{}/{}".format(address, mask)
     for adr_range in net_ranges:
         try:
-            result = result or subnet_of(
-                ipaddress.ip_network(network), ipaddress.ip_network(adr_range)
-            )
+            result = result or subnet_of(ipaddress.ip_network(network), ipaddress.ip_network(adr_range))
         except TypeError:  # V4 can't be a subnet of V6 and vice versa
             pass
         except ValueError:
@@ -127,9 +123,7 @@ def range_in_network(address, mask, net_ranges):
     network = "{}/{}".format(address, mask)
     for adr_range in net_ranges:
         try:
-            result = result or supernet_of(
-                ipaddress.ip_network(network), ipaddress.ip_network(adr_range)
-            )
+            result = result or supernet_of(ipaddress.ip_network(network), ipaddress.ip_network(adr_range))
         except ValueError:
             return False
 
@@ -147,9 +141,7 @@ def whole_world_range(net_ranges, address="0.0.0.0"):
 
     try:
         for adr_range in net_ranges:
-            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(
-                adr_range
-            )
+            result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
     except ValueError:
         return False
 
@@ -203,11 +195,7 @@ class PortString(object):
     def __call__(self, form, field):
         field_data = field.data.split(";")
         if len(field_data) > self.max_values:
-            raise ValidationError(
-                "{} maximum {} comma separated values".format(
-                    self.message, self.max_values
-                )
-            )
+            raise ValidationError("{} maximum {} comma separated values".format(self.message, self.max_values))
         try:
             for port_string in field_data:
                 flowspec.to_exabgp_string(port_string, constants.MAX_PORT)
@@ -265,9 +253,7 @@ class NetInRange(object):
         result = False
         for address in field.data.split("/"):
             for adr_range in self.net_ranges:
-                result = result or ipaddress.ip_address(
-                    address
-                ) in ipaddress.ip_network(adr_range)
+                result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
 
         if not result:
             raise ValidationError(self.message)
@@ -285,7 +271,7 @@ class IPAddress(object):
 
     def __call__(self, form, field):
         try:
-            address = ipaddress.ip_address(field.data)
+            ipaddress.ip_address(field.data)
         except ValueError:
             raise ValidationError(self.message + str(field.data))
 
@@ -323,6 +309,7 @@ class IPv4Address(object):
         except ValueError:
             raise ValidationError(self.message + str(field.data))
 
+
 def editable_range(rule, net_ranges):
     """
     check if the rule is editable for user
@@ -352,14 +339,9 @@ def _is_subnet_of(a, b):
         # Always false if one is v4 and the other is v6.
         if a._version != b._version:
             raise TypeError("%s and %s are not of the same version" % (a, b))
-        return (
-            b.network_address <= a.network_address
-            and b.broadcast_address >= a.broadcast_address
-        )
+        return b.network_address <= a.network_address and b.broadcast_address >= a.broadcast_address
     except AttributeError:
-        raise TypeError(
-            "Unable to test subnet containment " "between %s and %s" % (a, b)
-        )
+        raise TypeError("Unable to test subnet containment " "between %s and %s" % (a, b))
 
 
 def subnet_of(net_a, net_b):

@@ -38,12 +38,15 @@ See how is ExaFS integrated into the network in the picture below.
 
 The central part of the ExaFS is a web application, written in Python3.6 with Flask framework. It provides a user interface for ExaBGP rule CRUD operations. The application also provides the REST API with CRUD operations for the configuration rules. The web app uses Shibboleth authorization; the REST API is using token-based authorization. 
 
-The app creates the ExaBGP commands and forwards them to ExaAPI. All rules are carefully validated, and only valid rules are stored in the database and sent to the ExaBGP connector.
+The app creates the ExaBGP commands and forwards them to ExaBGP process. All rules are carefully validated, and only valid rules are stored in the database and sent to the ExaBGP connector.
  
-This second part of the system is another web application that replicates the received command to the stdout. The connection between ExaBGP daemon and stdout of ExaAPI is specified in the ExaBGP config. 
+This second part of the system is another application that replicates the received command to the stdout. The connection between ExaBGP daemon and stdout of ExaAPI (ExaBGP process) is specified in the ExaBGP config. 
+
+This API was a part of the project, but now has been moved to own repository. You can use [pip package exabgp-process](https://pypi.org/project/exabgp-process/) or clone the git repo. Or you can create your own version.
  
-Every time this API gets a command from ExaFS, it replicates this command to the ExaBGP daemon through the stdout. The registered daemon then updates the ExaBGP table – create, modify or remove the rule from command.
-Last part of the system is Guarda service. This systemctl service is running in the host system and gets a notification on each restart of ExaBGP service via systemctl WantedBy config option. For every restart of ExaBGP the Guarda service will put all the valid and active rules to the ExaBGP rules table again.
+Every time this process gets a command from ExaFS, it replicates this command to the ExaBGP service through the stdout. The registered service then updates the ExaBGP table – create, modify or remove the rule from command.
+
+You may also need to monitor the ExaBGP and renew the commands after restart / shutdown. In docs you can find and example of system service named Guarda. This systemctl service is running in the host system and gets a notification on each restart of ExaBGP service via systemctl WantedBy config option. For every restart of ExaBGP the Guarda service will put all the valid and active rules to the ExaBGP rules table again.
 
 ## DOCS
 * [Install notes](./docs/INSTALL.md)
@@ -52,9 +55,10 @@ Last part of the system is Guarda service. This systemctl service is running in 
 * [Local database instalation notes](./docs/DB_LOCAL.md)
 
 ## Change Log
-- 0.8.1 application is using Flask-Session stored in DB using SQL Alchemy driver. This can be configured for other
-drivers, however server side session is required for the application proper function.
-- 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machines.
+- 1.0.1 . minor bug fixes
+- 1.0.0 . ExaAPI and Guarda modules moved outside of the project to their own repositories. ExaAPI is now available also as a [pip package exabgp-process](https://pypi.org/project/exabgp-process/). New format of message for ExaAPI - now sends information about user (author of rule) for logging purposes. There are now limits for rules for organization and overall limit for the instalation. Database changed / migration is required.
+- 0.8.1 application is using Flask-Session stored in DB using SQL Alchemy driver. This can be configured for other drivers, however server side session is required for the application proper function.
+- 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machinnes.
 - 0.7.3 - New possibility of external auth proxy. 
 - 0.7.2 - Dashboard and Main menu are now customizable in config. App is ready to be packaged using setup.py.
 - 0.7.0 - ExaAPI now have two options - HTTP or RabbitMQ. ExaAPI process has been renamed, update of ExaBGP process value is needed for this version.

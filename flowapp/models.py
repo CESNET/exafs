@@ -2,6 +2,8 @@ import json
 from sqlalchemy import event
 from datetime import datetime
 from flowapp import db, utils
+from flowapp.constants import RuleTypes
+from flask import current_app
 
 # models and tables
 
@@ -15,9 +17,7 @@ user_role = db.Table(
 user_organization = db.Table(
     "user_organization",
     db.Column("user_id", db.Integer, db.ForeignKey("user.id"), nullable=False),
-    db.Column(
-        "organization_id", db.Integer, db.ForeignKey("organization.id"), nullable=False
-    ),
+    db.Column("organization_id", db.Integer, db.ForeignKey("organization.id"), nullable=False),
     db.PrimaryKeyConstraint("user_id", "organization_id"),
 )
 
@@ -37,9 +37,7 @@ class User(db.Model):
     machineapikeys = db.relationship("MachineApiKey", back_populates="user", lazy="dynamic")
     role = db.relationship("Role", secondary=user_role, lazy="dynamic", backref="user")
 
-    organization = db.relationship(
-        "Organization", secondary=user_organization, lazy="dynamic", backref="user"
-    )
+    organization = db.relationship("Organization", secondary=user_organization, lazy="dynamic", backref="user")
 
     def __init__(self, uuid, name=None, phone=None, email=None, comment=None):
         self.uuid = uuid
@@ -88,6 +86,8 @@ class ApiKey(db.Model):
     comment = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", back_populates="apikeys")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="apikey")
 
     def is_expired(self):
         if self.expires is None:
@@ -105,6 +105,8 @@ class MachineApiKey(db.Model):
     comment = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", back_populates="machineapikeys")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="machineapikey")
 
     def is_expired(self):
         if self.expires is None:
@@ -130,13 +132,26 @@ class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=True)
     arange = db.Column(db.Text)
+    limit_flowspec4 = db.Column(db.Integer, default=0)
+    limit_flowspec6 = db.Column(db.Integer, default=0)
+    limit_rtbh = db.Column(db.Integer, default=0)
 
-    def __init__(self, name, arange):
+    def __init__(self, name, arange, limit_flowspec4=0, limit_flowspec6=0, limit_rtbh=0):
         self.name = name
         self.arange = arange
+        self.limit_flowspec4 = limit_flowspec4
+        self.limit_flowspec6 = limit_flowspec6
+        self.limit_rtbh = limit_rtbh
 
     def __repr__(self):
         return self.name
+
+    def get_users(self):
+        """
+        Returns all users associated with this organization.
+        """
+        # self.user is the backref from the user_organization relationship
+        return self.user
 
 
 class ASPath(db.Model):
@@ -186,9 +201,7 @@ class Community(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False)
     role = db.relationship("Role", backref="community")
 
-    def __init__(
-        self, name, comm, larcomm, extcomm, description, as_path=False, role_id=2
-    ):
+    def __init__(self, name, comm, larcomm, extcomm, description, as_path=False, role_id=2):
         self.name = name
         self.comm = comm
         self.larcomm = larcomm
@@ -225,6 +238,8 @@ class RTBH(db.Model):
     created = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref="rtbh")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="rtbh")
     rstate_id = db.Column(db.Integer, db.ForeignKey("rstate.id"), nullable=False)
     rstate = db.relationship("Rstate", backref="RTBH")
 
@@ -237,6 +252,7 @@ class RTBH(db.Model):
         community_id,
         expires,
         user_id,
+        org_id,
         comment=None,
         created=None,
         rstate_id=1,
@@ -248,6 +264,7 @@ class RTBH(db.Model):
         self.community_id = community_id
         self.expires = expires
         self.user_id = user_id
+        self.org_id = org_id
         self.comment = comment
         if created is None:
             created = datetime.now()
@@ -355,6 +372,8 @@ class Flowspec4(db.Model):
     action = db.relationship("Action", backref="flowspec4")
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref="flowspec4")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="flowspec4")
     rstate_id = db.Column(db.Integer, db.ForeignKey("rstate.id"), nullable=False)
     rstate = db.relationship("Rstate", backref="flowspec4")
 
@@ -372,6 +391,7 @@ class Flowspec4(db.Model):
         fragment,
         expires,
         user_id,
+        org_id,
         action_id,
         created=None,
         comment=None,
@@ -390,6 +410,7 @@ class Flowspec4(db.Model):
         self.comment = comment
         self.expires = expires
         self.user_id = user_id
+        self.org_id = org_id
         self.action_id = action_id
         if created is None:
             created = datetime.now()
@@ -509,6 +530,8 @@ class Flowspec6(db.Model):
     action = db.relationship("Action", backref="flowspec6")
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref="flowspec6")
+    org_id = db.Column(db.Integer, db.ForeignKey("organization.id"), nullable=False)
+    org = db.relationship("Organization", backref="flowspec6")
     rstate_id = db.Column(db.Integer, db.ForeignKey("rstate.id"), nullable=False)
     rstate = db.relationship("Rstate", backref="flowspec6")
 
@@ -525,6 +548,7 @@ class Flowspec6(db.Model):
         packet_len,
         expires,
         user_id,
+        org_id,
         action_id,
         created=None,
         comment=None,
@@ -542,6 +566,7 @@ class Flowspec6(db.Model):
         self.comment = comment
         self.expires = expires
         self.user_id = user_id
+        self.org_id = org_id
         self.action_id = action_id
         if created is None:
             created = datetime.now()
@@ -625,14 +650,16 @@ class Log(db.Model):
     rule_type = db.Column(db.Integer)
     rule_id = db.Column(db.Integer)
     user_id = db.Column(db.Integer)
+    org_id = db.Column(db.Integer, nullable=True)
 
-    def __init__(self, time, task, user_id, rule_type, rule_id, author):
+    def __init__(self, time, task, user_id, rule_type, rule_id, author, org_id=None):
         self.time = time
         self.task = task
         self.rule_type = rule_type
         self.rule_id = rule_id
         self.user_id = user_id
         self.author = author
+        self.org_id = org_id
 
 
 # DDL
@@ -665,11 +692,7 @@ def insert_initial_actions(table, conn, *args, **kwargs):
             role_id=2,
         )
     )
-    conn.execute(
-        table.insert().values(
-            name="Discard", command="discard", description="Discard", role_id=2
-        )
-    )
+    conn.execute(table.insert().values(name="Discard", command="discard", description="Discard", role_id=2))
 
 
 @event.listens_for(Community.__table__, "after_create")
@@ -715,16 +738,7 @@ def insert_initial_roles(table, conn, *args, **kwargs):
 
 @event.listens_for(Organization.__table__, "after_create")
 def insert_initial_organizations(table, conn, *args, **kwargs):
-    conn.execute(
-        table.insert().values(
-            name="TU Liberec", arange="147.230.0.0/16\n2001:718:1c01::/48"
-        )
-    )
-    conn.execute(
-        table.insert().values(
-            name="Cesnet", arange="147.230.0.0/16\n2001:718:1c01::/48"
-        )
-    )
+    conn.execute(table.insert().values(name="Cesnet", arange="147.230.0.0/16\n2001:718:1c01::/48"))
 
 
 @event.listens_for(Rstate.__table__, "after_create")
@@ -735,6 +749,48 @@ def insert_initial_rulestates(table, conn, *args, **kwargs):
 
 
 # Misc functions
+def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
+    """
+    Check if the organization has reached the rule limit
+    :param org_id: integer organization id
+    :param rule_type: RuleType rule type
+    :return: boolean
+    """
+    flowspec_limit = current_app.config.get("FLOWSPEC_MAX_RULES", 9000)
+    rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
+    fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+    fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+    rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
+
+    # check the organization limits
+    org = Organization.query.filter_by(id=org_id).first()
+    if rule_type == RuleTypes.IPv4 and org.limit_flowspec4 > 0:
+        count = db.session.query(Flowspec4).filter_by(org_id=org_id, rstate_id=1).count()
+        return count >= org.limit_flowspec4 or fs4 >= flowspec_limit
+    if rule_type == RuleTypes.IPv6 and org.limit_flowspec6 > 0:
+        count = db.session.query(Flowspec6).filter_by(org_id=org_id, rstate_id=1).count()
+        return count >= org.limit_flowspec6 or fs6 >= flowspec_limit
+    if rule_type == RuleTypes.RTBH and org.limit_rtbh > 0:
+        count = db.session.query(RTBH).filter_by(org_id=org_id, rstate_id=1).count()
+        return count >= org.limit_rtbh or rtbh >= rtbh_limit
+
+
+def check_global_rule_limit(rule_type: RuleTypes) -> bool:
+    flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
+    flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
+    rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
+    fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+    fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+    rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
+
+    # check the global limits if the organization limits are not set
+
+    if rule_type == RuleTypes.IPv4:
+        return fs4 >= flowspec4_limit
+    if rule_type == RuleTypes.IPv6:
+        return fs6 >= flowspec6_limit
+    if rule_type == RuleTypes.RTBH:
+        return rtbh >= rtbh_limit
 
 
 def get_ipv4_model_if_exists(form_data, rstate_id=1):
@@ -833,7 +889,13 @@ def insert_users(users):
 
 
 def insert_user(
-    uuid, role_ids, org_ids, name=None, phone=None, email=None, comment=None
+    uuid: str,
+    role_ids: list,
+    org_ids: list,
+    name: str = None,
+    phone: str = None,
+    email: str = None,
+    comment: str = None,
 ):
     """
     insert new user with multiple roles and organizations
@@ -873,6 +935,16 @@ def get_user_nets(user_id):
     return result
 
 
+def get_user_orgs_choices(user_id):
+    """
+    Return list of orgs as choices for form
+    """
+    user = db.session.query(User).filter_by(id=user_id).first()
+    orgs = user.organization
+
+    return [(g.id, g.name) for g in orgs]
+
+
 def get_user_actions(user_roles):
     """
     Return list of actions based on current user role
@@ -894,9 +966,7 @@ def get_user_communities(user_roles):
     if max_role == 3:
         communities = db.session.query(Community).order_by("id")
     else:
-        communities = (
-            db.session.query(Community).filter_by(role_id=max_role).order_by("id")
-        )
+        communities = db.session.query(Community).filter_by(role_id=max_role).order_by("id")
 
     return [(g.id, g.name) for g in communities]
 
@@ -909,9 +979,7 @@ def get_existing_action(name=None, command=None):
     :param command: string action command
     :return: action id
     """
-    action = Action.query.filter(
-        (Action.name == name) | (Action.command == command)
-    ).first()
+    action = Action.query.filter((Action.name == name) | (Action.command == command)).first()
     return action.id if hasattr(action, "id") else None
 
 
@@ -943,10 +1011,7 @@ def get_ip_rules(rule_type, rule_state, sort="expires", order="desc"):
         sorting_ip4 = getattr(sorter_ip4, order)
         if comp_func:
             rules4 = (
-                db.session.query(Flowspec4)
-                .filter(comp_func(Flowspec4.expires, today))
-                .order_by(sorting_ip4())
-                .all()
+                db.session.query(Flowspec4).filter(comp_func(Flowspec4.expires, today)).order_by(sorting_ip4()).all()
             )
         else:
             rules4 = db.session.query(Flowspec4).order_by(sorting_ip4()).all()
@@ -958,10 +1023,7 @@ def get_ip_rules(rule_type, rule_state, sort="expires", order="desc"):
         sorting_ip6 = getattr(sorter_ip6, order)
         if comp_func:
             rules6 = (
-                db.session.query(Flowspec6)
-                .filter(comp_func(Flowspec6.expires, today))
-                .order_by(sorting_ip6())
-                .all()
+                db.session.query(Flowspec6).filter(comp_func(Flowspec6.expires, today)).order_by(sorting_ip6()).all()
             )
         else:
             rules6 = db.session.query(Flowspec6).order_by(sorting_ip6()).all()
@@ -973,12 +1035,7 @@ def get_ip_rules(rule_type, rule_state, sort="expires", order="desc"):
         sorting_rtbh = getattr(sorter_rtbh, order)
 
         if comp_func:
-            rules_rtbh = (
-                db.session.query(RTBH)
-                .filter(comp_func(RTBH.expires, today))
-                .order_by(sorting_rtbh())
-                .all()
-            )
+            rules_rtbh = db.session.query(RTBH).filter(comp_func(RTBH.expires, today)).order_by(sorting_rtbh()).all()
 
         else:
             rules_rtbh = db.session.query(RTBH).order_by(sorting_rtbh()).all()
@@ -995,25 +1052,13 @@ def get_user_rules_ids(user_id, rule_type):
     """
 
     if rule_type == "ipv4":
-        rules4 = (
-            db.session.query(Flowspec4.id)
-            .filter_by(user_id=user_id)
-            .all()
-        )
+        rules4 = db.session.query(Flowspec4.id).filter_by(user_id=user_id).all()
         return [int(x[0]) for x in rules4]
 
     if rule_type == "ipv6":
-        rules6 = (
-            db.session.query(Flowspec6.id)
-            .order_by(Flowspec6.expires.desc())
-            .all()
-        )
+        rules6 = db.session.query(Flowspec6.id).order_by(Flowspec6.expires.desc()).all()
         return [int(x[0]) for x in rules6]
 
     if rule_type == "rtbh":
-        rules_rtbh = (
-            db.session.query(RTBH.id)
-            .filter_by(user_id=user_id)
-            .all()
-        )
+        rules_rtbh = db.session.query(RTBH.id).filter_by(user_id=user_id).all()
         return [int(x[0]) for x in rules_rtbh]

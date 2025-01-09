@@ -1,0 +1,59 @@
+{% extends 'layouts/default.html' %}
+{% from 'forms/macros.html' import render_field,  render_checkbox_field %}
+{% block title %}Add New Machine with ApiKey{% endblock %}
+{% block content %}
+<h2>Create multiple users.</h2>
+<form method="POST">
+    {{ form.hidden_tag() if form.hidden_tag }}
+    <div class="row">
+        <div class="col-sm-6">
+            {{ render_field(form.users, rows=12) }}
+        </div>
+        <div class="col-sm-6">
+            <table class="table table-striped">
+                <thead>
+                    <tr class="table-primary">
+                        <th>Organization name</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in orgs %}
+                    <tr>
+                        <td>{{ org.name }}</td>
+                        <td>{{ org.id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>  
+    
+    <div class="row">
+        <div class="col-sm-6">
+        <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+</form>
+<div class="row">
+    <div class="col-sm-6">
+        <h3>Example CSV data</h3>
+        <p>CSV data must contain header row when posting</p>
+        <pre>
+            <code>
+uuid-eppn,name,telefon,email,role,organizace,poznamka
+view@example.com,Test View,123,view@example.com,1,1,View
+user@example.com,Test User,123456,user@example.com,2,1,User
+admin@example.com,Test Admin,+420 111 111 111,admin@example.com,3,1,Admin
+            </code>
+        </pre>
+        <h3>Role</h3>
+        <ul>
+            <li>1 - View</li>
+            <li>2 - User</li>
+            <li>3 - Admin</li>
+        </ul>
+    </div>
+</div>      
+
+{% endblock %}

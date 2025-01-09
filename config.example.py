@@ -1,22 +1,31 @@
-class Config():
+class Config:
     """
     Default config options
     """
+
+    # Limits
+    FLOWSPEC4_MAX_RULES = 9000
+    FLOWSPEC6_MAX_RULES = 9000
+    RTBH_MAX_RULES = 100000
 
     # Flask debugging
     DEBUG = True
     # Flask testing
     TESTING = False
-    # SSO auth enabled
 
-    SSO_AUTH = True
+    # Choose your authentication method and set it to True here or
+    # the production / development config
+    # SSO auth enabled
+    SSO_AUTH = False
     # Authentication is done outside the app, use HTTP header to get the user uuid.
     # If SSO_AUTH is set to True, this option is ignored and SSO auth is used.
     HEADER_AUTH = False
+    # Local authentication - used when SSO_AUTH and HEADER_AUTH are set to False
+    LOCAL_AUTH = False
 
     # Name of HTTP header containing the UUID of authenticated user.
     # Only used when HEADER_AUTH is set to True
-    AUTH_HEADER_NAME = 'X-Authenticated-User'
+    AUTH_HEADER_NAME = "X-Authenticated-User"
     # SSO LOGOUT
     LOGOUT_URL = "https://flowspec.example.com/Shibboleth.sso/Logout"
     # SQL Alchemy config
@@ -24,7 +33,7 @@ class Config():
 
     # ExaApi configuration
     # possible values HTTP, RABBIT
-    EXA_API = "HTTP"
+    EXA_API = "RABBIT"
     # for HTTP EXA_API_URL must be specified
     EXA_API_URL = "http://localhost:5000/"
     # for RABBITMQ EXA_API_RABBIT_* must be specified
@@ -39,24 +48,6 @@ class Config():
     JWT_SECRET = "GenerateSomeLongRandomSequence"
     SECRET_KEY = "GenerateSomeLongRandomSequence"
 
-    # LOCAL user parameters - when the app is used without SSO_AUTH
-    # Defined in User model
-    LOCAL_USER_UUID = "admin@example.com"
-    # Defined in User model
-    LOCAL_USER_ID = 1
-    # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
-    LOCAL_USER_ROLES = ["admin"]
-    # Defined in Organization model
-    # List of organizations for the local user. There can be many of them.
-    # Define the name and the adress range. The range is then used for first data insert
-    # after the tables are created with db-init.py script.
-    LOCAL_USER_ORGS = [
-        {"name": "Example Org.", "arange": "192.168.0.0/16\n2121:414:1a0b::/48"},
-    ]
-    # Defined in Role model / default 1 - view, 2 - normal user, 3 - admin
-    LOCAL_USER_ROLE_IDS = [3]
-    # Defined in Organization model
-    LOCAL_USER_ORG_IDS = [1]
     # APP Name - display in main toolbar
     APP_NAME = "ExaFS"
     # Route Distinguisher for VRF
@@ -75,10 +66,23 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = "Your Productionl Database URI"
     # Public IP of the production machine
     LOCAL_IP = "127.0.0.1"
+    LOCAL_IP6 = "::ffff:127.0.0.1"
     # SSO AUTH enabled in produciion
     SSO_AUTH = True
+    SSO_ATTRIBUTE_MAP = {
+        "eppn": (False, "eppn"),
+        "HTTP_X_EPPN": (False, "eppn"),
+    }
+    SSO_LOGIN_URL = "/login"
+
     # Set true if you need debug in production
     DEBUG = False
+    DEVEL = False
+
+    # Set cookie behavior
+    SESSION_COOKIE_SECURE = (True,)
+    SESSION_COOKIE_HTTPONLY = (True,)
+    SESSION_COOKIE_SAMESITE = ("Lax",)
 
 
 class DevelopmentConfig(Config):
@@ -88,7 +92,14 @@ class DevelopmentConfig(Config):
 
     SQLALCHEMY_DATABASE_URI = "Your Local Database URI"
     LOCAL_IP = "127.0.0.1"
+    LOCAL_IP6 = "::ffff:127.0.0.1"
     DEBUG = True
+    DEVEL = True
+
+    # LOCAL user parameters - when the app is used without SSO_AUTH
+    # Local User must be in the database
+    LOCAL_USER_UUID = "admin@example.com"
+    LOCAL_AUTH = True
 
 
 class TestingConfig(Config):

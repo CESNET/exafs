@@ -1,0 +1,25 @@
+{% extends 'layouts/default.html' %}
+{% block title %}Rule limit reached{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <h2>You can't add new  / reactivate {{ rule_type }} rule.</h2>
+            <h5>{{ message }}</h5>
+            <table class="table">
+                <tr class="table-primary">
+                    <th>Rule type</th><th class="text-center">Current count</th><th class="text-center">Limit</th>
+                </tr>
+                <tr>
+                <td>IPv4 (Flowspec4)</td><td class="text-center">{{ count_4 }}</td><td class="text-center">{{ org.limit_flowspec4|unlimited }}</td>
+                </tr>
+                <tr>
+                <td>IPv6 {Flowspec6)</td><td class="text-center">{{ count_6 }}</td><td class="text-center">{{ org.limit_flowspec6|unlimited }}</td>
+                </tr>
+                <tr>    
+                <td>RTBH</td><td class="text-center">{{ count_rtbh }}</td><td class="text-center">{{ org.limit_rtbh|unlimited }}</td>
+                </tr>
+            </table >       
+            <p>Please delete some unnecesary rules, or contact system Administrator.</p>
+        </div>
+    </div>
+{% endblock %}

@@ -100,7 +100,8 @@ systemctl start httpd
 
 #### Supervisord - install as root
 
-Supervisord is used to run and manage application.
+Supervisord is used to run and manage applications, but it is not mandatory for deployment.
+You can skip this section if you are using a different deployment method, such as Docker.
 
 1. install:
    `pip install supervisor`
@@ -112,9 +113,9 @@ Supervisord is used to run and manage application.
    
    
 3. setup as service:
-    `cp supervisord.example.service /usr/lib/systemd/system/supervisord.service`
+    `cp docs/supervisor/supervisord.example.service /usr/lib/systemd/system/supervisord.service`
 4. copy exafs.supervisord.conf to /etc/supervisord/
-  `cp exafs.supervisord.conf /etc/supervisord/conf.d/`
+  `cp docs/supervisor/exafs.supervisord.conf /etc/supervisord/conf.d/`
 5. start service
    `systemctl start supervisord`
 6. view service status:

@@ -1,16 +1,36 @@
 {% extends 'layouts/default.html' %}
-{% block title %}Flowspec Organziations{% endblock %}
+{% block title %}Flowspec Organizations{% endblock %}
 {% block content %}
+    <table class="table">
+        <tr>
+            <th>RTBH All Count</th>
+            <th>Flowspec4 All Count</th>
+            <th>Flowspec6 All Count</th>
+        </tr>
+        <tr>
+            <td>{{ rtbh_all_count }} / {{ rtbh_limit }} </td>
+            <td>{{ flowspec4_all_count }} / {{ flowspec_limit }} </td>
+            <td>{{ flowspec6_all_count }} / {{ flowspec_limit }} </td>
+        </tr>
+        
+        
+    </table>
     <table class="table table-hover">
     <tr>
     <th>Name</th>
+    <th>Limit for rules</th>
     <th>Adress Ranges</th>
     <th>action</th>
     </tr>
     {% for org in orgs %}
-        <tr>
-        <td>{{ org.name }}</td>
-        <td>
+    <tr>
+        <td width="20%">{{ org.name }}</td>
+        <td width="20%">
+            IPv4: {{ org.limit_flowspec4 | unlimited }} / {{ flowspec4_counts[org.id] | default(0)  }}<br />
+            IPv6: {{ org.limit_flowspec6 | unlimited }} / {{ flowspec6_counts[org.id] | default(0)  }}<br />
+            RTBH: {{ org.limit_rtbh | unlimited }} / {{ rtbh_counts[org.id] | default(0) }}
+        </td>
+        <td width="40%">
             {% set rows = org.arange.split() %}
             <ul class="list-group">
             {% for row in rows %}
@@ -18,15 +38,16 @@
             {% endfor %}
             </ul>
         </td>
-        <td>
-        <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_organization', org_id=org.id) }}" role="button">
-            <i class="bi bi-pen"></i>
-        </a>
-        <a class="btn btn-danger btn-sm" href="{{ url_for('admin.delete_organization', org_id=org.id) }}" role="button">
-            <i class="bi bi-x-lg"></i>
-        </a>
+        <td width="20%">
+            <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_organization', org_id=org.id) }}" role="button">
+                <i class="bi bi-pen"></i>
+            </a>
+            <a class="btn btn-danger btn-sm" href="{{ url_for('admin.delete_organization', org_id=org.id) }}" role="button">
+                <i class="bi bi-x-lg"></i>
+            </a>
         </td>
-        </tr>
+    </tr>
     {% endfor %}
+
     </table>
 {% endblock %}
