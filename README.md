@@ -55,7 +55,8 @@ You may also need to monitor the ExaBGP and renew the commands after restart / s
 * [Local database instalation notes](./docs/DB_LOCAL.md)
 
 ## Change Log
-- 1.0.0 . DRAFT - ExaAPI and Guarda modules moved outside of the project to their own repositories. ExaAPI is now available also as a [pip package exabgp-process](https://pypi.org/project/exabgp-process/). New format of message for ExaAPI - now sends information about user (author of rule) for logging purposes. 
+- 1.0.1 . minor bug fixes
+- 1.0.0 . ExaAPI and Guarda modules moved outside of the project to their own repositories. ExaAPI is now available also as a [pip package exabgp-process](https://pypi.org/project/exabgp-process/). New format of message for ExaAPI - now sends information about user (author of rule) for logging purposes. There are now limits for rules for organization and overall limit for the instalation. Database changed / migration is required.
 - 0.8.1 application is using Flask-Session stored in DB using SQL Alchemy driver. This can be configured for other drivers, however server side session is required for the application proper function.
 - 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machinnes.
 - 0.7.3 - New possibility of external auth proxy. 
