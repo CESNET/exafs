@@ -16,3 +16,4 @@ pika>=1.3.0
 gunicorn>=22.0.0
 loguru
 flasgger
+python-dotenv
