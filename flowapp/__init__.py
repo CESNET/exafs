@@ -11,6 +11,8 @@ from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_session import Session
 from flasgger import Swagger
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 from .__about__ import __version__
 from .instance_config import InstanceConfig
@@ -57,6 +59,10 @@ def create_app(config_object=None):
 
     # Init swagger
     swagger.init_app(app)
+
+    # handle proxy fix
+    if app.config.get("BEHIND_PROXY", False):
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     from flowapp import models, constants, validators
     from .views.admin import admin

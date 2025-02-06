@@ -79,6 +79,9 @@ class ProductionConfig(Config):
     DEBUG = False
     DEVEL = False
 
+    # is production behind a reverse proxy?
+    BEHIND_PROXY = True
+
     # Set cookie behavior
     SESSION_COOKIE_SECURE = (True,)
     SESSION_COOKIE_HTTPONLY = (True,)
