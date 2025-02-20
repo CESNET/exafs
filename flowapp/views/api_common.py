@@ -292,7 +292,7 @@ def create_ipv4(current_user):
     log_route(
         current_user["id"],
         model,
-        RuleTypes.IPv4,
+        RuleTypes.IPv4.value,
         f"{current_user['uuid']} / {current_user['org']}",
     )
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
@@ -368,7 +368,7 @@ def create_ipv6(current_user):
     log_route(
         current_user["id"],
         model,
-        RuleTypes.IPv6,
+        RuleTypes.IPv6.value,
         f"{current_user['uuid']} / {current_user['org']}",
     )
 
@@ -441,7 +441,7 @@ def create_rtbh(current_user):
     log_route(
         current_user["id"],
         model,
-        RuleTypes.RTBH,
+        RuleTypes.RTBH.value,
         f"{current_user['uuid']} / {current_user['org']}",
     )
 

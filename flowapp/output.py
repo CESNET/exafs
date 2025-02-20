@@ -96,6 +96,7 @@ def log_route(user_id, route_model, rule_type, author):
     :param rule_type: string
     :return: None
     """
+    print(rule_type)
     converter = ROUTE_MODELS[rule_type]
     task = converter(route_model)
     log = Log(

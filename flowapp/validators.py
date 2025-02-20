@@ -352,3 +352,66 @@ def subnet_of(net_a, net_b):
 def supernet_of(net_a, net_b):
     """Return True if this network is a supernet of other."""
     return _is_subnet_of(net_b, net_a)
+
+
+class IPAddressValidator:
+    """
+    Universal validator that accepts both IPv4 and IPv6 addresses.
+    """
+
+    def __init__(self, message=None):
+        self.message = message or "Invalid IP address: {}"
+
+    def __call__(self, form, field):
+        if not field.data:
+            return
+
+        try:
+            ipaddress.ip_address(field.data)
+        except ValueError:
+            raise ValidationError(self.message.format(field.data))
+
+
+class NetworkValidator:
+    """
+    Validates that an IP address and mask form a valid network.
+    Works with both IPv4 and IPv6 addresses.
+    """
+
+    def __init__(self, mask_field_name, message=None):
+        self.mask_field_name = mask_field_name
+        self.message = message or "Invalid network: address {}, mask {}"
+
+    def __call__(self, form, field):
+        if not field.data:
+            return
+
+        mask_field = form._fields.get(self.mask_field_name)
+        if not mask_field or not mask_field.data:
+            return
+
+        try:
+            # Determine IP version
+            ip = ipaddress.ip_address(field.data)
+            mask = int(mask_field.data)
+
+            # Validate mask range based on IP version
+            if isinstance(ip, ipaddress.IPv4Address):
+                if not 0 <= mask <= 32:
+                    raise ValidationError(f"Invalid IPv4 mask: {mask}")
+            else:  # IPv6
+                if not 0 <= mask <= 128:
+                    raise ValidationError(f"Invalid IPv6 mask: {mask}")
+
+            # Try to create network to validate the combination
+            network = ipaddress.ip_network(f"{field.data}/{mask}", strict=False)
+
+            # Check if the original IP is the correct network address
+            if str(network.network_address) != str(ip):
+                raise ValidationError(
+                    f"Invalid network address: {field.data}/{mask}. "
+                    f"Network address should be: {network.network_address}"
+                )
+
+        except ValueError:
+            raise ValidationError(self.message.format(field.data, mask_field.data))
