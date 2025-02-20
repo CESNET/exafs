@@ -253,7 +253,10 @@ class NetInRange(object):
         result = False
         for address in field.data.split("/"):
             for adr_range in self.net_ranges:
-                result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+                try:
+                    result = result or ipaddress.ip_address(address) in ipaddress.ip_network(adr_range)
+                except ValueError as e:
+                    raise ValidationError(self.message + str(e.args[0]))
 
         if not result:
             raise ValidationError(self.message)
