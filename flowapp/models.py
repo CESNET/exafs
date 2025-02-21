@@ -419,7 +419,8 @@ class Flowspec4(db.Model):
 
     def __eq__(self, other):
         """
-        Two models are equal if all the network parameters equals. User_id and time fields can differ.
+        Two models are equal if all the network parameters equals.
+        User_id and time fields can differ.
         :param other: other Flowspec4 instance
         :return: boolean
         """
@@ -700,18 +701,12 @@ class Whitelist(db.Model):
 
     def __eq__(self, other):
         """
-        Two whitelists are equal if all the network parameters equals. User_id and time fields can differ.
+        Two whitelists are equal if all the network parameters equals.
+        User_id, org, comment and time fields can differ.
         :param other: other Whitelist instance
         :return: boolean
         """
-        return (
-            self.ip == other.ip
-            and self.mask == other.mask
-            and self.expires == other.expires
-            and self.user_id == other.user_id
-            and self.org_id == other.org_id
-            and self.rstate_id == other.rstate_id
-        )
+        return self.ip == other.ip and self.mask == other.mask and self.rstate_id == other.rstate_id
 
     def to_dict(self, prefered_format="yearfirst"):
         """
