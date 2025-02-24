@@ -163,16 +163,8 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
 
     packet_len = "packet-length {};".format(trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ""
 
-    match_body = "{source} {source_port} {dest} {dest_port} {protocol} {fragment} {flags} {packet_len}".format(
-        source=source,
-        source_port=source_port,
-        dest=dest,
-        dest_port=dest_port,
-        protocol=protocol,
-        fragment=fragment,
-        flags=flags,
-        packet_len=packet_len,
-    )
+    values = [source, source_port, dest, dest_port, protocol, fragment, flags, packet_len]
+    match_body = " ".join(v for v in values if v)
 
     command = "{};".format(rule.action.command)
 
