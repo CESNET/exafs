@@ -45,9 +45,7 @@ def announce_route(route: Route):
     if current_app.config.get("EXA_API") == "RABBIT":
         announce_to_rabbitmq(asdict(route))
     else:
-        route_dict = asdict(route)
-        print("route", route_dict)
-        announce_to_http(json.dumps(route_dict))
+        announce_to_http(asdict(route))
 
 
 def announce_to_http(route):
@@ -56,7 +54,7 @@ def announce_to_http(route):
     """
     if not current_app.config["TESTING"]:
         try:
-            resp = requests.post(current_app.config["EXA_API_URL"], data={"command": route})
+            resp = requests.post(current_app.config["EXA_API_URL"], data={"command": json.dumps(route)})
             resp.raise_for_status()
         except requests.exceptions.HTTPError as err:
             current_app.logger.error("ExaAPI HTTP Error: ", err)
