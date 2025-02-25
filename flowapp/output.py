@@ -45,7 +45,9 @@ def announce_route(route: Route):
     if current_app.config.get("EXA_API") == "RABBIT":
         announce_to_rabbitmq(asdict(route))
     else:
-        announce_to_http(asdict(route))
+        route_dict = asdict(route)
+        print("route", route_dict)
+        announce_to_http(json.dumps(route_dict))
 
 
 def announce_to_http(route):
