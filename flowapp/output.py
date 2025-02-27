@@ -96,7 +96,7 @@ def log_route(user_id, route_model, rule_type, author):
     :param rule_type: string
     :return: None
     """
-    print(rule_type)
+    rule_type = rule_type.value
     converter = ROUTE_MODELS[rule_type]
     task = converter(route_model)
     log = Log(
@@ -119,7 +119,7 @@ def log_withdraw(user_id, task, rule_type, deleted_id, author):
     log = Log(
         time=datetime.now(),
         task=task,
-        rule_type=rule_type,
+        rule_type=rule_type.value,
         rule_id=deleted_id,
         user_id=user_id,
         author=author,
