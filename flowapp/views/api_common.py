@@ -292,7 +292,7 @@ def create_ipv4(current_user):
     log_route(
         current_user["id"],
         model,
-        RuleTypes.IPv4.value,
+        RuleTypes.IPv4,
         f"{current_user['uuid']} / {current_user['org']}",
     )
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
@@ -368,7 +368,7 @@ def create_ipv6(current_user):
     log_route(
         current_user["id"],
         model,
-        RuleTypes.IPv6.value,
+        RuleTypes.IPv6,
         f"{current_user['uuid']} / {current_user['org']}",
     )
 
@@ -441,7 +441,7 @@ def create_rtbh(current_user):
     log_route(
         current_user["id"],
         model,
-        RuleTypes.RTBH.value,
+        RuleTypes.RTBH,
         f"{current_user['uuid']} / {current_user['org']}",
     )
 
@@ -506,7 +506,7 @@ def delete_v4_rule(current_user, rule_id):
     """
     model_name = Flowspec4
     route_model = messages.create_ipv4
-    return delete_rule(current_user, rule_id, model_name, route_model, 4)
+    return delete_rule(current_user, rule_id, model_name, route_model, RuleTypes.IPv4)
 
 
 def delete_v6_rule(current_user, rule_id):
@@ -516,7 +516,7 @@ def delete_v6_rule(current_user, rule_id):
     """
     model_name = Flowspec6
     route_model = messages.create_ipv6
-    return delete_rule(current_user, rule_id, model_name, route_model, 6)
+    return delete_rule(current_user, rule_id, model_name, route_model, RuleTypes.IPv6)
 
 
 def delete_rtbh_rule(current_user, rule_id):
@@ -526,7 +526,7 @@ def delete_rtbh_rule(current_user, rule_id):
     """
     model_name = RTBH
     route_model = messages.create_rtbh
-    return delete_rule(current_user, rule_id, model_name, route_model, 1)
+    return delete_rule(current_user, rule_id, model_name, route_model, RuleTypes.RTBH)
 
 
 def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
