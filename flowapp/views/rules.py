@@ -24,19 +24,16 @@ from flowapp.models import (
     Organization,
     check_global_rule_limit,
     check_rule_limit,
-    get_ipv4_model_if_exists,
-    get_ipv6_model_if_exists,
-    get_rtbh_model_if_exists,
     get_user_actions,
     get_user_communities,
     get_user_nets,
     insert_initial_communities,
 )
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
+from flowapp.services import rule_service
 from flowapp.utils import (
     flash_errors,
     get_state_by_time,
-    quote_to_ent,
     round_to_ten_minutes,
 )
 
@@ -476,53 +473,16 @@ def ipv4_rule():
     form.net_ranges = net_ranges
 
     if request.method == "POST" and form.validate():
-        model = get_ipv4_model_if_exists(form.data, 1)
-
-        if model:
-            model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
-        else:
-            model = Flowspec4(
-                source=form.source.data,
-                source_mask=form.source_mask.data,
-                source_port=form.source_port.data,
-                destination=form.dest.data,
-                destination_mask=form.dest_mask.data,
-                destination_port=form.dest_port.data,
-                protocol=form.protocol.data,
-                flags=";".join(form.flags.data),
-                packet_len=form.packet_len.data,
-                fragment=";".join(form.fragment.data),
-                expires=round_to_ten_minutes(form.expires.data),
-                comment=quote_to_ent(form.comment.data),
-                action_id=form.action.data,
-                user_id=session["user_id"],
-                org_id=session["user_org_id"],
-                rstate_id=get_state_by_time(form.expires.data),
-            )
-            flash_message = "IPv4 Rule saved"
-            db.session.add(model)
-
-        db.session.commit()
-        flash(flash_message, "alert-success")
-
-        # announce route if model is in active state
-        if model.rstate_id == 1:
-            command = messages.create_ipv4(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-
-        # log changes
-        log_route(
-            session["user_id"],
-            model,
-            RuleTypes.IPv4,
-            f"{session['user_email']} / {session['user_org']}",
+        # Use the service to create/update the rule
+        _model, message = rule_service.create_or_update_ipv4_rule(
+            form_data=form.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
         )
+
+        flash(message, "alert-success")
 
         return redirect(url_for("index"))
     else:
@@ -560,52 +520,14 @@ def ipv6_rule():
     form.net_ranges = net_ranges
 
     if request.method == "POST" and form.validate():
-        model = get_ipv6_model_if_exists(form.data, 1)
-
-        if model:
-            model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
-        else:
-            model = Flowspec6(
-                source=form.source.data,
-                source_mask=form.source_mask.data,
-                source_port=form.source_port.data,
-                destination=form.dest.data,
-                destination_mask=form.dest_mask.data,
-                destination_port=form.dest_port.data,
-                next_header=form.next_header.data,
-                flags=";".join(form.flags.data),
-                packet_len=form.packet_len.data,
-                expires=round_to_ten_minutes(form.expires.data),
-                comment=quote_to_ent(form.comment.data),
-                action_id=form.action.data,
-                user_id=session["user_id"],
-                org_id=session["user_org_id"],
-                rstate_id=get_state_by_time(form.expires.data),
-            )
-            flash_message = "IPv6 Rule saved"
-            db.session.add(model)
-
-        db.session.commit()
-        flash(flash_message, "alert-success")
-
-        # announce routes
-        if model.rstate_id == 1:
-            command = messages.create_ipv6(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-
-        # log changes
-        log_route(
-            session["user_id"],
-            model,
-            RuleTypes.IPv6,
-            f"{session['user_email']} / {session['user_org']}",
+        _model, message = rule_service.create_or_update_ipv6_rule(
+            form_data=form.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
         )
+        flash(message, "alert-success")
 
         return redirect(url_for("index"))
     else:
@@ -644,45 +566,14 @@ def rtbh_rule():
     form.net_ranges = net_ranges
 
     if request.method == "POST" and form.validate():
-        model = get_rtbh_model_if_exists(form.data, 1)
-
-        if model:
-            model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = "Existing RTBH Rule found. Expiration time was updated to new value."
-        else:
-            model = RTBH(
-                ipv4=form.ipv4.data,
-                ipv4_mask=form.ipv4_mask.data,
-                ipv6=form.ipv6.data,
-                ipv6_mask=form.ipv6_mask.data,
-                community_id=form.community.data,
-                expires=round_to_ten_minutes(form.expires.data),
-                comment=quote_to_ent(form.comment.data),
-                user_id=session["user_id"],
-                org_id=session["user_org_id"],
-                rstate_id=get_state_by_time(form.expires.data),
-            )
-            db.session.add(model)
-            db.session.commit()
-            flash_message = "RTBH Rule saved"
-
-        flash(flash_message, "alert-success")
-        # announce routes
-        if model.rstate_id == 1:
-            command = messages.create_rtbh(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-        # log changes
-        log_route(
-            session["user_id"],
-            model,
-            RuleTypes.RTBH,
-            f"{session['user_email']} / {session['user_org']}",
+        _model, message = rule_service.create_or_update_rtbh_rule(
+            form_data=form.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
         )
+        flash(message, "alert-success")
 
         return redirect(url_for("index"))
     else:
