@@ -4,6 +4,8 @@ from datetime import datetime
 from flowapp import utils
 from flowapp.constants import RuleTypes
 from flask import current_app
+
+from flowapp.models.rules.whitelist import Whitelist
 from .base import db
 from .user import User, Role
 from .organization import Organization
@@ -57,9 +59,33 @@ def check_global_rule_limit(rule_type: RuleTypes) -> bool:
         return rtbh >= rtbh_limit
 
 
+def get_whitelist_model_if_exists(form_data, rstate_id=1):
+    """
+    Check if the record in database exist
+    ip, mask, rstate_id should match
+    expires, user_id, org_id, created, comment can be different
+    """
+    record = (
+        db.session.query(Whitelist)
+        .filter(
+            Whitelist.ip == form_data["ip"],
+            Whitelist.mask == form_data["mask"],
+            Whitelist.rstate_id == rstate_id,
+        )
+        .first()
+    )
+
+    if record:
+        return record
+
+    return False
+
+
 def get_ipv4_model_if_exists(form_data, rstate_id=1):
     """
     Check if the record in database exist
+    Source and destination addresses, protocol, flags, action and packet_len should match
+    Other fields can be different
     """
     record = (
         db.session.query(Flowspec4)
@@ -113,9 +139,11 @@ def get_ipv6_model_if_exists(form_data, rstate_id=1):
     return False
 
 
-def get_rtbh_model_if_exists(form_data, rstate_id=1):
+def get_rtbh_model_if_exists(form_data):
     """
-    Check if the record in database exist
+    Check RTBH rule exist in database
+    IPv4, IPv6 and community_id should match
+    Rule can be in any state and have different expires, user_id, org_id, created, comment
     """
 
     record = (
@@ -126,7 +154,6 @@ def get_rtbh_model_if_exists(form_data, rstate_id=1):
             RTBH.ipv6 == form_data["ipv6"],
             RTBH.ipv6_mask == form_data["ipv6_mask"],
             RTBH.community_id == form_data["community"],
-            RTBH.rstate_id == rstate_id,
         )
         .first()
     )
@@ -307,6 +334,23 @@ def get_ip_rules(rule_type, rule_state, sort="expires", order="desc"):
             rules_rtbh = db.session.query(RTBH).order_by(sorting_rtbh()).all()
 
         return rules_rtbh
+
+    if rule_type == "whitelist":
+        sorter_whitelist = getattr(Whitelist, sort, Whitelist.id)
+        sorting_whitelist = getattr(sorter_whitelist, order)
+
+        if comp_func:
+            rules_whitelist = (
+                db.session.query(Whitelist)
+                .filter(comp_func(Whitelist.expires, today))
+                .order_by(sorting_whitelist())
+                .all()
+            )
+
+        else:
+            rules_whitelist = db.session.query(Whitelist).order_by(sorting_whitelist()).all()
+
+        return rules_whitelist
 
 
 def get_user_rules_ids(user_id, rule_type):

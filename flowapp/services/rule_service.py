@@ -2,14 +2,15 @@
 """
 Service module for rule operations.
 
-This module provides business logic functions for creating, updating, 
+This module provides business logic functions for creating, updating,
 and managing flow rules, separating these concerns from HTTP handling.
 """
 
+from datetime import datetime
 from typing import Dict, Tuple
 
 from flowapp import db, messages
-from flowapp.constants import RuleTypes, ANNOUNCE
+from flowapp.constants import RuleOrigin, RuleTypes, ANNOUNCE
 from flowapp.models import (
     get_ipv4_model_if_exists,
     get_ipv6_model_if_exists,
@@ -17,9 +18,12 @@ from flowapp.models import (
     Flowspec4,
     Flowspec6,
     RTBH,
+    Whitelist,
+    RuleWhitelistCache,
 )
 from flowapp.output import Route, announce_route, log_route, RouteSources
 from flowapp.utils import round_to_ten_minutes, get_state_by_time, quote_to_ent
+from .whitelist_service import check_rule_against_whitelists, Relation
 
 
 def create_or_update_ipv4_rule(
@@ -174,7 +178,7 @@ def create_or_update_rtbh_rule(
         Tuple containing (rule_model, message)
     """
     # Check for existing model
-    model = get_rtbh_model_if_exists(form_data, 1)
+    model = get_rtbh_model_if_exists(form_data)
 
     if model:
         model.expires = round_to_ten_minutes(form_data["expires"])
@@ -198,6 +202,24 @@ def create_or_update_rtbh_rule(
 
     db.session.commit()
 
+    # Check if rule is whitelisted
+    # get all not expired whitelists
+    whitelists = db.session.query(Whitelist).filter(Whitelist.expires > datetime.now()).all()
+    whitelists = {str(w): w for w in whitelists}
+    results = check_rule_against_whitelists(str(model), whitelists.keys())
+    # check rule against whitelists, stop search when rule is whitelisted first time
+    for rule, whitelist_key, relation in results:
+        match relation:
+            case Relation.EQUAL:
+                model = whitelist_rtbh_rule(model, whitelists[whitelist_key])
+                break
+            case Relation.SUBNET:
+                print("WL is subnet of rule")
+                break
+            case Relation.SUPERNET:
+                model = whitelist_rtbh_rule(model, whitelists[whitelist_key])
+                break
+
     # Announce routes
     if model.rstate_id == 1:
         command = messages.create_rtbh(model, ANNOUNCE)
@@ -217,3 +239,19 @@ def create_or_update_rtbh_rule(
     )
 
     return model, flash_message
+
+
+def whitelist_rtbh_rule(model: RTBH, whitelist: Whitelist) -> RTBH:
+    """
+    Whitelist RTBH rule.
+    set state to 4 - whitelisted rule, do not announce
+    Add to whitelist cache
+    """
+    model.rstate_id = 4
+    db.session.commit()
+    # add to cache
+    cache = RuleWhitelistCache(rid=model.id, rtype=RuleTypes.RTBH, whitelist_id=whitelist.id, rorigin=RuleOrigin.USER)
+    db.session.add(cache)
+    db.session.commit()
+
+    return model

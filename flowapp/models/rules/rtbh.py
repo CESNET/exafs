@@ -132,3 +132,19 @@ class RTBH(db.Model):
         :returns: json
         """
         return json.dumps(self.to_dict())
+
+    def __repr__(self):
+        if not self.ipv6 and not self.ipv6_mask:
+            return f"<RTBH {self.ipv4}/{self.ipv4_mask}>"
+        if not self.ipv4 and not self.ipv4_mask:
+            return f"<RTBH {self.ipv6}/{self.ipv6_mask}>"
+
+        return f"<RTBH {self.ipv4}/{self.ipv4_mask} {self.ipv6}/{self.ipv6_mask}>"
+
+    def __str__(self):
+        if not self.ipv6 and not self.ipv6_mask:
+            return f"{self.ipv4}/{self.ipv4_mask}"
+        if not self.ipv4 and not self.ipv4_mask:
+            return f"{self.ipv6}/{self.ipv6_mask}"
+
+        return f"{self.ipv4}/{self.ipv4_mask} {self.ipv6}/{self.ipv6_mask}"

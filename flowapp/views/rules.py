@@ -58,9 +58,13 @@ DEFAULT_SORT = {1: "ivp4", 4: "source", 6: "source"}
 def reactivate_rule(rule_type, rule_id):
     """
     Set new time for the rule of given type identified by id
-    :param rule_type: string - type of rule
+    :param rule_type: integer - type of rule, corresponds to RuleTypes enum value
     :param rule_id: integer - id of the rule
     """
+    # Convert the integer rule_type to RuleTypes enum
+    enum_rule_type = RuleTypes(rule_type)
+
+    # Now use the enum value where needed but the integer for dictionary lookups
     model_name = DATA_MODELS[rule_type]
     form_name = DATA_FORMS[rule_type]
 
@@ -72,14 +76,14 @@ def reactivate_rule(rule_type, rule_id):
         form.action.choices = [(g.id, g.name) for g in db.session.query(Action).order_by("name")]
         form.action.data = model.action_id
 
-    if rule_type == 1:
+    if rule_type == RuleTypes.RTBH.value:
         form.community.choices = get_user_communities(session["user_role_ids"])
         form.community.data = model.community_id
 
-    if rule_type == 4:
+    if rule_type == RuleTypes.IPv4.value:
         form.protocol.data = model.protocol
 
-    if rule_type == 6:
+    if rule_type == RuleTypes.IPv6.value:
         form.next_header.data = model.next_header
 
     # do not need to validate - all is readonly
@@ -114,11 +118,11 @@ def reactivate_rule(rule_type, rule_id):
                 command=command,
             )
             announce_route(route)
-            # log changes
+            # log changes - Use the enum value here
             log_route(
                 session["user_id"],
                 model,
-                rule_type,
+                enum_rule_type,  # Pass the enum instead of integer
                 f"{session['user_email']} / {session['user_org']}",
             )
         else:
@@ -130,11 +134,11 @@ def reactivate_rule(rule_type, rule_id):
                 command=command,
             )
             announce_route(route)
-            # log changes
+            # log changes - Use the enum value here
             log_withdraw(
                 session["user_id"],
                 route.command,
-                rule_type,
+                enum_rule_type,  # Pass the enum instead of integer
                 model.id,
                 f"{session['user_email']} / {session['user_org']}",
             )
@@ -183,6 +187,9 @@ def delete_rule(rule_type, rule_id):
     model_name = DATA_MODELS[rule_type]
     route_model = ROUTE_MODELS[rule_type]
 
+    # Convert the integer rule_type to RuleTypes enum
+    enum_rule_type = RuleTypes(rule_type)
+
     model = db.session.get(model_name, rule_id)
     if model.id in session[constants.RULES_KEY]:
         # withdraw route
@@ -197,7 +204,7 @@ def delete_rule(rule_type, rule_id):
         log_withdraw(
             session["user_id"],
             route.command,
-            rule_type,
+            enum_rule_type,
             model.id,
             f"{session['user_email']} / {session['user_org']}",
         )
@@ -257,6 +264,7 @@ def group_delete():
     rule_type = session[constants.TYPE_ARG]
     model_name = DATA_MODELS_NAMED[rule_type]
     rule_type_int = constants.RULE_TYPES_DICT[rule_type]
+    enum_rule_type = RuleTypes(rule_type_int)
     route_model = ROUTE_MODELS[rule_type_int]
     rules = [str(x) for x in session[constants.RULES_KEY]]
     to_delete = request.form.getlist("delete-id")
@@ -276,7 +284,7 @@ def group_delete():
             log_withdraw(
                 session["user_id"],
                 route.command,
-                rule_type_int,
+                enum_rule_type,
                 model.id,
                 f"{session['user_email']} / {session['user_org']}",
             )
@@ -373,6 +381,7 @@ def group_update_save(rule_type):
 
     model_name = DATA_MODELS[rule_type]
     form_name = DATA_FORMS[rule_type]
+    enum_rule_type = RuleTypes(rule_type)
 
     form = form_name(request.form)
 
@@ -414,7 +423,7 @@ def group_update_save(rule_type):
             log_route(
                 session["user_id"],
                 model,
-                rule_type,
+                enum_rule_type,
                 f"{session['user_email']} / {session['user_org']}",
             )
         else:
@@ -430,7 +439,7 @@ def group_update_save(rule_type):
             log_withdraw(
                 session["user_id"],
                 route.command,
-                rule_type,
+                enum_rule_type,
                 model.id,
                 f"{session['user_email']} / {session['user_org']}",
             )

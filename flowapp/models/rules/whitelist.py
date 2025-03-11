@@ -1,6 +1,7 @@
 from flowapp import utils
 from ..base import db
 from datetime import datetime
+from flowapp.constants import RuleTypes, RuleOrigin
 
 
 class Whitelist(db.Model):
@@ -72,6 +73,12 @@ class Whitelist(db.Model):
             "rstate": self.rstate.description,
         }
 
+    def __repr__(self):
+        return f"<Whitelist {self.ip}/{self.mask}>"
+
+    def __str__(self):
+        return f"{self.ip}/{self.mask}"
+
 
 class RuleWhitelistCache(db.Model):
     """
@@ -87,8 +94,8 @@ class RuleWhitelistCache(db.Model):
     whitelist_id = db.Column(db.Integer, db.ForeignKey("whitelist.id"))  # Add ForeignKey
     whitelist = db.relationship("Whitelist", backref="rulewhitelistcache")
 
-    def __init__(self, rid, rtype, rorigin, whitelist_id):
+    def __init__(self, rid: int, rtype: RuleTypes, whitelist_id: int, rorigin: RuleOrigin = RuleOrigin.USER):
         self.rid = rid
-        self.rtype = rtype
-        self.rorigin = rorigin
+        self.rtype = rtype.value
+        self.rorigin = rorigin.value
         self.whitelist_id = whitelist_id

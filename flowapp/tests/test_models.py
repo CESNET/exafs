@@ -473,6 +473,9 @@ def test_whitelist_to_dict(db):
     db.session.add_all([user, rstate])
     db.session.commit()
 
+    db.session.add(whitelist)
+    db.session.commit()
+
     whitelist.user = user
     whitelist.rstate_id = rstate.id
     db.session.add(whitelist)

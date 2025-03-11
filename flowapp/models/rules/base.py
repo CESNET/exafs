@@ -37,6 +37,7 @@ def insert_initial_rulestates(table, conn, *args, **kwargs):
     conn.execute(table.insert().values(description="active rule"))
     conn.execute(table.insert().values(description="withdrawed rule"))
     conn.execute(table.insert().values(description="deleted rule"))
+    conn.execute(table.insert().values(description="whitelisted rule"))
 
 
 @event.listens_for(Action.__table__, "after_create")
