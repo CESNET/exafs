@@ -1,10 +1,10 @@
 import pytest
-from flowapp.services.whitelist_service import (
+from flowapp.services.whitelist_common import (
     Relation,
-    check_whitelist_to_rule_relation,
-    subtract_network,
     check_rule_against_whitelists,
     check_whitelist_against_rules,
+    check_whitelist_to_rule_relation,
+    subtract_network,
     clear_network_cache,
 )
 

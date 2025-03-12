@@ -19,12 +19,12 @@ from flowapp.models import (
     Flowspec6,
     RTBH,
     Whitelist,
-    RuleWhitelistCache,
 )
 from flowapp.output import Route, announce_route, log_route, RouteSources
 from flowapp.services.base import announce_rtbh_route
+from flowapp.services.whitelist_common import Relation, add_rtbh_rule_to_cache, subtract_network, whitelist_rtbh_rule
 from flowapp.utils import round_to_ten_minutes, get_state_by_time, quote_to_ent
-from .whitelist_service import check_rule_against_whitelists, Relation, subtract_network
+from .whitelist_common import check_rule_against_whitelists
 
 
 def create_or_update_ipv4_rule(
@@ -266,22 +266,3 @@ def create_rtbh_from_whitelist_parts(
     add_rtbh_rule_to_cache(new_model, wl_id, RuleOrigin.WHITELIST)
     announce_rtbh_route(new_model, rule_owner)
     log_route(user_id, model, RuleTypes.RTBH, rule_owner)
-
-
-def add_rtbh_rule_to_cache(model: RTBH, whitelist_id: int, rule_origin: RuleOrigin = RuleOrigin.USER) -> None:
-    # add to cache
-    cache = RuleWhitelistCache(rid=model.id, rtype=RuleTypes.RTBH, whitelist_id=whitelist_id, rorigin=rule_origin)
-    db.session.add(cache)
-    db.session.commit()
-
-
-def whitelist_rtbh_rule(model: RTBH, whitelist: Whitelist) -> RTBH:
-    """
-    Whitelist RTBH rule.
-    Set rule state to 4 - whitelisted rule, do not announce later
-    Add to whitelist cache
-    """
-    model.rstate_id = 4
-    db.session.commit()
-    add_rtbh_rule_to_cache(model, whitelist.id, RuleOrigin.USER)
-    return model

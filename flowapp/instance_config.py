@@ -81,8 +81,8 @@ class InstanceConfig:
             {"name": "Add IPv4", "url": "rules.ipv4_rule"},
             {"name": "Add IPv6", "url": "rules.ipv6_rule"},
             {"name": "Add RTBH", "url": "rules.rtbh_rule"},
-            {"name": "API Key", "url": "api_keys.all"},
             {"name": "Add Whitelist", "url": "whitelist.add"},
+            {"name": "API Key", "url": "api_keys.all"},
         ],
         "admin": [
             {"name": "Commands Log", "url": "admin.log"},
