@@ -99,3 +99,37 @@ class RuleWhitelistCache(db.Model):
         self.rtype = rtype.value
         self.rorigin = rorigin.value
         self.whitelist_id = whitelist_id
+
+    @classmethod
+    def get_by_whitelist_id(cls, whitelist_id: int):
+        """
+        Get all cache items with the given whitelist ID
+
+        Args:
+            whitelist_id (int): The ID of the whitelist to filter by
+
+        Returns:
+            list: All RuleWhitelistCache objects with the specified whitelist_id
+        """
+        return cls.query.filter_by(whitelist_id=whitelist_id).all()
+
+    @classmethod
+    def clean_by_whitelist_id(cls, whitelist_id: int):
+        """
+        Delete all cache entries with the given whitelist ID from the database
+
+        Args:
+            whitelist_id (int): The ID of the whitelist to clean
+
+        Returns:
+            int: Number of rows deleted
+        """
+        deleted = cls.query.filter_by(whitelist_id=whitelist_id).delete()
+        db.session.commit()
+        return deleted
+
+    def __repr__(self):
+        return f"<RuleWhitelistCache {self.rid} {self.rtype} {self.rorigin}>"
+
+    def __str__(self):
+        return f"{self.rid} {self.rtype} {self.rorigin}"

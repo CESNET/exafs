@@ -59,18 +59,17 @@ def check_global_rule_limit(rule_type: RuleTypes) -> bool:
         return rtbh >= rtbh_limit
 
 
-def get_whitelist_model_if_exists(form_data, rstate_id=1):
+def get_whitelist_model_if_exists(form_data):
     """
     Check if the record in database exist
-    ip, mask, rstate_id should match
-    expires, user_id, org_id, created, comment can be different
+    ip, mask should match
+    expires, rstate_id, user_id, org_id, created, comment can be different
     """
     record = (
         db.session.query(Whitelist)
         .filter(
             Whitelist.ip == form_data["ip"],
             Whitelist.mask == form_data["mask"],
-            Whitelist.rstate_id == rstate_id,
         )
         .first()
     )
