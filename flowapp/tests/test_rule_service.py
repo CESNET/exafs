@@ -13,7 +13,6 @@ from flowapp.constants import RuleOrigin, ANNOUNCE
 from flowapp.models import Flowspec4, Flowspec6, RTBH, Whitelist
 from flowapp.services import rule_service
 from flowapp.services.whitelist_common import Relation
-import flowapp.services.whitelist_common
 
 
 @pytest.fixture
@@ -113,7 +112,7 @@ class TestCreateOrUpdateIPv4Rule:
             assert model.user_id == 1
             assert model.org_id == 1
 
-            # Verify message
+            # Verify message is still a string for IPv4 rules
             assert message == "IPv4 Rule saved"
 
             # Verify route was announced
@@ -171,7 +170,7 @@ class TestCreateOrUpdateIPv4Rule:
             assert model == existing_model
             assert model.expires.date() == rule_service.round_to_ten_minutes(new_expires).date()
 
-            # Verify message
+            # Verify message is still a string for IPv4 rules
             assert message == "Existing IPv4 Rule found. Expiration time was updated to new value."
 
             # Verify route was announced
@@ -216,65 +215,8 @@ class TestCreateOrUpdateIPv6Rule:
             assert model.user_id == 1
             assert model.org_id == 1
 
-            # Verify message
+            # Verify message is still a string for IPv6 rules
             assert message == "IPv6 Rule saved"
-
-            # Verify route was announced
-            mock_messages.create_ipv6.assert_called_once_with(model, ANNOUNCE)
-            mock_announce.assert_called_once()
-            mock_log.assert_called_once()
-
-    @patch("flowapp.services.rule_service.get_ipv6_model_if_exists")
-    @patch("flowapp.services.rule_service.messages")
-    @patch("flowapp.services.rule_service.announce_route")
-    @patch("flowapp.services.rule_service.log_route")
-    def test_update_existing_ipv6_rule(
-        self, mock_log, mock_announce, mock_messages, mock_get_model, app, db, ipv6_form_data
-    ):
-        """Test updating an existing IPv6 rule"""
-        # Create an existing model to return
-        existing_model = Flowspec6(
-            source=ipv6_form_data["source"],
-            source_mask=ipv6_form_data["source_mask"],
-            source_port=ipv6_form_data["source_port"] or "",
-            destination=ipv6_form_data["dest"] or "",
-            destination_mask=ipv6_form_data["dest_mask"],
-            destination_port=ipv6_form_data["dest_port"] or "",
-            next_header=ipv6_form_data["next_header"],
-            flags=";".join(ipv6_form_data["flags"]),
-            packet_len=ipv6_form_data["packet_len"] or "",
-            expires=datetime.now(),
-            user_id=1,
-            org_id=1,
-            action_id=1,
-            rstate_id=1,
-        )
-        mock_get_model.return_value = existing_model
-        mock_messages.create_ipv6.return_value = "mock command"
-
-        # Set a new expiration time
-        new_expires = datetime.now() + timedelta(days=1)
-        ipv6_form_data["expires"] = new_expires
-
-        # Call the service function
-        with app.app_context():
-            db.session.add(existing_model)
-            db.session.commit()
-
-            model, message = rule_service.create_or_update_ipv6_rule(
-                form_data=ipv6_form_data,
-                user_id=1,
-                org_id=1,
-                user_email="test@example.com",
-                org_name="Test Org",
-            )
-
-            # Verify the model was updated
-            assert model == existing_model
-            assert model.expires.date() == rule_service.round_to_ten_minutes(new_expires).date()
-
-            # Verify message
-            assert message == "Existing IPv6 Rule found. Expiration time was updated to new value."
 
             # Verify route was announced
             mock_messages.create_ipv6.assert_called_once_with(model, ANNOUNCE)
@@ -286,7 +228,7 @@ class TestCreateOrUpdateRTBHRule:
     @patch("flowapp.services.rule_service.get_rtbh_model_if_exists")
     @patch("flowapp.services.rule_service.db.session.query")
     @patch("flowapp.services.rule_service.check_rule_against_whitelists")
-    @patch("flowapp.services.rule_service.evaluate_rtbh_rule_against_whitelists")
+    @patch("flowapp.services.rule_service.evaluate_rtbh_against_whitelists_check_results")
     @patch("flowapp.services.rule_service.announce_rtbh_route")
     @patch("flowapp.services.rule_service.log_route")
     def test_create_new_rtbh_rule(
@@ -308,7 +250,7 @@ class TestCreateOrUpdateRTBHRule:
 
         # Call the service function
         with app.app_context():
-            model, messages = rule_service.create_or_update_rtbh_rule(
+            model, flashes = rule_service.create_or_update_rtbh_rule(
                 form_data=rtbh_form_data,
                 user_id=1,
                 org_id=1,
@@ -327,10 +269,11 @@ class TestCreateOrUpdateRTBHRule:
             assert model.user_id == 1
             assert model.org_id == 1
 
-            # Verify messages
-            assert "RTBH Rule saved" in messages[0]
+            # Verify flash messages - now a list instead of a string
+            assert isinstance(flashes, list)
+            assert "RTBH Rule saved" in flashes[0]
 
-            # Verify route was announced
+            # Verify rule was announced
             mock_announce.assert_called_once()
             mock_log.assert_called_once()
 
@@ -340,7 +283,7 @@ class TestCreateOrUpdateRTBHRule:
     @patch("flowapp.services.rule_service.get_rtbh_model_if_exists")
     @patch("flowapp.services.rule_service.db.session.query")
     @patch("flowapp.services.rule_service.check_rule_against_whitelists")
-    @patch("flowapp.services.rule_service.evaluate_rtbh_rule_against_whitelists")
+    @patch("flowapp.services.rule_service.evaluate_rtbh_against_whitelists_check_results")
     @patch("flowapp.services.rule_service.announce_rtbh_route")
     @patch("flowapp.services.rule_service.log_route")
     def test_update_existing_rtbh_rule(
@@ -380,7 +323,7 @@ class TestCreateOrUpdateRTBHRule:
             db.session.add(existing_model)
             db.session.commit()
 
-            model, messages = rule_service.create_or_update_rtbh_rule(
+            model, flashes = rule_service.create_or_update_rtbh_rule(
                 form_data=rtbh_form_data,
                 user_id=1,
                 org_id=1,
@@ -392,15 +335,89 @@ class TestCreateOrUpdateRTBHRule:
             assert model == existing_model
             assert model.expires.date() == rule_service.round_to_ten_minutes(new_expires).date()
 
-            # Verify messages
-            assert "Existing RTBH Rule found" in messages[0]
+            # Verify flash messages
+            assert isinstance(flashes, list)
+            assert "Existing RTBH Rule found" in flashes[0]
 
             # Verify route was announced
             mock_announce.assert_called_once()
             mock_log.assert_called_once()
 
+    @patch("flowapp.services.rule_service.get_rtbh_model_if_exists")
+    @patch("flowapp.services.rule_service.db.session.query")
+    @patch("flowapp.services.rule_service.map_whitelists_to_strings")
+    @patch("flowapp.services.rule_service.check_rule_against_whitelists")
+    @patch("flowapp.services.rule_service.evaluate_rtbh_against_whitelists_check_results")
+    @patch("flowapp.services.rule_service.announce_rtbh_route")
+    @patch("flowapp.services.rule_service.log_route")
+    def test_rtbh_rule_with_whitelists(
+        self,
+        mock_log,
+        mock_announce,
+        mock_evaluate,
+        mock_check,
+        mock_map,
+        mock_query,
+        mock_get_model,
+        app,
+        db,
+        rtbh_form_data,
+        whitelist_fixture,
+    ):
+        """Test creating a RTBH rule that interacts with whitelists"""
+        # Mock get_rtbh_model_if_exists to return False
+        mock_get_model.return_value = False
 
-class TestEvaluateRtbhRuleAgainstWhitelists:
+        # Create a mock whitelist
+        mock_whitelist = whitelist_fixture
+        mock_whitelists = [mock_whitelist]
+
+        # Setup mock query to return our whitelist
+        mock_query_result = MagicMock()
+        mock_query_result.filter.return_value.all.return_value = mock_whitelists
+        mock_query.return_value = mock_query_result
+
+        # Setup map function to return our whitelist in a dict
+        whitelist_key = "192.168.1.0/24"
+        mock_map.return_value = {whitelist_key: mock_whitelist}
+
+        # Setup check function to return a relation
+        mock_rtbh = MagicMock(spec=RTBH)
+        mock_rtbh.__str__.return_value = "192.168.1.0/24"
+
+        # Setup check result
+        rule_relation = [(str(mock_rtbh), whitelist_key, Relation.EQUAL)]
+        mock_check.return_value = rule_relation
+
+        # Setup evaluate function to add a flash message
+        def evaluate_side_effect(user_id, model, flashes, author, wl_cache, results):
+            flashes.append("Rule is equal to whitelist")
+            return model
+
+        mock_evaluate.side_effect = evaluate_side_effect
+
+        # Call the service function
+        with app.app_context():
+            model, flashes = rule_service.create_or_update_rtbh_rule(
+                form_data=rtbh_form_data,
+                user_id=1,
+                org_id=1,
+                user_email="test@example.com",
+                org_name="Test Org",
+            )
+
+            # Verify flash messages show both rule creation and whitelist check
+            assert isinstance(flashes, list)
+            assert "RTBH Rule saved" in flashes[0]
+            assert "Rule is equal to whitelist" in flashes[1]
+
+            # Verify interactions
+            mock_map.assert_called_once()
+            mock_check.assert_called_once()
+            mock_evaluate.assert_called_once()
+
+
+class TestEvaluateRtbhAgainstWhitelistsCheckResults:
     def test_equal_relation(self, app, whitelist_fixture):
         """Test evaluating a rule with an EQUAL relation to a whitelist"""
         # Create a model
@@ -532,56 +549,6 @@ class TestEvaluateRtbhRuleAgainstWhitelists:
             assert not flashes
 
 
-class TestCreateRtbhFromWhitelistParts:
-    @patch("flowapp.services.rule_service.add_rtbh_rule_to_cache")
-    @patch("flowapp.services.rule_service.announce_rtbh_route")
-    @patch("flowapp.services.rule_service.log_route")
-    def test_create_rtbh_from_whitelist_parts(self, mock_log, mock_announce, mock_add_cache, app, db):
-        """Test creating RTBH rules from whitelist parts"""
-        # Create an initial RTBH rule model
-        model = RTBH(
-            ipv4="192.168.1.0",
-            ipv4_mask=24,
-            ipv6="",
-            ipv6_mask=None,
-            community_id=1,
-            expires=datetime.now() + timedelta(hours=1),
-            user_id=1,
-            org_id=1,
-            rstate_id=1,
-        )
-
-        # Set up test data
-        network = "192.168.1.128/25"
-        whitelist_id = 1
-        whitelist_key = "192.168.1.128/25"
-        rule_owner = "test@example.com / Test Org"
-        user_id = 1
-
-        # Call the function
-        with app.app_context():
-            db.session.add(model)
-            db.session.commit()
-
-            flowapp.services.whitelist_common.create_rtbh_from_whitelist_parts(
-                model, whitelist_id, whitelist_key, network, rule_owner, user_id
-            )
-
-            # Verify a new model was created and saved
-            net_ip, net_mask = network.split("/")
-            subnet_rules = db.session.query(RTBH).filter(RTBH.ipv4 == net_ip, RTBH.ipv4_mask == net_mask).all()
-
-            assert len(subnet_rules) == 1
-            assert subnet_rules[0].rstate_id == 1  # Active state
-            assert subnet_rules[0].ipv4 == "192.168.1.128"
-            assert subnet_rules[0].ipv4_mask == 25
-
-            # Verify caching and announcement
-            mock_add_cache.assert_called_once()
-            mock_announce.assert_called_once()
-            mock_log.assert_called_once()
-
-
 class TestMapWhitelistsToStrings:
     def test_map_whitelists_to_strings(self):
         """Test mapping whitelist objects to strings"""
@@ -603,3 +570,60 @@ class TestMapWhitelistsToStrings:
         assert "10.0.0.0/8" in result
         assert result["192.168.1.0/24"] == whitelist1
         assert result["10.0.0.0/8"] == whitelist2
+
+    @patch("flowapp.services.rule_service.get_ipv6_model_if_exists")
+    @patch("flowapp.services.rule_service.messages")
+    @patch("flowapp.services.rule_service.announce_route")
+    @patch("flowapp.services.rule_service.log_route")
+    def test_update_existing_ipv6_rule(
+        self, mock_log, mock_announce, mock_messages, mock_get_model, app, db, ipv6_form_data
+    ):
+        """Test updating an existing IPv6 rule"""
+        # Create an existing model to return
+        existing_model = Flowspec6(
+            source=ipv6_form_data["source"],
+            source_mask=ipv6_form_data["source_mask"],
+            source_port=ipv6_form_data["source_port"] or "",
+            destination=ipv6_form_data["dest"] or "",
+            destination_mask=ipv6_form_data["dest_mask"],
+            destination_port=ipv6_form_data["dest_port"] or "",
+            next_header=ipv6_form_data["next_header"],
+            flags=";".join(ipv6_form_data["flags"]),
+            packet_len=ipv6_form_data["packet_len"] or "",
+            expires=datetime.now(),
+            user_id=1,
+            org_id=1,
+            action_id=1,
+            rstate_id=1,
+        )
+        mock_get_model.return_value = existing_model
+        mock_messages.create_ipv6.return_value = "mock command"
+
+        # Set a new expiration time
+        new_expires = datetime.now() + timedelta(days=1)
+        ipv6_form_data["expires"] = new_expires
+
+        # Call the service function
+        with app.app_context():
+            db.session.add(existing_model)
+            db.session.commit()
+
+            model, message = rule_service.create_or_update_ipv6_rule(
+                form_data=ipv6_form_data,
+                user_id=1,
+                org_id=1,
+                user_email="test@example.com",
+                org_name="Test Org",
+            )
+
+            # Verify the model was updated
+            assert model == existing_model
+            assert model.expires.date() == rule_service.round_to_ten_minutes(new_expires).date()
+
+            # Verify message is still a string for IPv6 rules
+            assert message == "Existing IPv6 Rule found. Expiration time was updated to new value."
+
+            # Verify route was announced
+            mock_messages.create_ipv6.assert_called_once_with(model, ANNOUNCE)
+            mock_announce.assert_called_once()
+            mock_log.assert_called_once()

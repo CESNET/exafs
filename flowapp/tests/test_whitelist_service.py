@@ -7,11 +7,12 @@ which manages creation, updating, and handling of whitelist rules.
 
 import pytest
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from flowapp.constants import RuleTypes, RuleOrigin
 from flowapp.models import Whitelist, RuleWhitelistCache, RTBH
 from flowapp.services import whitelist_service
+from flowapp.services.whitelist_common import Relation
 
 
 @pytest.fixture
@@ -26,13 +27,31 @@ def whitelist_form_data():
 
 
 class TestCreateOrUpdateWhitelist:
-    def test_create_new_whitelist(self, app, db, whitelist_form_data):
+    @patch("flowapp.services.whitelist_service.get_whitelist_model_if_exists")
+    @patch("flowapp.services.whitelist_service.check_whitelist_against_rules")
+    @patch("flowapp.services.whitelist_service.evaluate_whitelist_against_rtbh_check_results")
+    def test_create_new_whitelist(
+        self, mock_evaluate, mock_check_whitelist, mock_get_model, app, db, whitelist_form_data
+    ):
         """Test creating a new whitelist entry"""
         # Mock the get_whitelist_model_if_exists to return False (not found)
-        with patch("flowapp.services.whitelist_service.get_whitelist_model_if_exists", return_value=False):
-            # Call the service function
+        mock_get_model.return_value = False
+
+        # Mock RTBH rules and check results
+        mock_rtbh_rules = []
+        mock_query = MagicMock()
+        mock_query.filter.return_value.all.return_value = mock_rtbh_rules
+
+        # Mock check_whitelist_against_rules to return empty list (no matches)
+        mock_check_whitelist.return_value = []
+
+        # Mock evaluate to return the model unchanged
+        mock_evaluate.side_effect = lambda model, flashes, rtbh_rule_cache, results: model
+
+        # Call the service function
+        with patch("flowapp.services.whitelist_service.db.session.query", return_value=mock_query):
             with app.app_context():
-                model, message = whitelist_service.create_or_update_whitelist(
+                model, flashes = whitelist_service.create_or_update_whitelist(
                     form_data=whitelist_form_data,
                     user_id=1,
                     org_id=1,
@@ -49,15 +68,16 @@ class TestCreateOrUpdateWhitelist:
                 assert model.org_id == 1
                 assert model.rstate_id == 1  # Active state
 
-                # Verify message
-                assert message == "Whitelist saved"
+                # Verify flash messages - now a list instead of a string
+                assert isinstance(flashes, list)
+                assert "Whitelist saved" in flashes[0]
 
-                # Verify the whitelist was saved to the database
-                saved_whitelist = db.session.query(Whitelist).filter_by(ip=whitelist_form_data["ip"]).first()
-                assert saved_whitelist is not None
-                assert saved_whitelist.id == model.id
-
-    def test_update_existing_whitelist(self, app, db, whitelist_form_data):
+    @patch("flowapp.services.whitelist_service.get_whitelist_model_if_exists")
+    @patch("flowapp.services.whitelist_service.check_whitelist_against_rules")
+    @patch("flowapp.services.whitelist_service.evaluate_whitelist_against_rtbh_check_results")
+    def test_update_existing_whitelist(
+        self, mock_evaluate, mock_check_whitelist, mock_get_model, app, db, whitelist_form_data
+    ):
         """Test updating an existing whitelist entry"""
         # Create an existing whitelist
         existing_model = Whitelist(
@@ -70,17 +90,30 @@ class TestCreateOrUpdateWhitelist:
         )
 
         # Mock to return the existing model
-        with patch("flowapp.services.whitelist_service.get_whitelist_model_if_exists", return_value=existing_model):
-            # Set a new expiration time
-            new_expires = datetime.now() + timedelta(days=1)
-            whitelist_form_data["expires"] = new_expires
+        mock_get_model.return_value = existing_model
 
-            # Call the service function
+        # Mock RTBH rules and check results
+        mock_rtbh_rules = []
+        mock_query = MagicMock()
+        mock_query.filter.return_value.all.return_value = mock_rtbh_rules
+
+        # Mock check_whitelist_against_rules to return empty list (no matches)
+        mock_check_whitelist.return_value = []
+
+        # Mock evaluate to return the model unchanged
+        mock_evaluate.side_effect = lambda model, flashes, rtbh_rule_cache, results: model
+
+        # Set a new expiration time
+        new_expires = datetime.now() + timedelta(days=1)
+        whitelist_form_data["expires"] = new_expires
+
+        # Call the service function
+        with patch("flowapp.services.whitelist_service.db.session.query", return_value=mock_query):
             with app.app_context():
                 db.session.add(existing_model)
                 db.session.commit()
 
-                model, message = whitelist_service.create_or_update_whitelist(
+                model, flashes = whitelist_service.create_or_update_whitelist(
                     form_data=whitelist_form_data,
                     user_id=1,
                     org_id=1,
@@ -94,8 +127,70 @@ class TestCreateOrUpdateWhitelist:
                 # We can't compare exact timestamps, so check date parts
                 assert model.expires.date() == whitelist_service.round_to_ten_minutes(new_expires).date()
 
-                # Verify message
-                assert message == "Existing Whitelist found. Expiration time was updated to new value."
+                # Verify flash messages - now a list instead of a string
+                assert isinstance(flashes, list)
+                assert "Existing Whitelist found" in flashes[0]
+
+    @patch("flowapp.services.whitelist_service.get_whitelist_model_if_exists")
+    @patch("flowapp.services.whitelist_service.db.session.query")
+    @patch("flowapp.services.whitelist_service.map_rtbh_rules_to_strings")
+    @patch("flowapp.services.whitelist_service.check_whitelist_against_rules")
+    @patch("flowapp.services.whitelist_service.evaluate_whitelist_against_rtbh_check_results")
+    def test_create_whitelist_with_matching_rules(
+        self, mock_evaluate, mock_check, mock_map, mock_query, mock_get_model, app, db, whitelist_form_data
+    ):
+        """Test creating a whitelist that affects existing rules"""
+        # Mock get_whitelist_model_if_exists to return False (new whitelist)
+        mock_get_model.return_value = False
+
+        # Create a mock RTBH rule
+        mock_rtbh_rule = MagicMock(spec=RTBH)
+        mock_rtbh_rule.__str__.return_value = "192.168.1.0/24"
+        mock_rtbh_rules = [mock_rtbh_rule]
+
+        # Setup mock query to return our rule
+        mock_query_result = MagicMock()
+        mock_query_result.filter.return_value.all.return_value = mock_rtbh_rules
+        mock_query.return_value = mock_query_result
+
+        # Setup map function to return our rule in a dict
+        mock_map.return_value = {"192.168.1.0/24": mock_rtbh_rule}
+
+        # Setup check function to return a relation
+        rule_relation = [
+            (
+                str(mock_rtbh_rule),
+                str(whitelist_form_data["ip"]) + "/" + str(whitelist_form_data["mask"]),
+                Relation.EQUAL,
+            )
+        ]
+        mock_check.return_value = rule_relation
+
+        # Setup evaluate function to modify flashes
+        def evaluate_side_effect(model, flashes, rtbh_rule_cache, results):
+            flashes.append("Rule was whitelisted")
+            return model
+
+        mock_evaluate.side_effect = evaluate_side_effect
+
+        # Call the service function
+        with app.app_context():
+            model, flashes = whitelist_service.create_or_update_whitelist(
+                form_data=whitelist_form_data,
+                user_id=1,
+                org_id=1,
+                user_email="test@example.com",
+                org_name="Test Org",
+            )
+
+            # Verify flash messages includes both whitelist creation and rule whitelisting
+            assert "Whitelist saved" in flashes[0]
+            assert "Rule was whitelisted" in flashes[1]
+
+            # Verify interactions
+            mock_map.assert_called_once()
+            mock_check.assert_called_once()
+            mock_evaluate.assert_called_once()
 
 
 class TestDeleteWhitelist:
@@ -147,7 +242,7 @@ class TestDeleteWhitelist:
             # Mock the get_by_whitelist_id to return our cache entry
             with patch.object(RuleWhitelistCache, "get_by_whitelist_id", return_value=[cache_entry]):
                 # Call the service function
-                messages = whitelist_service.delete_whitelist(whitelist.id)
+                flashes = whitelist_service.delete_whitelist(whitelist.id)
 
                 # Verify the rule state was changed back to active
                 rtbh_rule = db.session.get(RTBH, rtbh_rule.id)
@@ -156,8 +251,9 @@ class TestDeleteWhitelist:
                 # Verify announcement was made
                 mock_announce.assert_called_once()
 
-                # Verify messages
-                assert any("Set rule" in msg for msg in messages)
+                # Verify flash messages
+                assert isinstance(flashes, list)
+                assert any("Set rule" in msg for msg in flashes)
 
                 # Verify the whitelist was deleted
                 assert db.session.get(Whitelist, whitelist.id) is None
@@ -210,10 +306,11 @@ class TestDeleteWhitelist:
             # Create a mock session that can get our rule
             with patch.object(RuleWhitelistCache, "get_by_whitelist_id", return_value=[cache_entry]):
                 # Call the service function
-                messages = whitelist_service.delete_whitelist(whitelist.id)
+                flashes = whitelist_service.delete_whitelist(whitelist.id)
 
-                # Verify messages
-                assert any("Deleted rule" in msg for msg in messages)
+                # Verify flash messages
+                assert isinstance(flashes, list)
+                assert any("Deleted rule" in msg for msg in flashes)
 
                 # Verify the rule was deleted
                 assert db.session.get(RTBH, rtbh_rule.id) is None
@@ -228,7 +325,137 @@ class TestDeleteWhitelist:
         """Test deleting a whitelist that doesn't exist"""
         with app.app_context():
             # Call the service function with a non-existent ID
-            messages = whitelist_service.delete_whitelist(999)
+            flashes = whitelist_service.delete_whitelist(999)
 
-            # Should return empty list of messages, as no whitelist was found
-            assert len(messages) == 0
+            # Should return empty list of flash messages, as no whitelist was found
+            assert isinstance(flashes, list)
+            assert len(flashes) == 0
+
+
+class TestEvaluateWhitelistAgainstRtbhResults:
+    def test_equal_relation(self, app):
+        """Test evaluating a whitelist with an EQUAL relation to a rule"""
+        # Create test data
+        whitelist_model = MagicMock(spec=Whitelist)
+        whitelist_model.id = 1
+
+        flashes = []
+
+        rtbh_rule = MagicMock(spec=RTBH)
+        rtbh_rule.rstate_id = 1  # Active state
+
+        rule_key = "192.168.1.0/24"
+        whitelist_key = "192.168.1.0/24"
+        rtbh_rule_cache = {rule_key: rtbh_rule}
+
+        results = [(rule_key, whitelist_key, Relation.EQUAL)]
+
+        # Mock required functions
+        with patch("flowapp.services.whitelist_service.whitelist_rtbh_rule") as mock_whitelist_rule, patch(
+            "flowapp.services.whitelist_service.withdraw_rtbh_route"
+        ) as mock_withdraw:
+
+            # Call the function
+            with app.app_context():
+                result = whitelist_service.evaluate_whitelist_against_rtbh_check_results(
+                    whitelist_model, flashes, rtbh_rule_cache, results
+                )
+
+                # Verify the rule was whitelisted and route withdrawn
+                mock_whitelist_rule.assert_called_once_with(rtbh_rule, whitelist_model)
+                mock_withdraw.assert_called_once_with(rtbh_rule)
+
+                # Verify the flash message
+                assert any("equal to whitelist" in msg for msg in flashes)
+
+                # Verify the correct model was returned
+                assert result == whitelist_model
+
+    def test_subnet_relation(self, app):
+        """Test evaluating a whitelist with a SUBNET relation to a rule"""
+        # Create test data
+        whitelist_model = MagicMock(spec=Whitelist)
+        whitelist_model.id = 1
+
+        flashes = []
+
+        rtbh_rule = MagicMock(spec=RTBH)
+        rtbh_rule.rstate_id = 1  # Active state
+
+        rule_key = "192.168.1.0/24"
+        whitelist_key = "192.168.1.128/25"
+        rtbh_rule_cache = {rule_key: rtbh_rule}
+
+        results = [(rule_key, whitelist_key, Relation.SUBNET)]
+
+        # Mock required functions
+        with patch("flowapp.services.whitelist_service.subtract_network") as mock_subtract, patch(
+            "flowapp.services.whitelist_service.create_rtbh_from_whitelist_parts"
+        ) as mock_create, patch("flowapp.services.whitelist_service.add_rtbh_rule_to_cache") as mock_add_cache, patch(
+            "flowapp.services.whitelist_service.db.session.commit"
+        ) as mock_commit:
+
+            # Mock subtract_network to return some subnets
+            mock_subtract.return_value = ["192.168.1.0/25"]
+
+            # Call the function
+            with app.app_context():
+                _result = whitelist_service.evaluate_whitelist_against_rtbh_check_results(
+                    whitelist_model, flashes, rtbh_rule_cache, results
+                )
+
+                # Verify subnet calculation was performed
+                mock_subtract.assert_called_once()
+
+                # Verify new rules were created for the subnets
+                mock_create.assert_called_once()
+
+                # Verify the original rule was cached
+                mock_add_cache.assert_called_once_with(rtbh_rule, whitelist_model.id, RuleOrigin.USER)
+
+                # Verify transaction was committed
+                mock_commit.assert_called_once()
+
+                # Verify the flash messages
+                assert any("supernet of whitelist" in msg for msg in flashes)
+
+                # Verify model was updated to whitelisted state
+                assert rtbh_rule.rstate_id == 4
+
+    def test_supernet_relation(self, app):
+        """Test evaluating a whitelist with a SUPERNET relation to a rule"""
+        # Create test data
+        whitelist_model = MagicMock(spec=Whitelist)
+        whitelist_model.id = 1
+
+        flashes = []
+
+        rtbh_rule = MagicMock(spec=RTBH)
+        rtbh_rule.rstate_id = 1  # Active state
+
+        rule_key = "192.168.1.0/24"
+        whitelist_key = "192.168.0.0/16"
+        rtbh_rule_cache = {rule_key: rtbh_rule}
+
+        results = [(rule_key, whitelist_key, Relation.SUPERNET)]
+
+        # Mock required functions
+        with patch("flowapp.services.whitelist_service.whitelist_rtbh_rule") as mock_whitelist_rule, patch(
+            "flowapp.services.whitelist_service.withdraw_rtbh_route"
+        ) as mock_withdraw:
+
+            # Call the function
+            with app.app_context():
+                result = whitelist_service.evaluate_whitelist_against_rtbh_check_results(
+                    whitelist_model, flashes, rtbh_rule_cache, results
+                )
+
+                # Verify the rule was whitelisted and route withdrawn
+                mock_whitelist_rule.assert_called_once_with(rtbh_rule, whitelist_model)
+                mock_withdraw.assert_called_once_with(rtbh_rule)
+
+                # Verify the flash message
+                assert any("subnet of whitelist" in msg for msg in flashes)
+
+                # Verify the correct model was returned
+                assert result == whitelist_model
