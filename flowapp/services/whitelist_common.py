@@ -5,6 +5,8 @@ from typing import List, Tuple
 from flowapp import db
 from flowapp.constants import RuleOrigin, RuleTypes
 from flowapp.models import RTBH, RuleWhitelistCache, Whitelist
+from flowapp.output import log_route
+from flowapp.services.base import announce_rtbh_route
 
 
 def add_rtbh_rule_to_cache(model: RTBH, whitelist_id: int, rule_origin: RuleOrigin = RuleOrigin.USER) -> None:
@@ -29,6 +31,14 @@ def whitelist_rtbh_rule(model: RTBH, whitelist: Whitelist) -> RTBH:
 
 
 class Relation(Enum):
+    """
+    Enum to represent the relation between Whitelist to Rule Relation
+    Subnet: Whitelist is a subnet of the rule
+    Supernet: Whitelist is a supernet of the rule
+    Equal: Whitelist is equal to the rule
+    Different: Whitelist is different from the rule
+    """
+
     SUBNET = auto()
     SUPERNET = auto()
     EQUAL = auto()
@@ -148,3 +158,31 @@ def clear_network_cache() -> None:
     Useful when processing a large number of networks to prevent memory growth.
     """
     get_network.cache_clear()
+
+
+def create_rtbh_from_whitelist_parts(
+    model: RTBH, wl_id: int, whitelist_key: str, network: str, rule_owner: str = "", user_id: int = 0
+) -> None:
+    # default values from model
+    rule_owner = rule_owner or model.get_author()
+    user_id = user_id or model.user_id
+
+    net_ip, net_mask = network.split("/")
+    new_model = RTBH(
+        ipv4=net_ip,
+        ipv4_mask=net_mask,
+        ipv6=model.ipv6,
+        ipv6_mask=model.ipv6_mask,
+        community_id=model.community_id,
+        expires=model.expires,
+        comment=model.comment,
+        user_id=model.user_id,
+        org_id=model.org_id,
+        rstate_id=1,
+    )
+    db.session.add(new_model)
+    db.session.commit()
+
+    add_rtbh_rule_to_cache(new_model, wl_id, RuleOrigin.WHITELIST)
+    announce_rtbh_route(new_model, rule_owner)
+    log_route(user_id, model, RuleTypes.RTBH, rule_owner)

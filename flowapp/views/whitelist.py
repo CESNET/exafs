@@ -24,14 +24,15 @@ def add():
     form.net_ranges = net_ranges
 
     if request.method == "POST" and form.validate():
-        model, message = create_or_update_whitelist(
+        model, messages = create_or_update_whitelist(
             form.data,
             user_id=session["user_id"],
             org_id=session["user_org_id"],
             user_email=session["user_email"],
             org_name=session["user_org"],
         )
-        flash(message, "alert-success")
+        for message in messages:
+            flash(message, "alert-success")
 
         return redirect(url_for("index"))
     else:

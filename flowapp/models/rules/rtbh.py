@@ -148,3 +148,6 @@ class RTBH(db.Model):
             return f"{self.ipv6}/{self.ipv6_mask}"
 
         return f"{self.ipv4}/{self.ipv4_mask} {self.ipv6}/{self.ipv6_mask}"
+
+    def get_author(self):
+        return f"{self.user.email} / {self.org}"

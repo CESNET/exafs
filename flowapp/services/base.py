@@ -1,6 +1,6 @@
-from flowapp import db, messages
-from flowapp.constants import ANNOUNCE, RuleOrigin, RuleTypes
-from flowapp.models import RTBH, RuleWhitelistCache
+from flowapp import messages
+from flowapp.constants import ANNOUNCE, WITHDRAW
+from flowapp.models import RTBH
 from flowapp.output import Route, RouteSources, announce_route
 
 
@@ -18,10 +18,15 @@ def announce_rtbh_route(model: RTBH, author: str) -> None:
         announce_route(route)
 
 
-def add_rtbh_rule_to_cache(model: RTBH, whitelist_id: int, rule_origin: RuleOrigin = RuleOrigin.USER) -> None:
+def withdraw_rtbh_route(model: RTBH) -> None:
     """
-    Add RTBH rule to whitelist cache
+    Withdraw RTBH route if rule is in whitelist state
     """
-    cache = RuleWhitelistCache(rid=model.id, rtype=RuleTypes.RTBH, whitelist_id=whitelist_id, rorigin=rule_origin)
-    db.session.add(cache)
-    db.session.commit()
+    if model.rstate_id == 4:
+        command = messages.create_rtbh(model, WITHDRAW)
+        route = Route(
+            author=model.get_author(),
+            source=RouteSources.UI,
+            command=command,
+        )
+        announce_route(route)

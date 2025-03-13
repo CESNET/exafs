@@ -13,7 +13,14 @@ from flowapp.constants import RuleOrigin, RuleTypes
 from flowapp.models import Whitelist, RuleWhitelistCache, get_whitelist_model_if_exists
 from flowapp.models.rules.flowspec import Flowspec4, Flowspec6
 from flowapp.models.rules.rtbh import RTBH
-from flowapp.services.base import announce_rtbh_route
+from flowapp.services.base import announce_rtbh_route, withdraw_rtbh_route
+from flowapp.services.whitelist_common import add_rtbh_rule_to_cache, create_rtbh_from_whitelist_parts
+from flowapp.services.whitelist_common import (
+    Relation,
+    check_whitelist_against_rules,
+    subtract_network,
+    whitelist_rtbh_rule,
+)
 from flowapp.utils import round_to_ten_minutes, quote_to_ent
 
 
@@ -35,10 +42,10 @@ def create_or_update_whitelist(
     """
     # Check for existing model
     model = get_whitelist_model_if_exists(form_data)
-
+    flashes = []
     if model:
         model.expires = round_to_ten_minutes(form_data["expires"])
-        flash_message = "Existing Whitelist found. Expiration time was updated to new value."
+        flashes.append("Existing Whitelist found. Expiration time was updated to new value.")
     else:
         # Create new model
         model = Whitelist(
@@ -50,11 +57,59 @@ def create_or_update_whitelist(
             comment=quote_to_ent(form_data["comment"]),
         )
         db.session.add(model)
-        flash_message = "Whitelist saved"
+        flashes.append("Whitelist saved")
 
     db.session.commit()
 
-    return model, flash_message
+    # check RTBH rules against whitelist
+    all_rtbh_rules = RTBH.query.filter(RTBH.rstate_id == 1).all()
+    print(f"Found {len(all_rtbh_rules)} active RTBH rules")
+    rtbh_rules_map = map_rtbh_rules_to_strings(all_rtbh_rules)
+    result = check_whitelist_against_rules(rtbh_rules_map, str(model))
+    print(f"Found {len(result)} matching RTBH rules")
+    model = evaluate_whitelist_against_rtbh_check_results(model, flashes, rtbh_rules_map, result)
+
+    return model, flashes
+
+
+def evaluate_whitelist_against_rtbh_check_results(
+    whitelist_model: Whitelist,
+    flashes: List[str],
+    rtbh_rule_cache: Dict[str, Whitelist],
+    results: List[Tuple[str, str, Relation]],
+) -> Whitelist:
+
+    for rule_key, whitelist_key, relation in results:
+        print(f"whitelist {whitelist_key} is {relation} to Rule {rule_key}")
+        match relation:
+            case Relation.EQUAL:
+                whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
+                withdraw_rtbh_route(rtbh_rule_cache[rule_key])
+                flashes.append(f"Active rule {rule_key} is equal to whitelist {whitelist_key}. Rule is whitelisted.")
+            case Relation.SUBNET:
+                parts = subtract_network(target=rule_key, whitelist=whitelist_key)
+                wl_id = whitelist_model.id
+                flashes.append(
+                    f" Rule {rule_key} is supernet of whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules created."
+                )
+                for network in parts:
+                    rule_model = rtbh_rule_cache[rule_key]
+                    create_rtbh_from_whitelist_parts(rule_model, wl_id, whitelist_key, network)
+                    flashes.append(f"DEBUG: Created RTBH rule for {network}, from whitelist {whitelist_key}")
+                rule_model.rstate_id = 4
+                add_rtbh_rule_to_cache(rule_model, wl_id, RuleOrigin.USER)
+                db.session.commit()
+            case Relation.SUPERNET:
+
+                whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
+                withdraw_rtbh_route(rtbh_rule_cache[rule_key])
+                flashes.append(f"Active rule {rule_key} is subnet of whitelist {whitelist_key}. Rule is whitelisted.")
+
+    return whitelist_model
+
+
+def map_rtbh_rules_to_strings(all_rtbh_rules: List[RTBH]) -> Dict[str, RTBH]:
+    return {str(rule): rule for rule in all_rtbh_rules}
 
 
 def delete_whitelist(whitelist_id: int) -> List[str]:
@@ -83,9 +138,13 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
                 db.session.delete(rule_model)
             elif rorigin_type == RuleOrigin.USER:
                 flashes.append(f"Set rule {rule_model} back to state 'Active'")
-                rule_model.rstate_id = 1  # Set rule state to "Active" again
-                author = f"{model.user.email} ({model.user.organization})"
-                announce_rtbh_route(rule_model, author)
+                try:
+                    rule_model.rstate_id = 1  # Set rule state to "Active" again
+                except AttributeError:
+                    print(f"Rule {rule_model} does not exist, cache anomaly?. Skipping.")
+                else:
+                    author = f"{model.user.email} ({model.user.organization})"
+                    announce_rtbh_route(rule_model, author)
 
         flashes.append(f"Deleted cache entries for whitelist {whitelist_id}")
         RuleWhitelistCache.clean_by_whitelist_id(whitelist_id)

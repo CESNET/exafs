@@ -22,7 +22,13 @@ from flowapp.models import (
 )
 from flowapp.output import Route, announce_route, log_route, RouteSources
 from flowapp.services.base import announce_rtbh_route
-from flowapp.services.whitelist_common import Relation, add_rtbh_rule_to_cache, subtract_network, whitelist_rtbh_rule
+from flowapp.services.whitelist_common import (
+    Relation,
+    add_rtbh_rule_to_cache,
+    create_rtbh_from_whitelist_parts,
+    subtract_network,
+    whitelist_rtbh_rule,
+)
 from flowapp.utils import round_to_ten_minutes, get_state_by_time, quote_to_ent
 from .whitelist_common import check_rule_against_whitelists
 
@@ -209,34 +215,10 @@ def create_or_update_rtbh_rule(
     # Check if rule is whitelisted
     # get all not expired whitelists
     whitelists = db.session.query(Whitelist).filter(Whitelist.expires > datetime.now()).all()
-    wl_cache = {str(w): w for w in whitelists}
+    wl_cache = map_whitelists_to_strings(whitelists)
     results = check_rule_against_whitelists(str(model), wl_cache.keys())
     # check rule against whitelists, stop search when rule is whitelisted first time
-    for rule, whitelist_key, relation in results:
-        match relation:
-            case Relation.EQUAL:
-                model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
-                flashes.append(f" Rule is equal to active whitelist {whitelist_key}. Rule is whitelisted.")
-                break
-            case Relation.SUBNET:
-                # split subnet into parts
-                parts = subtract_network(target=str(model), whitelist=whitelist_key)
-                wl_id = wl_cache[whitelist_key].id
-                flashes.append(
-                    f" Rule is supernet of active whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules created."
-                )
-                for network in parts:
-                    create_rtbh_from_whitelist_parts(model, wl_id, whitelist_key, network, author, user_id)
-                    flashes.append(f"DEBUG: Created RTBH rule for {network}, from whitelist {whitelist_key}")
-
-                model.rstate_id = 4
-                add_rtbh_rule_to_cache(model, wl_id, RuleOrigin.USER)
-                db.session.commit()
-                break
-            case Relation.SUPERNET:
-                model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
-                flashes.append(f" Rule is subnet of active whitelist {whitelist_key}. Rule is whitelisted.")
-                break
+    model = evaluate_rtbh_against_whitelists_check_results(user_id, model, flashes, author, wl_cache, results)
 
     announce_rtbh_route(model, author=author)
     # Log changes
@@ -245,24 +227,39 @@ def create_or_update_rtbh_rule(
     return model, flashes
 
 
-def create_rtbh_from_whitelist_parts(
-    model: RTBH, wl_id: int, whitelist_key: str, network: str, rule_owner: str, user_id: int
-) -> None:
-    net_ip, net_mask = network.split("/")
-    new_model = RTBH(
-        ipv4=net_ip,
-        ipv4_mask=net_mask,
-        ipv6=model.ipv6,
-        ipv6_mask=model.ipv6_mask,
-        community_id=model.community_id,
-        expires=model.expires,
-        comment=model.comment,
-        user_id=model.user_id,
-        org_id=model.org_id,
-        rstate_id=1,
-    )
-    db.session.add(new_model)
-    db.session.commit()
-    add_rtbh_rule_to_cache(new_model, wl_id, RuleOrigin.WHITELIST)
-    announce_rtbh_route(new_model, rule_owner)
-    log_route(user_id, model, RuleTypes.RTBH, rule_owner)
+def evaluate_rtbh_against_whitelists_check_results(
+    user_id: int,
+    model: RTBH,
+    flashes: List[str],
+    author: str,
+    wl_cache: Dict[str, Whitelist],
+    results: List[Tuple[str, str, Relation]],
+) -> RTBH:
+    for rule, whitelist_key, relation in results:
+        match relation:
+            case Relation.EQUAL:
+                model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
+                flashes.append(f" Rule is equal to active whitelist {whitelist_key}. Rule is whitelisted.")
+                break
+            case Relation.SUBNET:
+                parts = subtract_network(target=str(model), whitelist=whitelist_key)
+                wl_id = wl_cache[whitelist_key].id
+                flashes.append(
+                    f" Rule is supernet of active whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules created."
+                )
+                for network in parts:
+                    create_rtbh_from_whitelist_parts(model, wl_id, whitelist_key, network, author, user_id)
+                    flashes.append(f"DEBUG: Created RTBH rule for {network}, from whitelist {whitelist_key}")
+                model.rstate_id = 4
+                add_rtbh_rule_to_cache(model, wl_id, RuleOrigin.USER)
+                db.session.commit()
+                break
+            case Relation.SUPERNET:
+                model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
+                flashes.append(f" Rule is subnet of active whitelist {whitelist_key}. Rule is whitelisted.")
+                break
+    return model
+
+
+def map_whitelists_to_strings(whitelists: List[Whitelist]) -> Dict[str, Whitelist]:
+    return {str(w): w for w in whitelists}
