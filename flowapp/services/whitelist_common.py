@@ -45,6 +45,19 @@ class Relation(Enum):
     DIFFERENT = auto()
 
 
+def _is_same_ip_version(addr1: str, addr2: str) -> bool:
+    """
+    Check if two IP addresses/networks are of the same IP version.
+
+    :param addr1: First IP address or network string
+    :param addr2: Second IP address or network string
+    :return: True if both addresses are of the same IP version (IPv4 or IPv6), False otherwise
+    """
+    is_ipv4_1 = "." in addr1
+    is_ipv4_2 = "." in addr2
+    return is_ipv4_1 == is_ipv4_2
+
+
 @lru_cache(maxsize=1024)
 def get_network(address: str) -> ipaddress.IPv4Network | ipaddress.IPv6Network:
     """
@@ -58,22 +71,34 @@ def get_network(address: str) -> ipaddress.IPv4Network | ipaddress.IPv6Network:
 
 def check_whitelist_to_rule_relation(rule: str, whitelist_entry: str) -> Relation:
     """
-    Checks if the whitelist network is a subnet or supernet or  exactly the same as the rule network.
+    Checks if the whitelist network is a subnet or supernet or exactly the same as the rule network.
     Uses cached network objects for better performance.
+
+    If the rule and whitelist are different IP versions (IPv4 vs IPv6),
+    they are treated as different networks.
 
     :param rule: The IP address or network to check (e.g., "192.168.1.1" or "192.168.1.0/24")
     :param whitelist_entry: The allowed network to compare against (e.g., "192.168.1.0/24")
     :return: Relation between the two networks
     """
-    rule_net = get_network(rule)
-    whitelist_net = get_network(whitelist_entry)
-    if whitelist_net == rule_net:
-        return Relation.EQUAL
-    if whitelist_net.supernet_of(rule_net):
-        return Relation.SUPERNET
-    if whitelist_net.subnet_of(rule_net):
-        return Relation.SUBNET
-    else:
+    # First check if IP versions are the same
+    if not _is_same_ip_version(rule, whitelist_entry):
+        return Relation.DIFFERENT
+
+    try:
+        rule_net = get_network(rule)
+        whitelist_net = get_network(whitelist_entry)
+
+        if whitelist_net == rule_net:
+            return Relation.EQUAL
+        if whitelist_net.supernet_of(rule_net):
+            return Relation.SUPERNET
+        if whitelist_net.subnet_of(rule_net):
+            return Relation.SUBNET
+        else:
+            return Relation.DIFFERENT
+    except (ValueError, TypeError):
+        # Handle any other errors that might occur during comparison
         return Relation.DIFFERENT
 
 
@@ -82,34 +107,45 @@ def subtract_network(target: str, whitelist: str) -> List[str]:
     Computes the remaining parts of a network after removing the whitelist subnet.
     Uses cached network objects for better performance.
 
+    If the target and whitelist are different IP versions (IPv4 vs IPv6),
+    the original target is returned unchanged.
+
     :param target: The main network (e.g., "192.168.1.0/24")
     :param whitelist: The subnet to remove (e.g., "192.168.1.128/25")
     :return: A list of remaining subnets as strings
     """
-    target_net = get_network(target)
-    whitelist_net = get_network(whitelist)
+    # First check if IP versions are the same
+    if not _is_same_ip_version(target, whitelist):
+        return [target]
 
-    # Check if the whitelist is actually a subnet
-    if check_whitelist_to_rule_relation(target, whitelist) != Relation.SUBNET:
-        return [target]  # Return the full network if whitelist isn't a valid subnet
+    try:
+        target_net = get_network(target)
+        whitelist_net = get_network(whitelist)
 
-    remaining = []
+        # Check if the whitelist is actually a subnet
+        if check_whitelist_to_rule_relation(target, whitelist) != Relation.SUBNET:
+            return [target]  # Return the full network if whitelist isn't a valid subnet
 
-    # Compute ranges before and after the whitelist
-    if whitelist_net.network_address > target_net.network_address:
-        # Before the whitelist
-        start = target_net.network_address
-        end = whitelist_net.network_address - 1
-        remaining.extend(ipaddress.summarize_address_range(start, end))
+        remaining = []
 
-    if whitelist_net.broadcast_address < target_net.broadcast_address:
-        # After the whitelist
-        start = whitelist_net.broadcast_address + 1
-        end = target_net.broadcast_address
-        remaining.extend(ipaddress.summarize_address_range(start, end))
+        # Compute ranges before and after the whitelist
+        if whitelist_net.network_address > target_net.network_address:
+            # Before the whitelist
+            start = target_net.network_address
+            end = whitelist_net.network_address - 1
+            remaining.extend(ipaddress.summarize_address_range(start, end))
 
-    # Convert to string format
-    return [str(net) for net in remaining]
+        if whitelist_net.broadcast_address < target_net.broadcast_address:
+            # After the whitelist
+            start = whitelist_net.broadcast_address + 1
+            end = target_net.broadcast_address
+            remaining.extend(ipaddress.summarize_address_range(start, end))
+
+        # Convert to string format
+        return [str(net) for net in remaining]
+    except (ValueError, TypeError):
+        # Return the original target in case of any error
+        return [target]
 
 
 def check_rule_against_whitelists(rule: str, whitelists: List[str]) -> List[Tuple]:
@@ -123,12 +159,21 @@ def check_rule_against_whitelists(rule: str, whitelists: List[str]) -> List[Tupl
     :return: tuple of rule, whitelist and relation for each whitelists that is not DIFFERENT
     """
     # Pre-cache the rule network since it will be used multiple times
-    get_network(rule)
+    try:
+        get_network(rule)
+    except (ValueError, TypeError):
+        # Return empty list if rule is not a valid network
+        return []
+
     items = []
     for whitelist in whitelists:
-        rel = check_whitelist_to_rule_relation(rule, whitelist)
-        if rel != Relation.DIFFERENT:
-            items.append((rule, whitelist, rel))
+        try:
+            rel = check_whitelist_to_rule_relation(rule, whitelist)
+            if rel != Relation.DIFFERENT:
+                items.append((rule, whitelist, rel))
+        except (ValueError, TypeError):
+            # Skip this whitelist if there's an error comparing
+            continue
     return items
 
 
@@ -138,17 +183,26 @@ def check_whitelist_against_rules(rules: List[str], whitelist: str) -> List[Tupl
     Creates a cached rule network object for better performance.
     Reduces list of rules, where the Relation is not DIFFERENT
 
-    :param rule: The IP address or network to check against
-    :param whitelists: List of whitelist networks to check
-    :return: tuple of rule, whitelist and relation for each whitelists that is not DIFFERENT
+    :param rules: List of rule networks to check against
+    :param whitelist: The whitelist network to check
+    :return: tuple of rule, whitelist and relation for each rules that is not DIFFERENT
     """
-    # Pre-cache the rule network since it will be used multiple times
-    get_network(whitelist)
+    # Pre-cache the whitelist network since it will be used multiple times
+    try:
+        get_network(whitelist)
+    except (ValueError, TypeError):
+        # Return empty list if whitelist is not a valid network
+        return []
+
     items = []
     for rule in rules:
-        rel = check_whitelist_to_rule_relation(rule, whitelist)
-        if rel != Relation.DIFFERENT:
-            items.append((rule, whitelist, rel))
+        try:
+            rel = check_whitelist_to_rule_relation(rule, whitelist)
+            if rel != Relation.DIFFERENT:
+                items.append((rule, whitelist, rel))
+        except (ValueError, TypeError):
+            # Skip this rule if there's an error comparing
+            continue
     return items
 
 

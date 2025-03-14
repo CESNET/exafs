@@ -6,6 +6,7 @@ from flowapp.services.whitelist_common import (
     check_whitelist_to_rule_relation,
     subtract_network,
     clear_network_cache,
+    _is_same_ip_version,  # New helper function
 )
 
 
@@ -130,16 +131,119 @@ def test_single_ip_as_network():
     assert check_whitelist_to_rule_relation("2001:db8::1/128", "2001:db8::/32") == Relation.SUPERNET
 
 
-def test_invalid_input():
+def test_is_same_ip_version():
+    """Test the new helper function to check if two addresses are of the same IP version"""
+    # IPv4 cases
+    assert _is_same_ip_version("192.168.1.0/24", "10.0.0.0/8") is True
+    assert _is_same_ip_version("192.168.1.1", "10.0.0.1") is True
+
+    # IPv6 cases
+    assert _is_same_ip_version("2001:db8::/32", "fe80::/64") is True
+    assert _is_same_ip_version("2001:db8::1", "fe80::1") is True
+
+    # Mixed cases
+    assert _is_same_ip_version("192.168.1.0/24", "2001:db8::/32") is False
+    assert _is_same_ip_version("192.168.1.1", "fe80::1") is False
+
+
+def test_check_whitelist_to_rule_relation_mixed_versions():
+    """Test the check_whitelist_to_rule_relation function with mixed IP versions"""
     clear_network_cache()
-    with pytest.raises(ValueError):
-        check_whitelist_to_rule_relation("invalid", "192.168.1.0/24")
 
-    with pytest.raises(ValueError):
-        check_whitelist_to_rule_relation("192.168.1.0/24", "invalid")
+    # IPv4 rule with IPv6 whitelist
+    assert check_whitelist_to_rule_relation("192.168.1.0/24", "2001:db8::/32") == Relation.DIFFERENT
 
-    with pytest.raises(ValueError):
-        subtract_network("invalid", "192.168.1.0/24")
+    # IPv6 rule with IPv4 whitelist
+    assert check_whitelist_to_rule_relation("2001:db8::/32", "192.168.1.0/24") == Relation.DIFFERENT
+
+    # Invalid IP addresses should return DIFFERENT
+    assert check_whitelist_to_rule_relation("invalid", "192.168.1.0/24") == Relation.DIFFERENT
+    assert check_whitelist_to_rule_relation("192.168.1.0/24", "invalid") == Relation.DIFFERENT
+
+
+def test_subtract_network_mixed_versions():
+    """Test the subtract_network function with mixed IP versions"""
+    clear_network_cache()
+
+    # IPv4 target with IPv6 whitelist - should return original target
+    result = subtract_network("192.168.1.0/24", "2001:db8::/32")
+    assert result == ["192.168.1.0/24"]
+
+    # IPv6 target with IPv4 whitelist - should return original target
+    result = subtract_network("2001:db8::/32", "192.168.1.0/24")
+    assert result == ["2001:db8::/32"]
+
+    # Invalid addresses - should return original target
+    result = subtract_network("invalid", "192.168.1.0/24")
+    assert result == ["invalid"]
+    result = subtract_network("192.168.1.0/24", "invalid")
+    assert result == ["192.168.1.0/24"]
+
+
+def test_check_rule_against_whitelists_mixed_versions():
+    """Test the check_rule_against_whitelists function with mixed IP versions"""
+    clear_network_cache()
+
+    # IPv4 rule against mixed whitelist
+    rule = "192.168.1.0/24"
+    whitelists = [
+        "192.168.0.0/16",  # IPv4 - should match
+        "2001:db8::/32",  # IPv6 - should not match
+        "10.0.0.0/8",  # IPv4 - should not match (different network)
+    ]
+
+    results = check_rule_against_whitelists(rule, whitelists)
+    assert len(results) == 1
+    assert results[0][0] == rule
+    assert results[0][1] == "192.168.0.0/16"
+    assert results[0][2] == Relation.SUPERNET
+
+    # IPv6 rule against mixed whitelist
+    rule = "2001:db8:1::/48"
+    whitelists = [
+        "192.168.0.0/16",  # IPv4 - should not match
+        "2001:db8::/32",  # IPv6 - should match
+        "2002:db8::/32",  # IPv6 - should not match (different network)
+    ]
+
+    results = check_rule_against_whitelists(rule, whitelists)
+    assert len(results) == 1
+    assert results[0][0] == rule
+    assert results[0][1] == "2001:db8::/32"
+    assert results[0][2] == Relation.SUPERNET
+
+
+def test_check_whitelist_against_rules_mixed_versions():
+    """Test the check_whitelist_against_rules function with mixed IP versions"""
+    clear_network_cache()
+
+    # IPv4 whitelist against mixed rules
+    whitelist = "192.168.1.0/24"
+    rules = [
+        "192.168.0.0/16",  # IPv4 - should match
+        "2001:db8::/32",  # IPv6 - should not match
+        "10.0.0.0/8",  # IPv4 - should not match (different network)
+    ]
+
+    results = check_whitelist_against_rules(rules, whitelist)
+    assert len(results) == 1
+    assert results[0][0] == "192.168.0.0/16"
+    assert results[0][1] == whitelist
+    assert results[0][2] == Relation.SUBNET
+
+    # IPv6 whitelist against mixed rules
+    whitelist = "2001:db8:1::/48"
+    rules = [
+        "192.168.0.0/16",  # IPv4 - should not match
+        "2001:db8::/32",  # IPv6 - should match
+        "2002:db8::/32",  # IPv6 - should not match (different network)
+    ]
+
+    results = check_whitelist_against_rules(rules, whitelist)
+    assert len(results) == 1
+    assert results[0][0] == "2001:db8::/32"
+    assert results[0][1] == whitelist
+    assert results[0][2] == Relation.SUBNET
 
 
 if __name__ == "__main__":
