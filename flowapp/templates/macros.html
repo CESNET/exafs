@@ -130,7 +130,7 @@
 {% endmacro %}
 
 
-{% macro build_whitelist_tbody(rules, today, editable=True, group_op=True) %}
+{% macro build_whitelist_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None) %}
     <tbody>
 {% for rule in rules %}
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>

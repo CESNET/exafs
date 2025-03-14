@@ -65,9 +65,8 @@ def create_or_update_whitelist(
 
     # check RTBH rules against whitelist
     allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
-    current_app.logger.info(f"allowed communities: {allowed_communities}")
-    # filter out RTBH rules that are not active and not in allowed communities
-    all_rtbh_rules = RTBH.query.filter(RTBH.rstate_id == 1, RTBH.community_id.in_(allowed_communities)).all()
+    # filter out RTBH rules that are not active or whitelisted and not in allowed communities
+    all_rtbh_rules = RTBH.query.filter(RTBH.rstate_id.in_([1, 4]), RTBH.community_id.in_(allowed_communities)).all()
     rtbh_rules_map = map_rtbh_rules_to_strings(all_rtbh_rules)
     result = check_whitelist_against_rules(rtbh_rules_map, str(model))
     current_app.logger.info(f"Found {len(result)} matching RTBH rules for whitelist {model}")
@@ -133,6 +132,7 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
         for cached_rule in cached_rules:
             current_app.logger.debug(f"Processing cached rule {cached_rule}")
             rule_model_type = RuleTypes(cached_rule.rtype)
+            cache_entries_count = RuleWhitelistCache.count_by_rule(cached_rule.rid, rule_model_type)
             match rule_model_type:
                 case RuleTypes.IPv4:
                     rule_model = db.session.get(Flowspec4, cached_rule.rid)
@@ -151,7 +151,7 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
                         f"RuleWhitelistCache Anomaly! Rule {rule_model} does not exist. Type {rule_model_type} RID {cached_rule.rid} ID {cached_rule.id} Skipping."
                     )
 
-            elif rorigin_type == RuleOrigin.USER:
+            elif rorigin_type == RuleOrigin.USER and cache_entries_count == 1:
                 flashes.append(f"Set rule {rule_model} back to state 'Active'")
                 try:
                     rule_model.rstate_id = 1  # Set rule state to "Active" again

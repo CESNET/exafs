@@ -239,12 +239,15 @@ def evaluate_rtbh_against_whitelists_check_results(
     wl_cache: Dict[str, Whitelist],
     results: List[Tuple[str, str, Relation]],
 ) -> RTBH:
+    """
+    Evaluate RTBH rule against whitelist check results.
+    Process all results for cases where rule is whitelisted by several whitelists.
+    """
     for rule, whitelist_key, relation in results:
         match relation:
             case Relation.EQUAL:
                 model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
                 flashes.append(f" Rule is equal to active whitelist {whitelist_key}. Rule is whitelisted.")
-                break
             case Relation.SUBNET:
                 parts = subtract_network(target=str(model), whitelist=whitelist_key)
                 wl_id = wl_cache[whitelist_key].id
@@ -257,11 +260,9 @@ def evaluate_rtbh_against_whitelists_check_results(
                 model.rstate_id = 4
                 add_rtbh_rule_to_cache(model, wl_id, RuleOrigin.USER)
                 db.session.commit()
-                break
             case Relation.SUPERNET:
                 model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
                 flashes.append(f" Rule is subnet of active whitelist {whitelist_key}. Rule is whitelisted.")
-                break
     return model
 
 

@@ -143,6 +143,20 @@ class RuleWhitelistCache(db.Model):
         db.session.commit()
         return deleted
 
+    @classmethod
+    def count_by_rule(cls, rule_id: int, rule_type: RuleTypes):
+        """
+        Count the number of cache entries for the given rule
+
+        Args:
+            rule_id (int): The ID of the rule to count
+            rule_type (RuleTypes): The type of the rule
+
+        Returns:
+            int: Number of cache entries
+        """
+        return cls.query.filter_by(rid=rule_id, rtype=rule_type.value).count()
+
     def __repr__(self):
         return f"<RuleWhitelistCache {self.rid} {self.rtype} {self.rorigin}>"
 
