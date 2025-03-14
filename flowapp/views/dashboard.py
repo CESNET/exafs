@@ -48,7 +48,7 @@ def whois(ip_address):
 def index(rtype=None, rstate="active"):
     """
     dispatcher object for the dashboard
-    :param rtype:  ipv4, ipv6, rtbh
+    :param rtype:  ipv4, ipv6, rtbh, whitelist
     :param rstate:
     :return: view from view factory
     """
@@ -84,7 +84,6 @@ def index(rtype=None, rstate="active"):
 
     data_handler_module = current_app.config["DASHBOARD"].get(rtype).get("data_handler", models)
     data_handler_method = current_app.config["DASHBOARD"].get(rtype).get("data_handler_method", "get_ip_rules")
-
     # get search query, sort order and sort key from request or session
     get_search_query = request.args.get(SEARCH_ARG, session.get(SEARCH_ARG, ""))
     get_sort_key = request.args.get(SORT_ARG, session.get(SORT_ARG, DEFAULT_SORT))
@@ -109,6 +108,10 @@ def index(rtype=None, rstate="active"):
     # get the handler and the data
     handler = getattr(data_handler_module, data_handler_method)
     rules = handler(rtype, rstate, get_sort_key, get_sort_order)
+
+    # Enrich rules with whitelist information
+    rules, whitelist_rule_ids = enrich_rules_with_whitelist_info(rules, rtype)
+
     session[RULES_KEY] = [rule.id for rule in rules]
     # search rules
     if get_search_query:
@@ -138,6 +141,7 @@ def index(rtype=None, rstate="active"):
         macro_tbody=macro_tbody,
         macro_thead=macro_thead,
         macro_tfoot=macro_tfoot,
+        whitelist_rule_ids=whitelist_rule_ids,
     )
 
 
@@ -148,18 +152,22 @@ def create_dashboard_table_body(
     group_op=True,
     macro_file="macros.html",
     macro_name="build_ip_tbody",
+    whitelist_rule_ids=None,
 ):
     """
     create the table body for the dashboard using a jinja2 macro
     :param rules:  list of rules
     :param rtype:  ipv4, ipv6, rtbh
+    :param editable: whether rules can be edited
+    :param group_op: whether group operations are allowed
     :param macro_file:  the file where the macro is defined
     :param macro_name:  the name of the macro
+    :param whitelist_rule_ids: set of rule IDs that were created by a whitelist
     """
     tstring = "{% "
     tstring = tstring + f"from '{macro_file}' import {macro_name}"
     tstring = tstring + " %} {{"
-    tstring = tstring + f" {macro_name}(rules, today, editable, group_op) " + "}}"
+    tstring = tstring + f" {macro_name}(rules, today, editable, group_op, whitelist_rule_ids) " + "}}"
 
     dashboard_table_body = render_template_string(
         tstring,
@@ -167,6 +175,7 @@ def create_dashboard_table_body(
         today=datetime.now(),
         editable=editable,
         group_op=group_op,
+        whitelist_rule_ids=whitelist_rule_ids or set(),
     )
     return dashboard_table_body
 
@@ -246,6 +255,7 @@ def create_admin_response(
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
     macro_tfoot="build_group_buttons_tfoot",
+    whitelist_rule_ids=None,
 ):
     """
     Admin can see and edit any rules
@@ -257,7 +267,9 @@ def create_admin_response(
     :return:
     """
 
-    dashboard_table_body = create_dashboard_table_body(rules, rtype, macro_file=macro_file, macro_name=macro_tbody)
+    dashboard_table_body = create_dashboard_table_body(
+        rules, rtype, macro_file=macro_file, macro_name=macro_tbody, whitelist_rule_ids=whitelist_rule_ids
+    )
 
     dashboard_table_head = create_dashboard_table_head(
         rules_columns=table_columns,
@@ -313,6 +325,7 @@ def create_user_response(
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
     macro_tfoot="build_rules_tfoot",
+    whitelist_rule_ids=None,
 ):
     """
     Filter out the rules for normal users
@@ -343,9 +356,10 @@ def create_user_response(
         group_op=False,
         macro_file=macro_file,
         macro_name=macro_tbody,
+        whitelist_rule_ids=whitelist_rule_ids,
     )
     dashboard_table_editable = create_dashboard_table_body(
-        rules_editable, rtype, macro_file=macro_file, macro_name=macro_tbody
+        rules_editable, rtype, macro_file=macro_file, macro_name=macro_tbody, whitelist_rule_ids=whitelist_rule_ids
     )
     dashboard_table_editable_head = create_dashboard_table_head(
         rules_columns=table_columns,
@@ -419,6 +433,7 @@ def create_view_response(
     macro_tbody="build_ip_tbody",
     macro_thead="build_rules_thead",
     macro_tfoot="build_rules_tfoot",
+    whitelist_rule_ids=None,
 ):
     """
     Filter out the rules for normal users
@@ -433,6 +448,7 @@ def create_view_response(
         group_op=False,
         macro_file=macro_file,
         macro_name=macro_tbody,
+        whitelist_rule_ids=whitelist_rule_ids,
     )
 
     dashboard_table_head = create_dashboard_table_head(
@@ -482,3 +498,39 @@ def filter_rules(rules, get_search_query):
             result.append(rules[idx])
 
     return result
+
+
+def enrich_rules_with_whitelist_info(rules, rule_type):
+    """
+    Enrich rules with whitelist information from RuleWhitelistCache.
+
+    Args:
+        rules: List of rule objects (Flowspec4, Flowspec6, RTBH)
+        rule_type: String identifier of rule type ("ipv4", "ipv6", "rtbh")
+
+    Returns:
+        Tuple of (rules, whitelist_rule_ids) where whitelist_rule_ids is a set of
+        rule IDs that were created by a whitelist.
+    """
+    from flowapp.models.rules.whitelist import RuleWhitelistCache
+    from flowapp.constants import RuleTypes, RuleOrigin
+
+    # Map rule type string to enum value
+    rule_type_map = {"ipv4": RuleTypes.IPv4.value, "ipv6": RuleTypes.IPv6.value, "rtbh": RuleTypes.RTBH.value}
+
+    # Get all rule IDs
+    rule_ids = [rule.id for rule in rules]
+
+    # No rules to process
+    if not rule_ids:
+        return rules, set()
+
+    # Query the cache for these rule IDs
+    cache_entries = RuleWhitelistCache.query.filter(
+        RuleWhitelistCache.rid.in_(rule_ids), RuleWhitelistCache.rtype == rule_type_map.get(rule_type)
+    ).all()
+
+    # Create a set of rule IDs that were created by a whitelist
+    whitelist_rule_ids = {entry.rid for entry in cache_entries if entry.rorigin == RuleOrigin.WHITELIST.value}
+
+    return rules, whitelist_rule_ids
