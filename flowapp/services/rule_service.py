@@ -9,6 +9,8 @@ and managing flow rules, separating these concerns from HTTP handling.
 from datetime import datetime
 from typing import Dict, List, Tuple
 
+from flask import current_app
+
 from flowapp import db, messages
 from flowapp.constants import RuleOrigin, RuleTypes, ANNOUNCE
 from flowapp.models import (
@@ -213,12 +215,14 @@ def create_or_update_rtbh_rule(
     author = f"{user_email} / {org_name}"
 
     # Check if rule is whitelisted
-    # get all not expired whitelists
-    whitelists = db.session.query(Whitelist).filter(Whitelist.expires > datetime.now()).all()
-    wl_cache = map_whitelists_to_strings(whitelists)
-    results = check_rule_against_whitelists(str(model), wl_cache.keys())
-    # check rule against whitelists, stop search when rule is whitelisted first time
-    model = evaluate_rtbh_against_whitelists_check_results(user_id, model, flashes, author, wl_cache, results)
+    allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
+    if model.community_id in allowed_communities:
+        # get all not expired whitelists
+        whitelists = db.session.query(Whitelist).filter(Whitelist.expires > datetime.now()).all()
+        wl_cache = map_whitelists_to_strings(whitelists)
+        results = check_rule_against_whitelists(str(model), wl_cache.keys())
+        # check rule against whitelists, stop search when rule is whitelisted first time
+        model = evaluate_rtbh_against_whitelists_check_results(user_id, model, flashes, author, wl_cache, results)
 
     announce_rtbh_route(model, author=author)
     # Log changes

@@ -84,10 +84,10 @@ def announce_to_rabbitmq(route: Dict[str, str]) -> None:
             credentials,
         )
 
-        connection = pika.BlockingConnection(parameters)
-        channel = connection.channel()
-        channel.queue_declare(queue=queue)
-        channel.basic_publish(exchange="", routing_key=queue, body=json.dumps(route))
+        with pika.BlockingConnection(parameters) as connection:
+            channel = connection.channel()
+            channel.queue_declare(queue=queue)
+            channel.basic_publish(exchange="", routing_key=queue, body=json.dumps(route))
     else:
         current_app.logger.debug(f"Testing: {route}")
 

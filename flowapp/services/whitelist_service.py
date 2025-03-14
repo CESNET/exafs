@@ -5,8 +5,10 @@ Service module for rule operations.
 This module provides business logic functions for creating, updating,
 and managing flow rules, separating these concerns from HTTP handling.
 """
-
+from flask import current_app
 from typing import Dict, Tuple, List
+
+import sqlalchemy
 
 from flowapp import db
 from flowapp.constants import RuleOrigin, RuleTypes
@@ -62,11 +64,13 @@ def create_or_update_whitelist(
     db.session.commit()
 
     # check RTBH rules against whitelist
-    all_rtbh_rules = RTBH.query.filter(RTBH.rstate_id == 1).all()
-    print(f"Found {len(all_rtbh_rules)} active RTBH rules")
+    allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
+    current_app.logger.info(f"allowed communities: {allowed_communities}")
+    # filter out RTBH rules that are not active and not in allowed communities
+    all_rtbh_rules = RTBH.query.filter(RTBH.rstate_id == 1, RTBH.community_id.in_(allowed_communities)).all()
     rtbh_rules_map = map_rtbh_rules_to_strings(all_rtbh_rules)
     result = check_whitelist_against_rules(rtbh_rules_map, str(model))
-    print(f"Found {len(result)} matching RTBH rules")
+    current_app.logger.info(f"Found {len(result)} matching RTBH rules for whitelist {model}")
     model = evaluate_whitelist_against_rtbh_check_results(model, flashes, rtbh_rules_map, result)
 
     return model, flashes
@@ -80,7 +84,7 @@ def evaluate_whitelist_against_rtbh_check_results(
 ) -> Whitelist:
 
     for rule_key, whitelist_key, relation in results:
-        print(f"whitelist {whitelist_key} is {relation} to Rule {rule_key}")
+        current_app.logger.info(f"whitelist {whitelist_key} is {relation} to Rule {rule_key}")
         match relation:
             case Relation.EQUAL:
                 whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
@@ -123,7 +127,11 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
     flashes = []
     if model:
         cached_rules = RuleWhitelistCache.get_by_whitelist_id(whitelist_id)
+        current_app.logger.info(
+            f"Deleting whitelist {whitelist_id}. Found {len(cached_rules)} cached rules to process."
+        )
         for cached_rule in cached_rules:
+            current_app.logger.debug(f"Processing cached rule {cached_rule}")
             rule_model_type = RuleTypes(cached_rule.rtype)
             match rule_model_type:
                 case RuleTypes.IPv4:
@@ -133,15 +141,24 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
                 case RuleTypes.RTBH:
                     rule_model = db.session.get(RTBH, cached_rule.rid)
             rorigin_type = RuleOrigin(cached_rule.rorigin)
+            current_app.logger.debug(f"Rule {rule_model} has origin {rorigin_type}")
             if rorigin_type == RuleOrigin.WHITELIST:
                 flashes.append(f"Deleted rule {rule_model} created by this whitelist")
-                db.session.delete(rule_model)
+                try:
+                    db.session.delete(rule_model)
+                except sqlalchemy.orm.exc.UnmappedInstanceError:
+                    current_app.logger.warning(
+                        f"RuleWhitelistCache Anomaly! Rule {rule_model} does not exist. Type {rule_model_type} RID {cached_rule.rid} ID {cached_rule.id} Skipping."
+                    )
+
             elif rorigin_type == RuleOrigin.USER:
                 flashes.append(f"Set rule {rule_model} back to state 'Active'")
                 try:
                     rule_model.rstate_id = 1  # Set rule state to "Active" again
                 except AttributeError:
-                    print(f"Rule {rule_model} does not exist, cache anomaly?. Skipping.")
+                    current_app.logger.warning(
+                        f"RuleWhitelistCache Anomaly! Rule {rule_model} does not exist. Type {rule_model_type} RID {cached_rule.rid} ID {cached_rule.id} Skipping."
+                    )
                 else:
                     author = f"{model.user.email} ({model.user.organization})"
                     announce_rtbh_route(rule_model, author)

@@ -1,8 +1,6 @@
 import logging
 import babel
 from flask import redirect, render_template, request, session, url_for
-from flask.logging import default_handler
-from loguru import logger
 
 
 def register_blueprints(app, csrf=None):
@@ -35,18 +33,24 @@ def register_blueprints(app, csrf=None):
     return app
 
 
-class InterceptHandler(logging.Handler):
-
-    def emit(self, record):
-        logger_opt = logger.opt(depth=6, exception=record.exc_info, colors=True)
-        logger_opt.log(record.levelname, record.getMessage())
-
-
 def configure_logging(app):
-    """Configure logging for the application."""
-    # register loguru as handler
-    app.logger.removeHandler(default_handler)
-    app.logger.addHandler(InterceptHandler())
+    """Configure logging for the Flask application."""
+
+    # Remove all default handlers
+    for handler in app.logger.handlers[:]:
+        app.logger.removeHandler(handler)
+
+    # Define log format
+    log_format = "%(asctime)s | %(levelname)s | %(message)s"
+    log_datefmt = "%Y-%m-%d %H:%M:%S"
+
+    # Create a new handler with the desired format
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter(log_format, datefmt=log_datefmt))
+
+    # Set logger level and attach the handler
+    app.logger.setLevel(logging.DEBUG)
+    app.logger.addHandler(console_handler)
 
     return app
 

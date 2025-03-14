@@ -29,6 +29,7 @@ from flowapp.models import (
     get_user_nets,
     insert_initial_communities,
 )
+from flowapp.models.rules.whitelist import RuleWhitelistCache
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
 from flowapp.services import rule_service
 from flowapp.utils import (
@@ -208,6 +209,9 @@ def delete_rule(rule_type, rule_id):
             model.id,
             f"{session['user_email']} / {session['user_org']}",
         )
+        if enum_rule_type == RuleTypes.RTBH:
+            current_app.logger.debug(f"Deleting RTBH rule {rule_id} from cache")
+            RuleWhitelistCache.delete_by_rule_id(rule_id)
 
         # delete from db
         db.session.delete(model)

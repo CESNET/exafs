@@ -128,6 +128,21 @@ class RuleWhitelistCache(db.Model):
         db.session.commit()
         return deleted
 
+    @classmethod
+    def delete_by_rule_id(cls, rule_id: int):
+        """
+        Delete all cache entries with the given rule ID from the database
+
+        Args:
+            rule_id (int): The ID of the rule to clean
+
+        Returns:
+            int: Number of rows deleted
+        """
+        deleted = cls.query.filter_by(rid=rule_id).delete()
+        db.session.commit()
+        return deleted
+
     def __repr__(self):
         return f"<RuleWhitelistCache {self.rid} {self.rtype} {self.rorigin}>"
 
