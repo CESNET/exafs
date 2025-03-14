@@ -67,6 +67,7 @@ def app(request):
         SECRET_KEY="testkeysession",
         LOCAL_USER_UUID="jiri.vrany@cesnet.cz",
         LOCAL_AUTH=True,
+        ALLOWED_COMMUNITIES=[1, 2, 3],
     )
 
     print("\n----- CREATE FLASK APPLICATION\n")
