@@ -88,17 +88,21 @@ def evaluate_whitelist_against_rtbh_check_results(
             case Relation.EQUAL:
                 whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
                 withdraw_rtbh_route(rtbh_rule_cache[rule_key])
-                flashes.append(f"Active rule {rule_key} is equal to whitelist {whitelist_key}. Rule is whitelisted.")
+                msg = "Existing active rule {rule_key} is equal to whitelist {whitelist_key}. Rule is now whitelisted."
+                flashes.append(msg)
+                current_app.logger.info(msg)
             case Relation.SUBNET:
                 parts = subtract_network(target=rule_key, whitelist=whitelist_key)
                 wl_id = whitelist_model.id
-                flashes.append(
-                    f" Rule {rule_key} is supernet of whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules created."
-                )
+                msg = f"Rule {rule_key} is supernet of whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules will be created."
+                flashes.append(msg)
+                current_app.logger.info(msg)
                 for network in parts:
                     rule_model = rtbh_rule_cache[rule_key]
                     create_rtbh_from_whitelist_parts(rule_model, wl_id, whitelist_key, network)
-                    flashes.append(f"DEBUG: Created RTBH rule for {network}, from whitelist {whitelist_key}")
+                    msg = f"Created RTBH rule from {rule_model.id} {network} parted by whitelist {whitelist_key}."
+                    flashes.append(msg)
+                    current_app.logger.info(msg)
                 rule_model.rstate_id = 4
                 add_rtbh_rule_to_cache(rule_model, wl_id, RuleOrigin.USER)
                 db.session.commit()
@@ -106,7 +110,11 @@ def evaluate_whitelist_against_rtbh_check_results(
 
                 whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
                 withdraw_rtbh_route(rtbh_rule_cache[rule_key])
-                flashes.append(f"Active rule {rule_key} is subnet of whitelist {whitelist_key}. Rule is whitelisted.")
+                msg = (
+                    f"Existing active rule {rule_key} is subnet of whitelist {whitelist_key}. Rule is now whitelisted."
+                )
+                current_app.logger.info(msg)
+                flashes.append(msg)
 
     return whitelist_model
 
@@ -127,10 +135,9 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
     if model:
         cached_rules = RuleWhitelistCache.get_by_whitelist_id(whitelist_id)
         current_app.logger.info(
-            f"Deleting whitelist {whitelist_id}. Found {len(cached_rules)} cached rules to process."
+            f"Deleting whitelist {whitelist_id} {model}. Found {len(cached_rules)} cached rules to process."
         )
         for cached_rule in cached_rules:
-            current_app.logger.debug(f"Processing cached rule {cached_rule}")
             rule_model_type = RuleTypes(cached_rule.rtype)
             cache_entries_count = RuleWhitelistCache.count_by_rule(cached_rule.rid, rule_model_type)
             match rule_model_type:
@@ -143,7 +150,9 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
             rorigin_type = RuleOrigin(cached_rule.rorigin)
             current_app.logger.debug(f"Rule {rule_model} has origin {rorigin_type}")
             if rorigin_type == RuleOrigin.WHITELIST:
-                flashes.append(f"Deleted rule {rule_model} created by this whitelist")
+                msg = f"Deleted {rule_model_type} rule {rule_model} created by whitelist {model}"
+                current_app.logger.info(msg)
+                flashes.append(msg)
                 try:
                     db.session.delete(rule_model)
                 except sqlalchemy.orm.exc.UnmappedInstanceError:
@@ -152,7 +161,9 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
                     )
 
             elif rorigin_type == RuleOrigin.USER and cache_entries_count == 1:
-                flashes.append(f"Set rule {rule_model} back to state 'Active'")
+                msg = f"Set rule {rule_model} back to state 'Active'"
+                current_app.logger.info(msg)
+                flashes.append(msg)
                 try:
                     rule_model.rstate_id = 1  # Set rule state to "Active" again
                 except AttributeError:
@@ -163,10 +174,15 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
                     author = f"{model.user.email} ({model.user.organization})"
                     announce_rtbh_route(rule_model, author)
 
-        flashes.append(f"Deleted cache entries for whitelist {whitelist_id}")
+        msg = f"Deleted cache entries for whitelist {whitelist_id} {model}"
+        current_app.logger.info(msg)
+        flashes.append(msg)
         RuleWhitelistCache.clean_by_whitelist_id(whitelist_id)
 
         db.session.delete(model)
         db.session.commit()
+        msg = f"Deleted whitelist {whitelist_id} {model}"
+        flashes.append(msg)
+        current_app.logger.info(msg)
 
     return flashes
