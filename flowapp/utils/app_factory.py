@@ -40,17 +40,29 @@ def configure_logging(app):
     for handler in app.logger.handlers[:]:
         app.logger.removeHandler(handler)
 
+    # Retrieve log level and file name from config
+    log_level = app.config.get("LOG_LEVEL", "DEBUG").upper()
+    log_file = app.config.get("LOG_FILE", "app.log")
+
     # Define log format
     log_format = "%(asctime)s | %(levelname)s | %(message)s"
     log_datefmt = "%Y-%m-%d %H:%M:%S"
+    formatter = logging.Formatter(log_format, datefmt=log_datefmt)
 
-    # Create a new handler with the desired format
+    # Console handler
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(logging.Formatter(log_format, datefmt=log_datefmt))
+    console_handler.setFormatter(formatter)
 
-    # Set logger level and attach the handler
-    app.logger.setLevel(logging.DEBUG)
+    # File handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+
+    # Set logger level
+    app.logger.setLevel(getattr(logging, log_level, logging.DEBUG))
+
+    # Attach handlers
     app.logger.addHandler(console_handler)
+    app.logger.addHandler(file_handler)
 
     return app
 

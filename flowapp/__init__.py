@@ -25,6 +25,13 @@ swagger = Swagger(template_file="static/swagger.yml")
 def create_app(config_object=None):
     app = Flask(__name__)
 
+    # Load the default configuration for dashboard and main menu
+    app.config.from_object(InstanceConfig)
+    if config_object:
+        app.config.from_object(config_object)
+
+    app.config.setdefault("VERSION", __version__)
+
     # SSO configuration
     SSO_ATTRIBUTE_MAP = {
         "eppn": (True, "eppn"),
@@ -35,13 +42,6 @@ def create_app(config_object=None):
     # extension init
     migrate.init_app(app, db)
     csrf.init_app(app)
-
-    # Load the default configuration for dashboard and main menu
-    app.config.from_object(InstanceConfig)
-    if config_object:
-        app.config.from_object(config_object)
-
-    app.config.setdefault("VERSION", __version__)
 
     # Init SSO
     ext.init_app(app)

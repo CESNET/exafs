@@ -216,7 +216,7 @@ def clear_network_cache() -> None:
 
 def create_rtbh_from_whitelist_parts(
     model: RTBH, wl_id: int, whitelist_key: str, network: str, rule_owner: str = "", user_id: int = 0
-) -> None:
+) -> RTBH:
     # default values from model
     rule_owner = rule_owner or model.get_author()
     user_id = user_id or model.user_id
@@ -240,3 +240,5 @@ def create_rtbh_from_whitelist_parts(
     add_rtbh_rule_to_cache(new_model, wl_id, RuleOrigin.WHITELIST)
     announce_rtbh_route(new_model, rule_owner)
     log_route(user_id, model, RuleTypes.RTBH, rule_owner)
+
+    return new_model

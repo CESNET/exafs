@@ -247,22 +247,32 @@ def evaluate_rtbh_against_whitelists_check_results(
         match relation:
             case Relation.EQUAL:
                 model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
-                flashes.append(f" Rule is equal to active whitelist {whitelist_key}. Rule is whitelisted.")
+                msg = f"RTBH Rule {model.id} {model} is equal to active whitelist {whitelist_key}. Rule is whitelisted."
+                flashes.append(msg)
+                current_app.logger.info(msg)
             case Relation.SUBNET:
                 parts = subtract_network(target=str(model), whitelist=whitelist_key)
                 wl_id = wl_cache[whitelist_key].id
-                flashes.append(
-                    f" Rule is supernet of active whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules created."
-                )
+                msg = f"RTBH Rule {model.id} {model} is supernet of active whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules created."
+                flashes.append(msg)
+                current_app.logger.info(msg)
                 for network in parts:
-                    create_rtbh_from_whitelist_parts(model, wl_id, whitelist_key, network, author, user_id)
-                    flashes.append(f"DEBUG: Created RTBH rule for {network}, from whitelist {whitelist_key}")
+                    new_rule = create_rtbh_from_whitelist_parts(model, wl_id, whitelist_key, network, author, user_id)
+                    msg = (
+                        f"Created RTBH rule {new_rule.id} {new_rule} for {network} parted by whitelist {whitelist_key}"
+                    )
+                    flashes.append(msg)
+                    current_app.logger.info(msg)
                 model.rstate_id = 4
                 add_rtbh_rule_to_cache(model, wl_id, RuleOrigin.USER)
                 db.session.commit()
             case Relation.SUPERNET:
                 model = whitelist_rtbh_rule(model, wl_cache[whitelist_key])
-                flashes.append(f" Rule is subnet of active whitelist {whitelist_key}. Rule is whitelisted.")
+                msg = (
+                    f"RTBH Rule {model.id} {model} is subnet of active whitelist {whitelist_key}. Rule is whitelisted."
+                )
+                current_app.logger.info(msg)
+                flashes.append(msg)
     return model
 
 
