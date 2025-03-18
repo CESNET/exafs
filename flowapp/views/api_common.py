@@ -305,7 +305,6 @@ def create_rtbh(current_user):
         count = db.session.query(RTBH).filter_by(rstate_id=1).count()
         return global_limit_reached(count=count, rule_type=RuleTypes.RTBH)
 
-    # check limit
     if check_rule_limit(current_user["org_id"], RuleTypes.RTBH):
         count = db.session.query(RTBH).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
         return limit_reached(count=count, rule_type=RuleTypes.RTBH, org_id=current_user["org_id"])

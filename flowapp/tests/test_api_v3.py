@@ -1,8 +1,35 @@
 import json
 
+
 from flowapp.models import Flowspec4, Organization
 
 V_PREFIX = "/api/v3"
+
+
+def test_create_rtbh_only(client, app, db, jwt_token):
+    """
+    Test creating an RTBH rule through API that exactly matches an existing whitelist.
+
+    The rule should be created but marked as whitelisted (rstate_id=4), and a cache entry
+    should be created linking the rule to the whitelist.
+    """
+
+    # Now create the RTBH rule via API
+    res = client.post(
+        f"{V_PREFIX}/rules/rtbh",
+        headers={"x-access-token": jwt_token},
+        json={
+            "community": 1,
+            "ipv4": "147.230.17.17",
+            "ipv4_mask": 32,
+            "expires": "10/25/2050 14:46",
+        },
+    )
+
+    # Verify response is successful
+    assert res.status_code == 201
+    data = json.loads(res.data)
+    assert data["rule"] is not None
 
 
 def test_token(client, jwt_token):

@@ -29,14 +29,6 @@ def create_form_data(data):
     return MultiDict(processed_data)
 
 
-@pytest.fixture()
-def app():
-    """Create Flask app with CSRF disabled for testing"""
-    app = Flask(__name__)
-    app.config.update(SECRET_KEY="test_secret", WTF_CSRF_ENABLED=False, TESTING=True)
-    return app
-
-
 @pytest.fixture
 def valid_datetime():
     return (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")

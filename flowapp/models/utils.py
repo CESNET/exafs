@@ -40,6 +40,8 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
         count = db.session.query(RTBH).filter_by(org_id=org_id, rstate_id=1).count()
         return count >= org.limit_rtbh or rtbh >= rtbh_limit
 
+    return False
+
 
 def check_global_rule_limit(rule_type: RuleTypes) -> bool:
     flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
@@ -57,6 +59,8 @@ def check_global_rule_limit(rule_type: RuleTypes) -> bool:
         return fs6 >= flowspec6_limit
     if rule_type == RuleTypes.RTBH:
         return rtbh >= rtbh_limit
+
+    return False
 
 
 def get_whitelist_model_if_exists(form_data):

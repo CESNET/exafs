@@ -4,13 +4,6 @@ import flowapp.forms
 
 
 @pytest.fixture()
-def app():
-    app = Flask(__name__)
-    app.secret_key = "test"
-    return app
-
-
-@pytest.fixture()
 def ip_form(app, field_class):
     with app.test_request_context():  # Push the request context
         form = flowapp.forms.IPForm()

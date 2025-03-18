@@ -12,6 +12,7 @@ from flowapp import create_app
 from flowapp import db as _db
 from datetime import datetime
 import flowapp.models
+from flowapp.models.organization import Organization
 
 
 TESTDB = "test_project.db"
@@ -68,6 +69,7 @@ def app(request):
         LOCAL_USER_UUID="jiri.vrany@cesnet.cz",
         LOCAL_AUTH=True,
         ALLOWED_COMMUNITIES=[1, 2, 3],
+        WTF_CSRF_ENABLED=False,
     )
 
     print("\n----- CREATE FLASK APPLICATION\n")
@@ -114,6 +116,12 @@ def db(app, request):
         ]
         print("#: inserting users")
         flowapp.models.insert_users(users)
+
+        org = _db.session.query(Organization).filter_by(id=1).first()
+        # Update the organization address range to include our test networks
+        org.arange = "147.230.0.0/16\n2001:718:1c01::/48\n192.168.0.0/16\n10.0.0.0/8"
+        _db.session.commit()
+        print("\n----- UPDATED TEST ORG 1 \n", org)
 
     def teardown():
         _db.session.commit()
@@ -186,3 +194,19 @@ def auth_client(client):
     print("\n----- CREATE AUTHENTICATED FLASK TEST CLIENT\n")
     client.get("/local-login")
     return client
+
+
+@pytest.fixture(autouse=True)
+def reset_org_limits(db, app):
+    """
+    Automatically reset organization limits after each test that modifies them.
+    """
+    yield  # Allow test execution
+
+    with app.app_context():
+        org = db.session.query(Organization).filter_by(id=1).first()
+        if org:
+            org.limit_flowspec4 = 0
+            org.limit_flowspec6 = 0
+            org.limit_rtbh = 0
+            db.session.commit()
