@@ -1,5 +1,4 @@
 import pytest
-from flask import Flask
 import flowapp.forms
 
 

@@ -1,7 +1,6 @@
 import pytest
 from datetime import datetime, timedelta
 from werkzeug.datastructures import MultiDict
-from flask import Flask
 from flowapp.forms import (
     UserForm,
     BulkUserForm,

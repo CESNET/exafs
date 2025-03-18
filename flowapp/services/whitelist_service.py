@@ -123,6 +123,20 @@ def map_rtbh_rules_to_strings(all_rtbh_rules: List[RTBH]) -> Dict[str, RTBH]:
     return {str(rule): rule for rule in all_rtbh_rules}
 
 
+def delete_expired_whitelists() -> List[str]:
+    """
+    Delete all expired whitelist entries from the database.
+
+    Returns:
+        List of messages for the user
+    """
+    expired_whitelists = Whitelist.query.filter(Whitelist.expires < db.func.now()).all()
+    flashes = []
+    for model in expired_whitelists:
+        flashes.extend(delete_whitelist(model.id))
+    return flashes
+
+
 def delete_whitelist(whitelist_id: int) -> List[str]:
     """
     Delete a whitelist entry from the database.

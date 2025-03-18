@@ -1,11 +1,10 @@
 # flowapp/views/admin.py
 from datetime import datetime, timedelta
-from operator import ge, lt
 from collections import namedtuple
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
-from flowapp import constants, db, messages
+from flowapp import constants, db
 from flowapp.auth import (
     admin_required,
     auth_required,
@@ -31,7 +30,7 @@ from flowapp.models import (
 )
 from flowapp.models.rules.whitelist import RuleWhitelistCache
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
-from flowapp.services import rule_service
+from flowapp.services import rule_service, announce_all_routes, delete_expired_whitelists
 from flowapp.utils import (
     flash_errors,
     get_state_by_time,
@@ -680,64 +679,6 @@ def announce_all():
 @rules.route("/withdraw_expired", methods=["GET"])
 @localhost_only
 def withdraw_expired():
+    delete_expired_whitelists()
     announce_all_routes(constants.WITHDRAW)
     return " "
-
-
-def announce_all_routes(action=constants.ANNOUNCE):
-    """
-    get routes from db and send it to ExaBGB api
-
-    @TODO take the request away, use some kind of messaging (maybe celery?)
-    :param action: action with routes - announce valid routes or withdraw expired routes
-    """
-    today = datetime.now()
-    comp_func = ge if action == constants.ANNOUNCE else lt
-
-    rules4 = (
-        db.session.query(Flowspec4)
-        .filter(Flowspec4.rstate_id == 1)
-        .filter(comp_func(Flowspec4.expires, today))
-        .order_by(Flowspec4.expires.desc())
-        .all()
-    )
-    rules6 = (
-        db.session.query(Flowspec6)
-        .filter(Flowspec6.rstate_id == 1)
-        .filter(comp_func(Flowspec6.expires, today))
-        .order_by(Flowspec6.expires.desc())
-        .all()
-    )
-    rules_rtbh = (
-        db.session.query(RTBH)
-        .filter(RTBH.rstate_id == 1)
-        .filter(comp_func(RTBH.expires, today))
-        .order_by(RTBH.expires.desc())
-        .all()
-    )
-
-    messages_v4 = [messages.create_ipv4(rule, action) for rule in rules4]
-    messages_v6 = [messages.create_ipv6(rule, action) for rule in rules6]
-    messages_rtbh = [messages.create_rtbh(rule, action) for rule in rules_rtbh]
-
-    messages_all = []
-    messages_all.extend(messages_v4)
-    messages_all.extend(messages_v6)
-    messages_all.extend(messages_rtbh)
-
-    author_action = "announce all" if action == constants.ANNOUNCE else "withdraw all expired"
-
-    for command in messages_all:
-        route = Route(
-            author=f"System call / {author_action} rules",
-            source=RouteSources.UI,
-            command=command,
-        )
-        announce_route(route)
-
-    if action == constants.WITHDRAW:
-        for ruleset in [rules4, rules6, rules_rtbh]:
-            for rule in ruleset:
-                rule.rstate_id = 2
-
-        db.session.commit()
