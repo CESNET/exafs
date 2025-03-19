@@ -5,7 +5,7 @@ from flask import request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, timedelta
 
-from flowapp.constants import WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG
+from flowapp.constants import RULE_NAMES_DICT, WITHDRAW, ANNOUNCE, TIME_FORMAT_ARG, RuleTypes
 from flowapp.models import (
     RTBH,
     Flowspec4,
@@ -13,6 +13,9 @@ from flowapp.models import (
     ApiKey,
     MachineApiKey,
     Community,
+    Organization,
+    check_global_rule_limit,
+    check_rule_limit,
     get_user_nets,
     get_user_actions,
     get_ipv4_model_if_exists,
@@ -28,12 +31,7 @@ from flowapp.utils import (
     output_date_format,
 )
 from flowapp.auth import check_access_rights
-from flowapp.output import (
-    RULE_TYPES,
-    announce_route,
-    log_route,
-    log_withdraw,
-)
+from flowapp.output import announce_route, log_route, log_withdraw, Route, RouteSources
 
 
 from flowapp import db, validators, flowspec, messages
@@ -51,9 +49,7 @@ def token_required(f):
             return jsonify({"message": "auth token is missing"}), 401
 
         try:
-            data = jwt.decode(
-                token, current_app.config.get("JWT_SECRET"), algorithms=["HS256"]
-            )
+            data = jwt.decode(token, current_app.config.get("JWT_SECRET"), algorithms=["HS256"])
             current_user = data["user"]
         except jwt.DecodeError:
             return jsonify({"message": "auth token is invalid"}), 403
@@ -86,18 +82,16 @@ def authorize(user_key):
         return jsonify({"message": "auth token is expired"}), 401
 
     # check if the key is not used by different machine
-    if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(
-        request.remote_addr
-    ):
+    if model and ipaddress.ip_address(model.machine) == ipaddress.ip_address(request.remote_addr):
         payload = {
             "user": {
                 "uuid": model.user.uuid,
                 "id": model.user.id,
                 "readonly": model.readonly,
                 "roles": [role.name for role in model.user.role.all()],
-                "org": [org.name for org in model.user.organization.all()],
+                "org": model.org.name,
+                "org_id": model.org.id,
                 "role_ids": [role.id for role in model.user.role.all()],
-                "org_ids": [org.id for org in model.user.organization.all()],
             },
             "exp": datetime.now() + timedelta(minutes=30),
         }
@@ -114,25 +108,24 @@ def check_readonly(func):
     Check if the token is readonly
     Used in api endpoints
     """
+
     @wraps(func)
     def decorated_function(*args, **kwargs):
         # Access read only flag from first of the args
-        print("ARGS", args)
-        print("KWARGS", kwargs)
         current_user = kwargs.get("current_user", False)
         read_only = current_user.get("readonly", False)
         if read_only:
             return jsonify({"message": "read only token can't perform this action"}), 403
         return func(*args, **kwargs)
+
     return decorated_function
 
 
 # endpints
 
+
 def index(current_user, key_map):
-    prefered_tf = (
-        request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
-    )
+    prefered_tf = request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
 
     net_ranges = get_user_nets(current_user["id"])
     rules4 = db.session.query(Flowspec4).order_by(Flowspec4.expires.desc()).all()
@@ -156,26 +149,14 @@ def index(current_user, key_map):
         user_actions = get_user_actions(current_user["role_ids"])
         user_actions = [act[0] for act in user_actions]
 
-        rules4_editable, rules4_visible = flowspec.filter_rules_action(
-            user_actions, rules4
-        )
-        rules6_editable, rules6_visible = flowspec.filter_rules_action(
-            user_actions, rules6
-        )
+        rules4_editable, rules4_visible = flowspec.filter_rules_action(user_actions, rules4)
+        rules6_editable, rules6_visible = flowspec.filter_rules_action(user_actions, rules6)
 
         payload = {
-            key_map["ipv4_rules"]: [
-                rule.to_dict(prefered_tf) for rule in rules4_editable
-            ],
-            key_map["ipv6_rules"]: [
-                rule.to_dict(prefered_tf) for rule in rules6_editable
-            ],
-            key_map["ipv4_rules_readonly"]: [
-                rule.to_dict(prefered_tf) for rule in rules4_visible
-            ],
-            key_map["ipv6_rules_readonly"]: [
-                rule.to_dict(prefered_tf) for rule in rules6_visible
-            ],
+            key_map["ipv4_rules"]: [rule.to_dict(prefered_tf) for rule in rules4_editable],
+            key_map["ipv6_rules"]: [rule.to_dict(prefered_tf) for rule in rules6_editable],
+            key_map["ipv4_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules4_visible],
+            key_map["ipv6_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules6_visible],
             key_map["rtbh_rules"]: [rule.to_dict(prefered_tf) for rule in rules_rtbh],
         }
         return jsonify(payload)
@@ -209,6 +190,37 @@ def all_communities(current_user):
         return jsonify({"message": "no actions for this user?"}), 404
 
 
+def limit_reached(count, rule_type, org_id):
+    rule_name = RULE_NAMES_DICT[int(rule_type)]
+    org = db.session.get(Organization, org_id)
+    if rule_type == RuleTypes.IPv4:
+        limit = org.limit_flowspec4
+    elif rule_type == RuleTypes.IPv6:
+        limit = org.limit_flowspec6
+    elif rule_type == RuleTypes.RTBH:
+        limit = org.rtbh
+
+    return (
+        jsonify({"message": f"Rule limit {limit} reached for {rule_name}, currently you have {count} active rules."}),
+        403,
+    )
+
+
+def global_limit_reached(count, rule_type):
+    rule_name = RULE_NAMES_DICT[int(rule_type)]
+    if rule_type == RuleTypes.IPv4 or rule_type == RuleTypes.IPv6:
+        limit = current_app.config.get("FLOWSPEC_MAX_RULES")
+    elif rule_type == RuleTypes.RTBH:
+        limit = current_app.config.get("RTBH_MAX_RULES")
+
+    return (
+        jsonify(
+            {"message": f"System limit {limit} reached for {rule_name}. Currently there are {count} active rules."}
+        ),
+        403,
+    )
+
+
 def create_ipv4(current_user):
     """
     Api method for new IPv4 rule
@@ -216,6 +228,14 @@ def create_ipv4(current_user):
     :param current_user: data from jwt token
     :return: json response
     """
+    if check_global_rule_limit(RuleTypes.IPv4):
+        count = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+        return global_limit_reached(count=count, rule_type=RuleTypes.IPv4)
+
+    if check_rule_limit(current_user["org_id"], RuleTypes.IPv4):
+        count = db.session.query(Flowspec4).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        return limit_reached(count=count, rule_type=RuleTypes.IPv4, org_id=current_user["org_id"])
+
     net_ranges = get_user_nets(current_user["id"])
     json_request_data = request.get_json()
     form = IPv4Form(data=json_request_data, meta={"csrf": False})
@@ -225,9 +245,7 @@ def create_ipv4(current_user):
 
     # if the form is not valid, we should return 404 with errors
     if not form.validate():
-        print("F EXPIRES", form.expires)
         form_errors = get_form_errors(form)
-        print("VALIDATION", form_errors)
         if form_errors:
             return jsonify(form_errors), 400
 
@@ -235,9 +253,7 @@ def create_ipv4(current_user):
 
     if model:
         model.expires = form.expires.data
-        flash_message = (
-            "Existing IPv4 Rule found. Expiration time was updated to new value."
-        )
+        flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
     else:
         model = Flowspec4(
             source=form.source.data,
@@ -254,6 +270,7 @@ def create_ipv4(current_user):
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user["id"],
+            org_id=current_user["org_id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
         flash_message = "IPv4 Rule saved"
@@ -263,19 +280,24 @@ def create_ipv4(current_user):
 
     # announce route if model is in active state
     if model.rstate_id == 1:
-        route = messages.create_ipv4(model, ANNOUNCE)
+        command = messages.create_ipv4(model, ANNOUNCE)
+        route = Route(
+            author=f"{current_user['uuid']} / {current_user['org']}",
+            source=RouteSources.API,
+            command=command,
+        )
         announce_route(route)
 
     # log changes
     log_route(
         current_user["id"],
         model,
-        RULE_TYPES["IPv4"],
-        "{} / {}".format(current_user["uuid"], current_user["org"]),
+        RuleTypes.IPv4,
+        f"{current_user['uuid']} / {current_user['org']}",
     )
-
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
-    return jsonify({"message": flash_message, "rule": model.to_dict(pref_format)}), 201
+    response = {"message": flash_message, "rule": model.to_dict(pref_format)}
+    return jsonify(response), 201
 
 
 def create_ipv6(current_user):
@@ -285,6 +307,14 @@ def create_ipv6(current_user):
     :param current_user: data from jwt token
     :return:
     """
+    if check_global_rule_limit(RuleTypes.IPv6):
+        count = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+        return global_limit_reached(count=count, rule_type=RuleTypes.IPv6)
+
+    if check_rule_limit(current_user["org_id"], RuleTypes.IPv6):
+        count = db.session.query(Flowspec6).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        return limit_reached(count=count, rule_type=RuleTypes.IPv6, org_id=current_user["org_id"])
+
     net_ranges = get_user_nets(current_user["id"])
     json_request_data = request.get_json()
     form = IPv6Form(data=json_request_data, meta={"csrf": False})
@@ -300,9 +330,7 @@ def create_ipv6(current_user):
 
     if model:
         model.expires = form.expires.data
-        flash_message = (
-            "Existing IPv6 Rule found. Expiration time was updated to new value."
-        )
+        flash_message = "Existing IPv6 Rule found. Expiration time was updated to new value."
     else:
         model = Flowspec6(
             source=form.source.data,
@@ -318,6 +346,7 @@ def create_ipv6(current_user):
             comment=quote_to_ent(form.comment.data),
             action_id=form.action.data,
             user_id=current_user["id"],
+            org_id=current_user["org_id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
         flash_message = "IPv6 Rule saved"
@@ -327,15 +356,20 @@ def create_ipv6(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_ipv6(model, ANNOUNCE)
+        command = messages.create_ipv6(model, ANNOUNCE)
+        route = Route(
+            author=f"{current_user['uuid']} / {current_user['org']}",
+            source=RouteSources.API,
+            command=command,
+        )
         announce_route(route)
 
     # log changes
     log_route(
         current_user["id"],
         model,
-        RULE_TYPES["IPv6"],
-        "{} / {}".format(current_user["uuid"], current_user["org"]),
+        RuleTypes.IPv6,
+        f"{current_user['uuid']} / {current_user['org']}",
     )
 
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
@@ -343,6 +377,18 @@ def create_ipv6(current_user):
 
 
 def create_rtbh(current_user):
+    """
+    Create new RTBH rule
+    """
+    if check_global_rule_limit(RuleTypes.RTBH):
+        count = db.session.query(RTBH).filter_by(rstate_id=1).count()
+        return global_limit_reached(count=count, rule_type=RuleTypes.RTBH)
+
+    # check limit
+    if check_rule_limit(current_user["org_id"], RuleTypes.RTBH):
+        count = db.session.query(RTBH).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        return limit_reached(count=count, rule_type=RuleTypes.RTBH, org_id=current_user["org_id"])
+
     all_com = db.session.query(Community).all()
     if not all_com:
         insert_initial_communities()
@@ -364,9 +410,7 @@ def create_rtbh(current_user):
 
     if model:
         model.expires = form.expires.data
-        flash_message = (
-            "Existing RTBH Rule found. Expiration time was updated to new value."
-        )
+        flash_message = "Existing RTBH Rule found. Expiration time was updated to new value."
     else:
         model = RTBH(
             ipv4=form.ipv4.data,
@@ -377,6 +421,7 @@ def create_rtbh(current_user):
             expires=form.expires.data,
             comment=quote_to_ent(form.comment.data),
             user_id=current_user["id"],
+            org_id=current_user["org_id"],
             rstate_id=get_state_by_time(form.expires.data),
         )
         db.session.add(model)
@@ -385,14 +430,19 @@ def create_rtbh(current_user):
 
     # announce routes
     if model.rstate_id == 1:
-        route = messages.create_rtbh(model, ANNOUNCE)
+        command = messages.create_rtbh(model, ANNOUNCE)
+        route = Route(
+            author=f"{current_user['uuid']} / {current_user['org']}",
+            source=RouteSources.API,
+            command=command,
+        )
         announce_route(route)
     # log changes
     log_route(
         current_user["id"],
         model,
-        RULE_TYPES["RTBH"],
-        "{} / {}".format(current_user["uuid"], current_user["org"]),
+        RuleTypes.RTBH,
+        f"{current_user['uuid']} / {current_user['org']}",
     )
 
     pref_format = output_date_format(json_request_data, form.expires.pref_format)
@@ -406,7 +456,7 @@ def ipv4_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    model = db.session.query(Flowspec4).get(rule_id)
+    model = db.session.get(Flowspec4, rule_id)
     return get_rule(current_user, model, rule_id)
 
 
@@ -417,7 +467,7 @@ def ipv6_rule_get(current_user, rule_id):
     :param rule_id:
     :return:
     """
-    model = db.session.query(Flowspec6).get(rule_id)
+    model = db.session.get(Flowspec6, rule_id)
     return get_rule(current_user, model, rule_id)
 
 
@@ -438,9 +488,7 @@ def get_rule(current_user, model, rule_id):
     :param model: rule model
     :return: json
     """
-    prefered_tf = (
-        request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
-    )
+    prefered_tf = request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
 
     if model:
         if check_access_rights(current_user, model.user_id):
@@ -494,15 +542,20 @@ def delete_rule(current_user, rule_id, model_name, route_model, rule_type):
     if model:
         if check_access_rights(current_user, model.user_id):
             # withdraw route
-            route = route_model(model, WITHDRAW)
+            command = route_model(model, WITHDRAW)
+            route = Route(
+                author=f"{current_user['uuid']} / {current_user['org']}",
+                source=RouteSources.API,
+                command=command,
+            )
             announce_route(route)
 
             log_withdraw(
                 current_user["id"],
-                route,
+                route.command,
                 rule_type,
                 model.id,
-                "{} / {}".format(current_user["uuid"], current_user["org"]),
+                f"{current_user['uuid']} / {current_user['org']}",
             )
             # delete from db
             db.session.delete(model)

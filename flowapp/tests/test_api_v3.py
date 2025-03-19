@@ -1,5 +1,7 @@
 import json
 
+from flowapp.models import Flowspec4, Organization
+
 V_PREFIX = "/api/v3"
 
 
@@ -65,7 +67,7 @@ def test_create_v4rule(client, db, jwt_token):
     data = json.loads(req.data)
     assert data["rule"]
     assert data["rule"]["id"] == 1
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
 
 
 def test_delete_v4rule(client, db, jwt_token):
@@ -117,7 +119,7 @@ def test_create_rtbh_rule(client, db, jwt_token):
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == 1
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
 
 
 def test_delete_rtbh_rule(client, db, jwt_token):
@@ -164,7 +166,7 @@ def test_validation_rtbh_rule(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 400
     assert data["message"] == "error - invalid request data"
-    assert type(data["validation_errors"]) == dict
+    assert type(data["validation_errors"]) is dict
     assert "ipv6" in data["validation_errors"]
     assert "ipv4" in data["validation_errors"]
 
@@ -189,7 +191,7 @@ def test_create_v6rule(client, db, jwt_token):
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == "1"
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
 
 
 def test_validation_v4rule(client, db, jwt_token):
@@ -226,10 +228,7 @@ def test_all_validation_errors(client, db, jwt_token):
     """
     test that creating with invalid data returns 400 and errors
     """
-    req = client.post(
-        f"{V_PREFIX}/rules/ipv4", headers={"x-access-token": jwt_token}, json={"action": 2}
-    )
-    data = json.loads(req.data)
+    req = client.post(f"{V_PREFIX}/rules/ipv4", headers={"x-access-token": jwt_token}, json={"action": 2})
     assert req.status_code == 400
 
 
@@ -252,9 +251,7 @@ def test_validate_v6rule(client, db, jwt_token):
     data = json.loads(req.data)
     assert req.status_code == 400
     assert len(data["validation_errors"]) > 0
-    assert sorted(data["validation_errors"].keys()) == sorted(
-        ["action", "next_header", "dest", "source"]
-    )
+    assert sorted(data["validation_errors"].keys()) == sorted(["action", "next_header", "dest", "source"])
     # assert data['validation_errors'][0].startswith('Error in the Action')
     # assert data['validation_errors'][1].startswith('Error in the Source')
     # assert data['validation_errors'][2].startswith('Error in the Next Header')
@@ -277,9 +274,7 @@ def test_timestamp_param(client, db, jwt_token):
     """
     test that url param for time format works as expected
     """
-    req = client.get(
-        f"{V_PREFIX}/rules?time_format=timestamp", headers={"x-access-token": jwt_token}
-    )
+    req = client.get(f"{V_PREFIX}/rules?time_format=timestamp", headers={"x-access-token": jwt_token})
 
     assert req.status_code == 200
 
@@ -309,7 +304,7 @@ def test_update_existing_v4rule_with_timestamp(client, db, jwt_token):
     data = json.loads(req.data)
     assert data["rule"]
     assert data["rule"]["id"] == 2
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
     assert data["rule"]["expires"] == 1444913400
 
 
@@ -334,7 +329,7 @@ def test_create_v4rule_with_timestamp(client, db, jwt_token):
     data = json.loads(req.data)
     assert data["rule"]
     assert data["rule"]["id"] == 3
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
     assert data["rule"]["expires"] == 1444913400
 
 
@@ -358,7 +353,7 @@ def test_update_existing_v6rule_with_timestamp(client, db, jwt_token):
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == "1"
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
     assert data["rule"]["expires"] == 1444913400
 
 
@@ -375,15 +370,16 @@ def test_create_v6rule_with_timestamp(client, db, jwt_token):
             "source": "2001:718:1C01:1111::",
             "source_mask": 64,
             "source_port": "",
-            "expires": "1444913400",
+            "expires": "2549952908",
         },
     )
     data = json.loads(req.data)
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == "2"
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
-    assert data["rule"]["expires"] == 1444913400
+    assert data["rule"]["rstate"] == "active rule"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
+    assert data["rule"]["expires"] == 2549953200
 
 
 def test_update_existing_rtbh_rule_with_timestamp(client, db, jwt_token):
@@ -404,7 +400,7 @@ def test_update_existing_rtbh_rule_with_timestamp(client, db, jwt_token):
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == 1
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
     assert data["rule"]["expires"] == 1444913400
 
 
@@ -426,5 +422,163 @@ def test_create_rtbh_rule_with_timestamp(client, db, jwt_token):
     assert req.status_code == 201
     assert data["rule"]
     assert data["rule"]["id"] == 2
-    assert data["rule"]["user"] == "jiri.vrany@tul.cz"
+    assert data["rule"]["user"] == "jiri.vrany@cesnet.cz"
     assert data["rule"]["expires"] == 1444913400
+
+
+def test_create_v4rule_lmit(client, db, app, jwt_token):
+    """
+    test that limit checkt for v4 works
+    """
+    with app.app_context():
+        org = db.session.query(Organization).filter_by(id=1).first()
+        org.limit_flowspec4 = 2
+        db.session.commit()
+
+        # count
+        count = db.session.query(Flowspec4).count()
+        print("COUNT", count)
+
+    sources = ["147.230.42.17", "147.230.42.118"]
+    codes = [201, 403]
+
+    for source, code in zip(sources, codes):
+        data = {
+            "action": 1,
+            "protocol": "tcp",
+            "source": source,
+            "source_mask": 32,
+            "source_port": "",
+            "expires": "10/15/2050 14:46",
+        }
+        req = client.post(
+            f"{V_PREFIX}/rules/ipv4",
+            headers={"x-access-token": jwt_token},
+            json=data,
+        )
+
+        assert req.status_code == code
+
+
+def test_create_v6rule_lmit(client, db, app, jwt_token):
+    """
+    test that limit check for v6 works
+    """
+    with app.app_context():
+        org = db.session.query(Organization).filter_by(id=1).first()
+        org.limit_flowspec6 = 3
+        db.session.commit()
+
+    sources = ["2001:718:1C01:1111::", "2001:718:1C01:1112::"]
+    codes = [201, 403]
+
+    for source, code in zip(sources, codes):
+        data = {
+            "action": 1,
+            "next_header": "tcp",
+            "source": source,
+            "source_mask": 64,
+            "source_port": "",
+            "expires": "10/15/2050 14:46",
+        }
+        req = client.post(
+            f"{V_PREFIX}/rules/ipv6",
+            headers={"x-access-token": jwt_token},
+            json=data,
+        )
+
+        assert req.status_code == code
+
+
+def test_create_rtbh_lmit(client, db, app, jwt_token):
+    """
+    test that limit check for v6 works
+    """
+    with app.app_context():
+        org = db.session.query(Organization).filter_by(id=1).first()
+        org.limit_rtbh = 2
+        db.session.commit()
+
+    sources = ["147.230.17.42", "147.230.17.43"]
+    codes = [201, 403]
+
+    for source, code in zip(sources, codes):
+        data = {
+            "community": 1,
+            "ipv4": source,
+            "ipv4_mask": 32,
+            "expires": "10/25/2050 14:46",
+        }
+        req = client.post(f"{V_PREFIX}/rules/rtbh", headers={"x-access-token": jwt_token}, json=data)
+
+        assert req.status_code == code
+
+
+def test_update_existing_v4rule_with_timestamp_limit(client, db, app, jwt_token):
+    """
+    test that update with different data passes
+    """
+    with app.app_context():
+        # count
+        count = db.session.query(Flowspec4).filter_by(org_id=1, rstate_id=1).count()
+        print("COUNT in update", count)
+
+        org = db.session.query(Organization).filter_by(id=1).first()
+        org.limit_flowspec4 = count
+        db.session.commit()
+
+    req = client.post(
+        f"{V_PREFIX}/rules/ipv4",
+        headers={"x-access-token": jwt_token},
+        json={
+            "action": 2,
+            "protocol": "tcp",
+            "source": "147.230.17.17",
+            "source_mask": 32,
+            "source_port": "",
+            "expires": "2552634908",
+        },
+    )
+
+    assert req.status_code == 403
+    data = json.loads(req.data)
+    assert data["message"]
+    assert data["message"].startswith("Rule limit")
+
+
+def test_overall_limit(client, db, app, jwt_token):
+    """
+    test that update with different data passes
+    """
+    app.config.update({"FLOWSPEC4_MAX_RULES": 5, "FLOWSPEC6_MAX_RULES": 5, "RTBH_MAX_RULES": 5})
+
+    with app.app_context():
+        # count
+
+        org = db.session.query(Organization).filter_by(id=1).first()
+        org.limit_flowspec4 = 20
+        db.session.commit()
+
+    sources = ["147.230.42.1", "147.230.42.2", "147.230.42.3", "147.230.42.4"]
+    codes = [201, 201, 201, 403]
+
+    for source, code in zip(sources, codes):
+        data = {
+            "action": 1,
+            "protocol": "tcp",
+            "source": source,
+            "source_mask": 32,
+            "source_port": "",
+            "expires": "10/15/2050 14:46",
+        }
+        req = client.post(
+            f"{V_PREFIX}/rules/ipv4",
+            headers={"x-access-token": jwt_token},
+            json=data,
+        )
+        print(source)
+        assert req.status_code == code
+
+    data = json.loads(req.data)
+    assert data["message"]
+    assert data["message"].startswith("System limit")

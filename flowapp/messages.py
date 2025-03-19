@@ -25,11 +25,7 @@ def create_ipv4(rule, message_type=ANNOUNCE):
 
     flagstring = rule.flags.replace(";", " ") if rule.flags else ""
 
-    flags = (
-        "tcp-flags {};".format(flagstring)
-        if rule.flags and rule.protocol == "tcp"
-        else ""
-    )
+    flags = "tcp-flags {};".format(flagstring) if rule.flags and rule.protocol == "tcp" else ""
 
     fragment_string = rule.fragment.replace(";", " ") if rule.fragment else ""
     fragment = "fragment [ {} ];".format(fragment_string) if rule.fragment else ""
@@ -55,11 +51,7 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     if rule.next_header and rule.next_header != "all":
         protocol = "next-header ={};".format(IPV6_NEXT_HEADER[rule.next_header])
     flagstring = rule.flags.replace(";", " ")
-    flags = (
-        "tcp-flags {};".format(flagstring)
-        if rule.flags and rule.next_header == "tcp"
-        else ""
-    )
+    flags = "tcp-flags {};".format(flagstring) if rule.flags and rule.next_header == "tcp" else ""
 
     spec = {"protocol": protocol, "mask": IPV6_DEFMASK, "flags": flags}
 
@@ -103,25 +95,17 @@ def create_rtbh(rule, message_type=ANNOUNCE):
                 targets = current_app.config["MULTI_NEIGHBOR"].get(rule.community.comm)
             else:
                 targets = current_app.config["MULTI_NEIGHBOR"].get("primary")
-            
+
             neighbor = prepare_multi_neighbor(targets)
         else:
             neighbor = ""
     except KeyError:
         neighbor = ""
 
-    community_string = (
-        "community [{}]".format(rule.community.comm) if rule.community.comm else ""
-    )
-    large_community_string = (
-        "large-community [{}]".format(rule.community.larcomm)
-        if rule.community.larcomm
-        else ""
-    )
+    community_string = "community [{}]".format(rule.community.comm) if rule.community.comm else ""
+    large_community_string = "large-community [{}]".format(rule.community.larcomm) if rule.community.larcomm else ""
     extended_community_string = (
-        "extended-community [{}]".format(rule.community.extcomm)
-        if rule.community.extcomm
-        else ""
+        "extended-community [{}]".format(rule.community.extcomm) if rule.community.extcomm else ""
     )
 
     as_path_string = ""
@@ -165,49 +149,29 @@ def create_message(rule, ipv_specific, message_type=ANNOUNCE):
     source = "source {}".format(rule.source) if rule.source else ""
     source += "/{};".format(smask) if rule.source else ""
 
-    source_port = (
-        "source-port {};".format(trps(rule.source_port)) if rule.source_port else ""
-    )
+    source_port = "source-port {};".format(trps(rule.source_port)) if rule.source_port else ""
 
     dmask = sanitize_mask(rule.dest_mask, ipv_specific["mask"])
     dest = " destination {}".format(rule.dest) if rule.dest else ""
     dest += "/{};".format(dmask) if rule.dest else ""
 
-    dest_port = (
-        "destination-port {};".format(trps(rule.dest_port)) if rule.dest_port else ""
-    )
+    dest_port = "destination-port {};".format(trps(rule.dest_port)) if rule.dest_port else ""
 
-    protocol = ipv_specific["protocol"]
-    flags = ipv_specific["flags"]
-    fragment = ipv_specific.get("fragment", None)
+    protocol = ipv_specific.get("protocol", "")
+    flags = ipv_specific.get("flags", "")
+    fragment = ipv_specific.get("fragment", "")
 
-    packet_len = (
-        "packet-length {};".format(trps(rule.packet_len, MAX_PACKET))
-        if rule.packet_len
-        else ""
-    )
+    packet_len = "packet-length {};".format(trps(rule.packet_len, MAX_PACKET)) if rule.packet_len else ""
 
-    match_body = "{source} {source_port} {dest} {dest_port} {protocol} {fragment} {flags} {packet_len}".format(
-        source=source,
-        source_port=source_port,
-        dest=dest,
-        dest_port=dest_port,
-        protocol=protocol,
-        fragment=fragment,
-        flags=flags,
-        packet_len=packet_len,
-    )
+    values = [source, source_port, dest, dest_port, protocol, fragment, flags, packet_len]
+    match_body = " ".join(v for v in values if v)
 
     command = "{};".format(rule.action.command)
 
     try:
         if current_app.config["USE_RD"]:
-            rd_string = "route-distinguisher {rd};".format(
-                rd=current_app.config["RD_STRING"]
-            )
-            rt_string = "extended-community target:{rt};".format(
-                rt=current_app.config["RT_STRING"]
-            )
+            rd_string = "route-distinguisher {rd};".format(rd=current_app.config["RD_STRING"])
+            rt_string = "extended-community target:{rt};".format(rt=current_app.config["RT_STRING"])
         else:
             rd_string = ""
             rt_string = ""

@@ -1,0 +1,19 @@
+{% extends 'layouts/default.html' %}
+{% block title %}Flowspec Actions{% endblock %}
+{% block content %}
+    <h2>Updated {{ updated}} records.</h2>
+    <h2>Users with multiple organizations</h2>
+    <p>Records of users with multilple orgs could not be updated.</p>
+    {% for user, orgs in users.items() %}
+        <p>
+            <strong>{{ user }}</strong>
+            <ul>
+                {% for org in orgs %}
+                    <li>{{ org }}</li>
+                {% endfor %}
+            </ul>
+        </p>
+    {% endfor %}
+    
+
+{% endblock %}

@@ -1,16 +1,24 @@
 import pytest
+from flask import Flask
 import flowapp.forms
 
 
 @pytest.fixture()
-def ip_form(field_class):
+def app():
+    app = Flask(__name__)
+    app.secret_key = "test"
+    return app
 
-    form = flowapp.forms.IPForm()
-    form.source = field_class()
-    form.dest = field_class()
-    form.source_mask = field_class()
-    form.dest_mask = field_class()
-    return form
+
+@pytest.fixture()
+def ip_form(app, field_class):
+    with app.test_request_context():  # Push the request context
+        form = flowapp.forms.IPForm()
+        form.source = field_class()
+        form.dest = field_class()
+        form.source_mask = field_class()
+        form.dest_mask = field_class()
+        return form
 
 
 def test_ip_form_created(ip_form):

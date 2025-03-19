@@ -1,10 +1,13 @@
 """
 Module for message announcing and logging
 """
+
+from dataclasses import dataclass, asdict
 from datetime import datetime
 
 import requests
 import pika
+import json
 from flask import current_app
 
 from flowapp import db, messages
@@ -15,19 +18,34 @@ ROUTE_MODELS = {
     4: messages.create_ipv4,
     6: messages.create_ipv6,
 }
-RULE_TYPES = {"RTBH": 1, "IPv4": 4, "IPv6": 6}
 
 
-def announce_route(route):
+class RouteSources:
+    UI = "UI"
+    API = "API"
+
+
+@dataclass
+class Route:
+    author: str
+    source: RouteSources
+    command: str
+
+    def __dict__(self):
+        return asdict(self)
+
+
+def announce_route(route: Route):
     """
-    Dispatch route to ExaBGP API
+    Dispatch route as dict to ExaBGP API
     API must be set in app config.py
     defaults to HTTP API
     """
+    current_app.logger.debug(asdict(route))
     if current_app.config.get("EXA_API") == "RABBIT":
-        announce_to_rabbitmq(route)
+        announce_to_rabbitmq(asdict(route))
     else:
-        announce_to_http(route)
+        announce_to_http(asdict(route))
 
 
 def announce_to_http(route):
@@ -36,16 +54,14 @@ def announce_to_http(route):
     """
     if not current_app.config["TESTING"]:
         try:
-            resp = requests.post(
-                current_app.config["EXA_API_URL"], data={"command": route}
-            )
+            resp = requests.post(current_app.config["EXA_API_URL"], data={"command": json.dumps(route)})
             resp.raise_for_status()
         except requests.exceptions.HTTPError as err:
-            print("ExaAPI HTTP Error: ", err)
+            current_app.logger.error("ExaAPI HTTP Error: ", err)
         except requests.exceptions.RequestException as ce:
-            print("Connection to ExaAPI failed: ", ce)
+            current_app.logger.error("Connection to ExaAPI failed: ", ce)
     else:
-        print("Testing:", route)
+        current_app.logger.debug(f"Testing: {route}")
 
 
 def announce_to_rabbitmq(route):
@@ -67,9 +83,9 @@ def announce_to_rabbitmq(route):
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
         channel.queue_declare(queue=queue)
-        channel.basic_publish(exchange="", routing_key=queue, body=route)
+        channel.basic_publish(exchange="", routing_key=queue, body=json.dumps(route))
     else:
-        print("Testing:", route)
+        current_app.logger.debug("Testing: {route}")
 
 
 def log_route(user_id, route_model, rule_type, author):

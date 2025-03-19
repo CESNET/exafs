@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 import babel
+import logging
+from loguru import logger
 
 from flask import Flask, redirect, render_template, session, url_for, request
+from flask.logging import default_handler
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from flask_session import Session
+from flasgger import Swagger
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 from .__about__ import __version__
 from .instance_config import InstanceConfig
@@ -17,6 +23,14 @@ migrate = Migrate()
 csrf = CSRFProtect()
 ext = SSO()
 sess = Session()
+swagger = Swagger(template_file="static/swagger.yml")
+
+
+class InterceptHandler(logging.Handler):
+
+    def emit(self, record):
+        logger_opt = logger.opt(depth=6, exception=record.exc_info, colors=True)
+        logger_opt.log(record.levelname, record.getMessage())
 
 
 def create_app(config_object=None):
@@ -25,7 +39,6 @@ def create_app(config_object=None):
     # SSO configuration
     SSO_ATTRIBUTE_MAP = {
         "eppn": (True, "eppn"),
-        "cn": (False, "cn"),
     }
     app.config.setdefault("SSO_ATTRIBUTE_MAP", SSO_ATTRIBUTE_MAP)
     app.config.setdefault("SSO_LOGIN_URL", "/login")
@@ -43,6 +56,13 @@ def create_app(config_object=None):
 
     # Init SSO
     ext.init_app(app)
+
+    # Init swagger
+    swagger.init_app(app)
+
+    # handle proxy fix
+    if app.config.get("BEHIND_PROXY", False):
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     from flowapp import models, constants, validators
     from .views.admin import admin
@@ -67,19 +87,19 @@ def create_app(config_object=None):
     app.register_blueprint(api_v3, url_prefix="/api/v3")
     app.register_blueprint(dashboard, url_prefix="/dashboard")
 
+    # register loguru as handler
+    app.logger.removeHandler(default_handler)
+    app.logger.addHandler(InterceptHandler())
+
     @ext.login_handler
     def login(user_info):
         try:
             uuid = user_info.get("eppn")
         except KeyError:
             uuid = False
-            return redirect("/")
-        else:
-            try:
-                _register_user_to_session(uuid)
-            except AttributeError:
-                pass
-            return redirect("/")
+            return render_template("errors/401.html")
+
+        return _handle_login(uuid)
 
     @app.route("/logout")
     def logout():
@@ -95,16 +115,30 @@ def create_app(config_object=None):
             return render_template("errors/401.html")
 
         uuid = request.headers.get(header_name)
-        if uuid:
-            try:
-                _register_user_to_session(uuid)
-            except AttributeError:
-                return render_template("errors/401.html")
-        return redirect("/")
+        if not uuid:
+            return render_template("errors/401.html")
+
+        return _handle_login(uuid)
+
+    @app.route("/local-login")
+    def local_login():
+        print("Local login started")
+        if not app.config.get("LOCAL_AUTH", False):
+            print("Local auth not enabled")
+            return render_template("errors/401.html")
+
+        uuid = app.config.get("LOCAL_USER_UUID", False)
+        if not uuid:
+            print("Local user not set")
+            return render_template("errors/401.html")
+
+        print(f"Local login with {uuid}")
+        return _handle_login(uuid)
 
     @app.route("/")
     @auth_required
     def index():
+
         try:
             rtype = session[constants.TYPE_ARG]
         except KeyError:
@@ -135,6 +169,25 @@ def create_app(config_object=None):
             )
         )
 
+    @app.route("/select_org", defaults={"org_id": None})
+    @app.route("/select_org/<int:org_id>")
+    @auth_required
+    def select_org(org_id=None):
+        uuid = session.get("user_uuid")
+        user = db.session.query(models.User).filter_by(uuid=uuid).first()
+
+        if user is None:
+            return render_template("errors/404.html"), 404  # Handle missing user gracefully
+
+        orgs = user.organization
+        if org_id:
+            org = db.session.query(models.Organization).filter_by(id=org_id).first()
+            session["user_org_id"] = org.id
+            session["user_org"] = org.name
+            return redirect("/")
+
+        return render_template("pages/org_modal.html", orgs=orgs)
+
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         db.session.remove()
@@ -146,7 +199,7 @@ def create_app(config_object=None):
 
     @app.errorhandler(500)
     def internal_error(exception):
-        app.logger.error(exception)
+        app.logger.exception(exception)
         return render_template("errors/500.html"), 500
 
     @app.context_processor
@@ -183,18 +236,45 @@ def create_app(config_object=None):
         format = "y/MM/dd HH:mm"
         return babel.dates.format_datetime(value, format)
 
+    @app.template_filter("unlimited")
+    def unlimited_filter(value):
+        return "unlimited" if value == 0 else value
+
+    def _handle_login(uuid: str):
+        """
+        handles rest of login process
+        """
+        multiple_orgs = False
+        try:
+            user, multiple_orgs = _register_user_to_session(uuid)
+        except AttributeError as e:
+            app.logger.exception(e)
+            return render_template("errors/401.html")
+
+        if multiple_orgs:
+            return redirect(url_for("select_org", org_id=None))
+
+        # set user org to session
+        user_org = user.organization.first()
+        session["user_org"] = user_org.name
+        session["user_org_id"] = user_org.id
+
+        return redirect("/")
+
     def _register_user_to_session(uuid: str):
         print(f"Registering user {uuid} to session")
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
+        print(f"Got user {user} from DB")
         session["user_uuid"] = user.uuid
         session["user_email"] = user.uuid
         session["user_name"] = user.name
         session["user_id"] = user.id
         session["user_roles"] = [role.name for role in user.role.all()]
-        session["user_orgs"] = ", ".join(org.name for org in user.organization.all())
         session["user_role_ids"] = [role.id for role in user.role.all()]
-        session["user_org_ids"] = [org.id for org in user.organization.all()]
         roles = [i > 1 for i in session["user_role_ids"]]
         session["can_edit"] = True if all(roles) and roles else []
+        # check if user has multiple organizations and return True if so
+        print(f"DEBUG SESSION {session}")
+        return user, len(user.organization.all()) > 1
 
     return app

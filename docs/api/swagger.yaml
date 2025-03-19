@@ -1,0 +1,481 @@
+swagger: '2.0'
+info:
+  title: ExaFS API
+  version: '3.0'
+  description: ExaFS API allows authorized machines to send commands directly in JSON, without the web forms. The commands are validated in the same way as normal rules.
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: x-api-key
+    description: API key for initial authentication
+  TokenAuth:
+    type: apiKey
+    in: header
+    name: x-access-token
+    description: auth token received from /auth endpoint
+security:
+  - TokenAuth: []
+
+tags:
+  - name: Authorization
+    description: Endpoints for obtaining and managing API tokens.
+  - name: Rules
+    description: Endpoints for managing IPv4, IPv6, and RTBH rules.
+  - name: Choices
+    description: Choices for rule actions and communities.
+
+
+paths:
+  /auth:
+    get:
+      tags:
+        - Authorization
+      security:
+        - ApiKeyAuth: []
+      summary: Authenticate and get JWT token
+      description: Generate API Key for the logged user using PyJWT
+      responses:
+        '200':
+          description: Successfully authenticated
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+                description: JWT token to be used in subsequent requests
+        '401':
+          description: Authentication failed - token expired
+        '403':
+          description: Authentication failed - token invalid
+
+  /rules:
+    get:
+      tags:
+        - Rules
+      summary: Get all rules
+      description: Returns all flow rules accessible to the authenticated user
+      parameters:
+        - name: time_format
+          in: query
+          type: string
+          required: false
+          description: Preferred time format for dates in response
+      responses:
+        '200':
+          description: List of all rules
+          schema:
+            type: object
+            properties:
+              flowspec_ipv4_rw:
+                type: array
+                items:
+                  $ref: '#/definitions/IPv4Rule'
+              flowspec_ipv6_rw:
+                type: array
+                items:
+                  $ref: '#/definitions/IPv6Rule'
+              rtbh_any_rw:
+                type: array
+                items:
+                  $ref: '#/definitions/RTBHRule'
+              flowspec_ipv4_ro:
+                type: array
+                items:
+                  $ref: '#/definitions/IPv4Rule'
+              flowspec_ipv6_ro:
+                type: array
+                items:
+                  $ref: '#/definitions/IPv6Rule'
+
+ 
+  /rules/ipv4:
+    post:
+      tags:
+        - Rules
+      summary: Create IPv4 rule
+      description: Create a new IPv4 flow rule
+      parameters:
+        - name: rule
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/IPv4RuleInput'
+      responses:
+        '201':
+          description: Rule created successfully
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              rule:
+                $ref: '#/definitions/IPv4Rule'
+        '400':
+          description: Invalid input data
+        '403':
+          description: Rule limit reached or read-only token
+
+  /rules/ipv6:
+    post:
+      tags:
+        - Rules
+      summary: Create IPv6 rule
+      description: Create a new IPv6 flow rule
+      parameters:
+        - name: rule
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/IPv6RuleInput'
+      responses:
+        '201':
+          description: Rule created successfully
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              rule:
+                $ref: '#/definitions/IPv6Rule'
+        '400':
+          description: Invalid input data
+        '403':
+          description: Rule limit reached or read-only token
+
+  /rules/rtbh:
+    post:
+      tags:
+        - Rules
+      summary: Create RTBH rule
+      description: Create a new RTBH rule
+      parameters:
+        - name: rule
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/RTBHRuleInput'
+      responses:
+        '201':
+          description: Rule created successfully
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              rule:
+                $ref: '#/definitions/RTBHRule'
+        '400':
+          description: Invalid input data
+        '403':
+          description: Rule limit reached or read-only token
+
+  /rules/ipv4/{rule_id}:
+    parameters:
+      - name: rule_id
+        in: path
+        required: true
+        type: integer
+        description: ID of the IPv4 rule
+    get:
+      tags:
+        - Rules
+      summary: Get IPv4 rule
+      description: Get details of a specific IPv4 rule
+      responses:
+        '200':
+          description: Rule details
+          schema:
+            $ref: '#/definitions/IPv4Rule'
+        '401':
+          description: Not allowed to view this rule
+        '404':
+          description: Rule not found
+    delete:
+      tags:
+        - Rules
+      summary: Delete IPv4 rule
+      description: Delete a specific IPv4 rule
+      responses:
+        '201':
+          description: Rule deleted successfully
+        '401':
+          description: Not allowed to delete this rule
+        '403':
+          description: Read-only token
+        '404':
+          description: Rule not found
+
+  /rules/ipv6/{rule_id}:
+    parameters:
+      - name: rule_id
+        in: path
+        required: true
+        type: integer
+        description: ID of the IPv6 rule
+    get:
+      tags:
+        - Rules
+      summary: Get IPv6 rule
+      description: Get details of a specific IPv6 rule
+      responses:
+        '200':
+          description: Rule details
+          schema:
+            $ref: '#/definitions/IPv6Rule'
+        '401':
+          description: Not allowed to view this rule
+        '404':
+          description: Rule not found
+    delete:
+      tags:
+        - Rules
+      summary: Delete IPv6 rule
+      description: Delete a specific IPv6 rule
+      responses:
+        '201':
+          description: Rule deleted successfully
+        '401':
+          description: Not allowed to delete this rule
+        '403':
+          description: Read-only token
+        '404':
+          description: Rule not found
+
+  /rules/rtbh/{rule_id}:
+    parameters:
+      - name: rule_id
+        in: path
+        required: true
+        type: integer
+        description: ID of the RTBH rule
+    get:
+      tags:
+        - Rules
+      summary: Get RTBH rule
+      description: Get details of a specific RTBH rule
+      responses:
+        '200':
+          description: Rule details
+          schema:
+            $ref: '#/definitions/RTBHRule'
+        '401':
+          description: Not allowed to view this rule
+        '404':
+          description: Rule not found
+    delete:
+      tags:
+        - Rules
+      summary: Delete RTBH rule
+      description: Delete a specific RTBH rule
+      responses:
+        '201':
+          description: Rule deleted successfully
+        '401':
+          description: Not allowed to delete this rule
+        '403':
+          description: Read-only token
+        '404':
+          description: Rule not found
+
+  /actions:
+    get:
+      tags:
+        - Choices
+      summary: Get available actions
+      description: Returns actions allowed for current user
+      responses:
+        '200':
+          description: List of available actions
+        '404':
+          description: No actions found for user
+
+  /communities:
+    get:
+      tags:
+        - Choices
+      summary: Get available communities
+      description: Returns RTBH communities allowed for current user
+      responses:
+        '200':
+          description: List of available communities
+        '404':
+          description: No communities found for user
+
+
+definitions:
+  IPv4RuleInput:
+    type: object
+    required:
+      - source
+      - source_mask
+      - dest
+      - dest_mask
+      - expires
+      - action
+    properties:
+      source:
+        type: string
+        description: Source IP address
+      source_mask:
+        type: integer
+        description: Source network mask
+      source_port:
+        type: string
+        description: Source port(s)
+      dest:
+        type: string
+        description: Destination IP address
+      dest_mask:
+        type: integer
+        description: Destination network mask
+      destination_port:
+        type: string
+        description: Destination port(s)
+      protocol:
+        type: string
+        description: Protocol
+      flags:
+        type: array
+        items:
+          type: string
+        description: TCP flags
+      packet_len:
+        type: string
+        description: Packet length
+      fragment:
+        type: array
+        items:
+          type: string
+        description: Fragment types
+      expires:
+        type: string
+        format: date-time
+        description: Rule expiration time
+      comment:
+        type: string
+        description: Rule comment
+      action:
+        type: integer
+        description: Action ID
+
+  IPv4Rule:
+    allOf:
+      - $ref: '#/definitions/IPv4RuleInput'
+      - type: object
+        properties:
+          id:
+            type: integer
+          rstate_id:
+            type: integer
+          user_id:
+            type: integer
+          org_id:
+            type: integer
+
+  IPv6RuleInput:
+    type: object
+    required:
+      - source
+      - source_mask
+      - dest
+      - dest_mask
+      - expires
+      - action
+    properties:
+      source:
+        type: string
+        description: Source IPv6 address
+      source_mask:
+        type: integer
+        description: Source network mask
+      source_port:
+        type: string
+        description: Source port(s)
+      dest:
+        type: string
+        description: Destination IPv6 address
+      dest_mask:
+        type: integer
+        description: Destination network mask
+      destination_port:
+        type: string
+        description: Destination port(s)
+      next_header:
+        type: string
+        description: Next header
+      flags:
+        type: array
+        items:
+          type: string
+        description: TCP flags
+      packet_len:
+        type: string
+        description: Packet length
+      expires:
+        type: string
+        format: date-time
+        description: Rule expiration time
+      comment:
+        type: string
+        description: Rule comment
+      action:
+        type: integer
+        description: Action ID
+
+  IPv6Rule:
+    allOf:
+      - $ref: '#/definitions/IPv6RuleInput'
+      - type: object
+        properties:
+          id:
+            type: integer
+          rstate_id:
+            type: integer
+          user_id:
+            type: integer
+          org_id:
+            type: integer
+
+  RTBHRuleInput:
+    type: object
+    required:
+      - expires
+      - community
+    properties:
+      ipv4:
+        type: string
+        description: IPv4 address
+      ipv4_mask:
+        type: integer
+        description: IPv4 network mask
+      ipv6:
+        type: string
+        description: IPv6 address
+      ipv6_mask:
+        type: integer
+        description: IPv6 network mask
+      community:
+        type: integer
+        description: Community ID
+      expires:
+        type: string
+        format: date-time
+        description: Rule expiration time
+      comment:
+        type: string
+        description: Rule comment
+
+  RTBHRule:
+    allOf:
+      - $ref: '#/definitions/RTBHRuleInput'
+      - type: object
+        properties:
+          id:
+            type: integer
+          rstate_id:
+            type: integer
+          user_id:
+            type: integer
+          org_id:
+            type: integer

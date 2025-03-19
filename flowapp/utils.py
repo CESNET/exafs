@@ -7,7 +7,7 @@ from flowapp.constants import (
     TIME_US,
     TIME_STMP,
     TIME_FORMAT_ARG,
-    RULE_TYPES,
+    RULE_TYPES_DICT,
     FORM_TIME_PATTERN,
 )
 
@@ -17,7 +17,7 @@ def other_rtypes(rtype):
     get rtype and return list of remaining rtypes
     for example get ipv4 and return [ipv6, rtbh]
     """
-    result = list(RULE_TYPES.keys())
+    result = list(RULE_TYPES_DICT.keys())
     try:
         result.remove(rtype)
     except ValueError:
@@ -151,9 +151,7 @@ def flash_errors(form):
     """
     for field, errors in form.errors.items():
         for error in errors:
-            flash(
-                "Error in the %s field - %s" % (getattr(form, field).label.text, error)
-            )
+            flash("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
 
 def active_css_rstate(rtype, rstate):

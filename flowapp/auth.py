@@ -1,8 +1,7 @@
 from functools import wraps
 from flask import current_app, redirect, request, url_for, session, abort
 
-from flowapp import db, __version__
-from .models import User
+from flowapp import __version__
 
 
 # auth atd.
@@ -13,11 +12,19 @@ def auth_required(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not check_auth(get_user()):
+        user = get_user()
+        session["app_version"] = __version__
+        if not user:
             if current_app.config.get("SSO_AUTH"):
+                current_app.logger.warning("SSO AUTH SET")
                 return redirect("/login")
-            elif current_app.config.get("HEADER_AUTH", False):
-                return redirect("/ext-login")
+
+            if current_app.config.get("HEADER_AUTH", False):
+                return redirect("/ext_login")
+
+            if current_app.config.get("LOCAL_AUTH"):
+                return redirect(url_for("local_login"))
+
         return f(*args, **kwargs)
 
     return decorated
@@ -62,65 +69,11 @@ def localhost_only(f):
         localv4 = current_app.config.get("LOCAL_IP")
         localv6 = current_app.config.get("LOCAL_IP6")
         if remote != localv4 and remote != localv6:
-            print(
-                "AUTH LOCAL ONLY FAIL FROM {} / local adresses [{}, {}]".format(
-                    remote, localv4, localv6
-                )
-            )
+            current_app.logger.warning(f"AUTH LOCAL ONLY FAIL FROM {remote} / local adresses [{localv4}, {localv6}]")
             abort(403)  # Forbidden
         return f(*args, **kwargs)
 
     return decorated
-
-
-def get_user():
-    """
-    get user from session
-    """
-    try:
-        uuid = session["user_uuid"]
-    except KeyError:
-        uuid = False
-
-    return uuid
-
-
-def check_auth(uuid):
-    """
-    This function is every time when someone accessing the endpoint
-
-    Default behaviour is that uuid from SSO AUTH is used. If SSO AUTH is not used
-    default local user and roles are taken from database. In that case there is no user auth check
-    and it needs to be done outside the app - for example in Apache.
-    """
-
-    session["app_version"] = __version__
-
-    if current_app.config.get("SSO_AUTH"):
-        # SSO AUTH
-        exist = False
-        if uuid:
-            exist = db.session.query(User).filter_by(uuid=uuid).first()
-        return exist
-    elif current_app.config.get("HEADER_AUTH", False):
-        # External auth (for example apache)
-        header_name = current_app.config.get("AUTH_HEADER_NAME", 'X-Authenticated-User')
-        if header_name not in request.headers or not session.get("user_uuid"):
-            return False
-        return db.session.query(User).filter_by(uuid=request.headers.get(header_name))
-    else:
-        # Localhost login / no check
-        session["user_email"] = current_app.config["LOCAL_USER_UUID"]
-        session["user_id"] = current_app.config["LOCAL_USER_ID"]
-        session["user_roles"] = current_app.config["LOCAL_USER_ROLES"]
-        session["user_orgs"] = ", ".join(
-            org["name"] for org in current_app.config["LOCAL_USER_ORGS"]
-        )
-        session["user_role_ids"] = current_app.config["LOCAL_USER_ROLE_IDS"]
-        session["user_org_ids"] = current_app.config["LOCAL_USER_ORG_IDS"]
-        roles = [i > 1 for i in session["user_role_ids"]]
-        session["can_edit"] = True if all(roles) and roles else []
-        return True
 
 
 def check_access_rights(current_user, model_id):
@@ -170,3 +123,10 @@ def is_admin(current_user_roles):
         return True
 
     return False
+
+
+def get_user():
+    """
+    get user from session or return None
+    """
+    return session.get("user_uuid", None)

@@ -1,0 +1,35 @@
+{% extends 'layouts/default.html' %}
+{% from 'forms/macros.html' import render_field %}
+{% block title %}Add / Edit Organization{% endblock %}
+{% block content %}
+<h2>{{ title or 'New'}} Organization</h2>
+<form action="{{ action_url }}" method="POST">
+    {{ form.hidden_tag() if form.hidden_tag }}
+    <div class="row">
+        <div class="col-sm-8">
+            {{ render_field(form.name) }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            {{ render_field(form.limit_flowspec4) }}
+        </div>
+        <div class="col-sm-4">
+            {{ render_field(form.limit_flowspec6) }}
+        </div>
+        <div class="col-sm-4">
+            {{ render_field(form.limit_rtbh) }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            {{ render_field(form.arange) }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-10">
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

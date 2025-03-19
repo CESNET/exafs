@@ -3,11 +3,10 @@ Description=ExaBGP restart guardian
 After=exabgp.service
 Requires=exabgp.service
 PartOf=exabgp.service
-ConditionPathExists=/home/deploy/www/guarda/guarda.py
 
 [Service]
-Type=simple
-ExecStart=/usr/bin/python3.6 /home/deploy/www/guarda/guarda.py
+Type=oneshot
+ExecStart=/bin/sh -c 'sleep 10; curl -s $GUARDA_URL'
 StandardOutput=syslog
 StandardError=syslog
 
