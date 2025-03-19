@@ -55,8 +55,17 @@ You may also need to monitor the ExaBGP and renew the commands after restart / s
 * [Local database instalation notes](./docs/DB_LOCAL.md)
 
 ## Change Log
+- 1.0.2 - fixed bug in IPv6 Flowspec messages
 - 1.0.1 . minor bug fixes
-- 1.0.0 . ExaAPI and Guarda modules moved outside of the project to their own repositories. ExaAPI is now available also as a [pip package exabgp-process](https://pypi.org/project/exabgp-process/). New format of message for ExaAPI - now sends information about user (author of rule) for logging purposes. There are now limits for rules for organization and overall limit for the instalation. Database changed / migration is required.
+- 1.0.0 . Major changes
+    - Limits for nuber of rules in the system introduced. There are now limits for rules for organization and overall limit for the instalation. Database changed / migration is required. Migrating the database to version 1.0.x is a bit more complicated, you need to link existing rules to organizations. [A more detailed description is in a separate document](./docs/DB_MIGRATIONS.md).
+    - Rules are now tied to organization. If the user belongs to more than one organization, the organization for the session must be selected after login.
+    - Bulk import for users enabled for admin.
+    - Introduced Swagger docs for API on the local system. Just open /apidocs url. 
+    - New format of message for ExaAPI - now sends information about author of rule (user) for logging purposes.
+    - ExaAPI and Guarda modules moved outside of the project.
+    - ExaAPI is now available as a [pip package exabgp-process](https://pypi.org/project/exabgp-process/), with own [github repostiory](https://github.com/CESNET/exabgp-process).
+    - Watch of exabgp restart can be still done by guarda service - see docs. Or it can be done by override of the exabgp service settings.  
 - 0.8.1 application is using Flask-Session stored in DB using SQL Alchemy driver. This can be configured for other drivers, however server side session is required for the application proper function.
 - 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machinnes.
 - 0.7.3 - New possibility of external auth proxy. 
