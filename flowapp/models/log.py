@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+from flowapp.constants import RuleTypes
 from .base import db
 
 
@@ -19,3 +22,18 @@ class Log(db.Model):
         self.rule_id = rule_id
         self.user_id = user_id
         self.author = author
+
+    @classmethod
+    def delete_old(cls, days: int = 30):
+        """Delete logs older than :param days from the database"""
+        cls.query.filter(cls.time < datetime.now() - timedelta(days=days)).delete()
+        db.session.commit()
+
+    def __repr__(self):
+        return f"<Log {self.id}>"
+
+    def __str__(self):
+        """
+        {"author": "vrany@cesnet.cz / Cel\u00fd sv\u011bt", "source": "UI", "command": "cmd"}
+        """
+        return f"{self.author} - {RuleTypes(self.rule_type).name}({self.rule_id}) - {self.task}"

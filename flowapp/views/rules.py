@@ -28,6 +28,7 @@ from flowapp.models import (
     get_user_nets,
     insert_initial_communities,
 )
+from flowapp.models.log import Log
 from flowapp.models.rules.whitelist import RuleWhitelistCache
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
 from flowapp.services import rule_service, announce_all_routes, delete_expired_whitelists
@@ -679,6 +680,13 @@ def announce_all():
 @rules.route("/withdraw_expired", methods=["GET"])
 @localhost_only
 def withdraw_expired():
+    """
+    cleaning endpoint
+    deletes expired whitelists
+    withdraws all expired routes from ExaBGP
+    deletes logs older than 30 days
+    """
     delete_expired_whitelists()
     announce_all_routes(constants.WITHDRAW)
+    Log.delete_old()
     return " "

@@ -113,6 +113,7 @@ def log_route(user_id: int, route_model: Union[RTBH, Flowspec4, Flowspec6], rule
         author=author,
     )
     db.session.add(log)
+    current_app.logger.info(log)
     db.session.commit()
 
 
@@ -135,4 +136,5 @@ def log_withdraw(user_id: int, task: str, rule_type: RuleTypes, deleted_id: int,
         author=author,
     )
     db.session.add(log)
+    current_app.logger.info(log)
     db.session.commit()
