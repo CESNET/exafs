@@ -83,15 +83,19 @@ def reactivate_rule(
 
     # Set new expiration date
     model.expires = expires
-    # Set again the active state
-    model.rstate_id = state
+    # Set again the active state, if the rule is not whitelisted RTBH
+    if rule_type == RuleTypes.RTBH:
+        model = check_rtbh_whitelisted(model, user_id, flashes, f"{user_email} / {org_name}")
+    else:
+        model.rstate_id = state
+
     model.comment = comment
     db.session.commit()
-    flashes.append("Rule successfully updated")
 
     route_model = ROUTE_MODELS[rule_type.value]
 
     if model.rstate_id == 1:
+        flashes.append("Rule successfully updated, state set to active.")
         # Announce route
         command = route_model(model, ANNOUNCE)
         route = Route(
@@ -124,6 +128,10 @@ def reactivate_rule(
             model.id,
             f"{user_email} / {org_name}",
         )
+        if model.rstate_id == 4:
+            flashes.append("Rule successfully updated, state set to whitelisted.")
+        else:
+            flashes.append("Rule successfully updated, state set to inactive.")
 
     return model, flashes
 
@@ -306,7 +314,17 @@ def create_or_update_rtbh_rule(
 
     # rule author for logging and announcing
     author = f"{user_email} / {org_name}"
+    # Check if rule is whitelisted
+    model = check_rtbh_whitelisted(model, user_id, flashes, author)
 
+    announce_rtbh_route(model, author=author)
+    # Log changes
+    log_route(user_id, model, RuleTypes.RTBH, author)
+
+    return model, flashes
+
+
+def check_rtbh_whitelisted(model: RTBH, user_id: int, flashes: List[str], author: str) -> None:
     # Check if rule is whitelisted
     allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
     if model.community_id in allowed_communities:
@@ -314,14 +332,9 @@ def create_or_update_rtbh_rule(
         whitelists = db.session.query(Whitelist).filter(Whitelist.expires > datetime.now()).all()
         wl_cache = map_whitelists_to_strings(whitelists)
         results = check_rule_against_whitelists(str(model), wl_cache.keys())
-        # check rule against whitelists, stop search when rule is whitelisted first time
+        # check rule against whitelists
         model = evaluate_rtbh_against_whitelists_check_results(user_id, model, flashes, author, wl_cache, results)
-
-    announce_rtbh_route(model, author=author)
-    # Log changes
-    log_route(user_id, model, RuleTypes.RTBH, author)
-
-    return model, flashes
+    return model
 
 
 def evaluate_rtbh_against_whitelists_check_results(

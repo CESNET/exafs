@@ -114,7 +114,8 @@ def reactivate_rule(rule_type, rule_id):
         if "limit_reached" in messages:
             return redirect(url_for("rules.limit_reached", rule_type=rule_type))
 
-        flash("Rule successfully updated", "alert-success")
+        for message in messages:
+            flash(message, "alert-success")
 
         return redirect(
             url_for(
