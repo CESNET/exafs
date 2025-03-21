@@ -7,12 +7,12 @@ and managing flow rules, separating these concerns from HTTP handling.
 """
 
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 from flask import current_app
 
 from flowapp import db, messages
-from flowapp.constants import RuleOrigin, RuleTypes, ANNOUNCE
+from flowapp.constants import WITHDRAW, RuleOrigin, RuleTypes, ANNOUNCE
 from flowapp.models import (
     get_ipv4_model_if_exists,
     get_ipv6_model_if_exists,
@@ -22,7 +22,8 @@ from flowapp.models import (
     RTBH,
     Whitelist,
 )
-from flowapp.output import Route, announce_route, log_route, RouteSources
+from flowapp.models.utils import check_global_rule_limit, check_rule_limit
+from flowapp.output import ROUTE_MODELS, Route, announce_route, log_route, RouteSources, log_withdraw
 from flowapp.services.base import announce_rtbh_route
 from flowapp.services.whitelist_common import (
     Relation,
@@ -33,6 +34,98 @@ from flowapp.services.whitelist_common import (
 )
 from flowapp.utils import round_to_ten_minutes, get_state_by_time, quote_to_ent
 from .whitelist_common import check_rule_against_whitelists
+
+
+def reactivate_rule(
+    rule_type: RuleTypes,
+    rule_id: int,
+    expires: datetime,
+    comment: str,
+    user_id: int,
+    org_id: int,
+    user_email: str,
+    org_name: str,
+) -> Tuple[Union[RTBH, Flowspec4, Flowspec6], List[str]]:
+    """
+    Reactivate a rule by setting a new expiration time.
+
+    Args:
+        rule_type: Type of rule (RTBH, IPv4, IPv6)
+        rule_id: ID of the rule to reactivate
+        expires: New expiration datetime
+        comment: Updated comment
+        user_id: Current user ID
+        org_id: Current organization ID
+        user_email: User email for logging
+        org_name: Organization name for logging
+
+    Returns:
+        Tuple containing (rule_model, messages)
+    """
+    model_name = {RuleTypes.RTBH: RTBH, RuleTypes.IPv4: Flowspec4, RuleTypes.IPv6: Flowspec6}[rule_type]
+
+    model = db.session.get(model_name, rule_id)
+    if not model:
+        return None, ["Rule not found"]
+
+    flashes = []
+
+    # Check if rule will be reactivated
+    state = get_state_by_time(expires)
+
+    # Check global limit
+    if state == 1 and check_global_rule_limit(rule_type.value):
+        return model, ["global_limit_reached"]
+
+    # Check org limit
+    if state == 1 and check_rule_limit(org_id, rule_type=rule_type.value):
+        return model, ["limit_reached"]
+
+    # Set new expiration date
+    model.expires = expires
+    # Set again the active state
+    model.rstate_id = state
+    model.comment = comment
+    db.session.commit()
+    flashes.append("Rule successfully updated")
+
+    route_model = ROUTE_MODELS[rule_type.value]
+
+    if model.rstate_id == 1:
+        # Announce route
+        command = route_model(model, ANNOUNCE)
+        route = Route(
+            author=f"{user_email} / {org_name}",
+            source=RouteSources.UI,
+            command=command,
+        )
+        announce_route(route)
+        # Log changes
+        log_route(
+            user_id,
+            model,
+            rule_type,
+            f"{user_email} / {org_name}",
+        )
+    else:
+        # Withdraw route
+        command = route_model(model, WITHDRAW)
+        route = Route(
+            author=f"{user_email} / {org_name}",
+            source=RouteSources.UI,
+            command=command,
+        )
+        announce_route(route)
+        # Log changes
+        log_withdraw(
+            user_id,
+            route.command,
+            rule_type,
+            model.id,
+            f"{user_email} / {org_name}",
+        )
+
+    return model, flashes
 
 
 def create_or_update_ipv4_rule(

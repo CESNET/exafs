@@ -70,6 +70,10 @@ def reactivate_rule(rule_type, rule_id):
     form_name = DATA_FORMS[rule_type]
 
     model = db.session.get(model_name, rule_id)
+    if not model:
+        flash("Rule not found", "alert-danger")
+        return redirect(url_for("index"))
+
     form = form_name(request.form, obj=model)
     form.net_ranges = get_user_nets(session["user_id"])
 
@@ -87,62 +91,30 @@ def reactivate_rule(rule_type, rule_id):
     if rule_type == RuleTypes.IPv6.value:
         form.next_header.data = model.next_header
 
-    # do not need to validate - all is readonly
+    # Process form submission
     if request.method == "POST":
-        # check if rule will be reactivated
-        state = get_state_by_time(form.expires.data)
+        # Round expiration time to 10 minutes
+        expires = round_to_ten_minutes(form.expires.data)
 
-        # check global limit
-        check_gl = check_global_rule_limit(rule_type)
-        if state == 1 and check_gl:
+        # Use the service to reactivate the rule
+        _, messages = rule_service.reactivate_rule(
+            rule_type=enum_rule_type,
+            rule_id=rule_id,
+            expires=expires,
+            comment=form.comment.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
+        )
+
+        # Handle special messages (redirects)
+        if "global_limit_reached" in messages:
             return redirect(url_for("rules.global_limit_reached", rule_type=rule_type))
-        # check org limit
-        if state == 1 and check_rule_limit(session["user_org_id"], rule_type=rule_type):
+        if "limit_reached" in messages:
             return redirect(url_for("rules.limit_reached", rule_type=rule_type))
 
-        # set new expiration date
-        model.expires = round_to_ten_minutes(form.expires.data)
-        # set again the active state
-        model.rstate_id = get_state_by_time(form.expires.data)
-        model.comment = form.comment.data
-        db.session.commit()
         flash("Rule successfully updated", "alert-success")
-
-        route_model = ROUTE_MODELS[rule_type]
-
-        if model.rstate_id == 1:
-            # announce route
-            command = route_model(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-            # log changes - Use the enum value here
-            log_route(
-                session["user_id"],
-                model,
-                enum_rule_type,  # Pass the enum instead of integer
-                f"{session['user_email']} / {session['user_org']}",
-            )
-        else:
-            # withdraw route
-            command = route_model(model, constants.WITHDRAW)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-            # log changes - Use the enum value here
-            log_withdraw(
-                session["user_id"],
-                route.command,
-                enum_rule_type,  # Pass the enum instead of integer
-                model.id,
-                f"{session['user_email']} / {session['user_org']}",
-            )
 
         return redirect(
             url_for(
@@ -157,6 +129,7 @@ def reactivate_rule(rule_type, rule_id):
     else:
         flash_errors(form)
 
+    # For GET requests, prepare the form for display
     form.expires.data = model.expires
     for field in form:
         if field.name not in ["expires", "csrf_token", "comment"]:
