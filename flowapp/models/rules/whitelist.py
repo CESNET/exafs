@@ -73,6 +73,14 @@ class Whitelist(db.Model):
             "rstate": self.rstate.description,
         }
 
+    def dict(self, prefered_format="yearfirst"):
+        """
+        Serialize to dict
+        :param prefered_format: string with prefered time format
+        :returns: dictionary
+        """
+        return self.to_dict(prefered_format)
+
     def __repr__(self):
         return f"<Whitelist {self.ip}/{self.mask}>"
 
