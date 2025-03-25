@@ -497,11 +497,17 @@ def delete_rtbh_and_create_whitelist(
         whitelist_expires = datetime.now() + timedelta(days=7)
 
     # Prepare whitelist data
+    # Create base comment
+    comment_text = f"Created from RTBH rule {model} {rule_id}"
+    # Append the rule's comment only if it exists
+    if model.comment:
+        comment_text += f": {model.comment}"
+
     whitelist_data = {
         "ip": ip,
         "mask": mask,
         "expires": whitelist_expires,
-        "comment": f"Created from RTBH rule {rule_id}: {model.comment}",
+        "comment": comment_text,
     }
 
     # Delete the RTBH rule
