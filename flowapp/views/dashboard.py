@@ -266,9 +266,15 @@ def create_admin_response(
     :param sort_order:
     :return:
     """
+    group_op = True if rtype != "whitelist" else False
 
     dashboard_table_body = create_dashboard_table_body(
-        rules, rtype, macro_file=macro_file, macro_name=macro_tbody, whitelist_rule_ids=whitelist_rule_ids
+        rules,
+        rtype,
+        macro_file=macro_file,
+        macro_name=macro_tbody,
+        group_op=group_op,
+        whitelist_rule_ids=whitelist_rule_ids,
     )
 
     dashboard_table_head = create_dashboard_table_head(
@@ -278,15 +284,18 @@ def create_admin_response(
         sort_key=sort_key,
         sort_order=sort_order,
         search_query=search_query,
+        group_op=group_op,
         macro_file=macro_file,
         macro_name=macro_thead,
     )
-
-    dashboard_table_foot = create_dashboard_table_foot(
-        table_colspan,
-        macro_file=macro_file,
-        macro_name=macro_tfoot,
-    )
+    if group_op:
+        dashboard_table_foot = create_dashboard_table_foot(
+            table_colspan,
+            macro_file=macro_file,
+            macro_name=macro_tfoot,
+        )
+    else:
+        dashboard_table_foot = ""
 
     res = make_response(
         render_template(
@@ -358,8 +367,16 @@ def create_user_response(
         macro_name=macro_tbody,
         whitelist_rule_ids=whitelist_rule_ids,
     )
+
+    group_op = True if rtype != "whitelist" else False
+
     dashboard_table_editable = create_dashboard_table_body(
-        rules_editable, rtype, macro_file=macro_file, macro_name=macro_tbody, whitelist_rule_ids=whitelist_rule_ids
+        rules_editable,
+        rtype,
+        macro_file=macro_file,
+        macro_name=macro_tbody,
+        group_op=group_op,
+        whitelist_rule_ids=whitelist_rule_ids,
     )
     dashboard_table_editable_head = create_dashboard_table_head(
         rules_columns=table_columns,
@@ -368,7 +385,7 @@ def create_user_response(
         sort_key=sort_key,
         sort_order=sort_order,
         search_query=search_query,
-        group_op=True,
+        group_op=group_op,
         macro_file=macro_file,
         macro_name=macro_thead,
     )
@@ -384,11 +401,14 @@ def create_user_response(
         macro_name=macro_thead,
     )
 
-    dashboard_table_foot = create_dashboard_table_foot(
-        table_colspan,
-        macro_file=macro_file,
-        macro_name=macro_tfoot,
-    )
+    if group_op:
+        dashboard_table_foot = create_dashboard_table_foot(
+            table_colspan,
+            macro_file=macro_file,
+            macro_name=macro_tfoot,
+        )
+    else:
+        dashboard_table_foot = ""
 
     display_editable = len(rules_editable)
     display_readonly = len(read_only_rules)
