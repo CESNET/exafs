@@ -6,7 +6,7 @@ This module provides business logic functions for creating, updating,
 and managing flow rules, separating these concerns from HTTP handling.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Union
 
 from flask import current_app
@@ -22,6 +22,7 @@ from flowapp.models import (
     RTBH,
     Whitelist,
 )
+from flowapp.models.rules.whitelist import RuleWhitelistCache
 from flowapp.models.utils import check_global_rule_limit, check_rule_limit
 from flowapp.output import ROUTE_MODELS, Route, announce_route, log_route, RouteSources, log_withdraw
 from flowapp.services.base import announce_rtbh_route
@@ -31,9 +32,10 @@ from flowapp.services.whitelist_common import (
     create_rtbh_from_whitelist_parts,
     subtract_network,
     whitelist_rtbh_rule,
+    check_rule_against_whitelists,
 )
+from flowapp.services.whitelist_service import create_or_update_whitelist
 from flowapp.utils import round_to_ten_minutes, get_state_by_time, quote_to_ent
-from .whitelist_common import check_rule_against_whitelists
 
 
 def reactivate_rule(
@@ -384,3 +386,147 @@ def evaluate_rtbh_against_whitelists_check_results(
 
 def map_whitelists_to_strings(whitelists: List[Whitelist]) -> Dict[str, Whitelist]:
     return {str(w): w for w in whitelists}
+
+
+def delete_rule(
+    rule_type: RuleTypes, rule_id: int, user_id: int, user_email: str, org_name: str, allowed_rule_ids: List[int] = None
+) -> Tuple[bool, str]:
+    """
+    Delete a rule with the given id and type.
+
+    Args:
+        rule_type: Type of rule (RTBH, IPv4, IPv6)
+        rule_id: ID of the rule to delete
+        user_id: Current user ID
+        user_email: User email for logging
+        org_name: Organization name for logging
+        allowed_rule_ids: List of rule IDs the user is allowed to delete, None means no restriction
+
+    Returns:
+        Tuple containing (success, message)
+    """
+    model_class = {RuleTypes.RTBH: RTBH, RuleTypes.IPv4: Flowspec4, RuleTypes.IPv6: Flowspec6}[rule_type]
+
+    route_model = ROUTE_MODELS[rule_type.value]
+
+    model = db.session.get(model_class, rule_id)
+    if not model:
+        return False, "Rule not found"
+
+    # Check permission if allowed_rule_ids is provided
+    if allowed_rule_ids is not None and model.id not in allowed_rule_ids:
+        return False, "You cannot delete this rule"
+
+    # Withdraw route
+    command = route_model(model, WITHDRAW)
+    route = Route(
+        author=f"{user_email} / {org_name}",
+        source=RouteSources.UI,
+        command=command,
+    )
+    announce_route(route)
+
+    # Log withdrawal
+    log_withdraw(
+        user_id,
+        route.command,
+        rule_type,
+        model.id,
+        f"{user_email} / {org_name}",
+    )
+
+    # Special handling for RTBH rules
+    if rule_type == RuleTypes.RTBH:
+        current_app.logger.debug(f"Deleting RTBH rule {rule_id} from cache")
+        RuleWhitelistCache.delete_by_rule_id(rule_id)
+
+    # Delete from database
+    db.session.delete(model)
+    db.session.commit()
+
+    return True, "Rule deleted successfully"
+
+
+def delete_rtbh_and_create_whitelist(
+    rule_id: int,
+    user_id: int,
+    org_id: int,
+    user_email: str,
+    org_name: str,
+    allowed_rule_ids: List[int] = None,
+    whitelist_expires: datetime = None,
+) -> Tuple[bool, List[str], Union[Whitelist, None]]:
+    """
+    Delete an RTBH rule and create a whitelist entry from it.
+
+    Args:
+        rule_id: ID of the RTBH rule to delete
+        user_id: Current user ID
+        org_id: Current organization ID
+        user_email: User email for logging
+        org_name: Organization name for logging
+        allowed_rule_ids: List of rule IDs the user is allowed to delete
+        whitelist_expires: Expiration time for the whitelist entry (default: 7 days from now)
+
+    Returns:
+        Tuple containing (success, messages, whitelist_model)
+    """
+    messages = []
+
+    # First get the RTBH rule to extract its data
+    model = db.session.get(RTBH, rule_id)
+    if not model:
+        return False, ["RTBH rule not found"], None
+
+    # Check permission if allowed_rule_ids is provided
+    if allowed_rule_ids is not None and model.id not in allowed_rule_ids:
+        return False, ["You cannot delete this rule"], None
+
+    # Extract data for whitelist
+    if model.ipv4:
+        ip = model.ipv4
+        mask = model.ipv4_mask
+    elif model.ipv6:
+        ip = model.ipv6
+        mask = model.ipv6_mask
+    else:
+        return False, ["RTBH rule has no IP address"], None
+
+    # Set default whitelist expiration time if not provided
+    if whitelist_expires is None:
+        whitelist_expires = datetime.now() + timedelta(days=7)
+
+    # Prepare whitelist data
+    whitelist_data = {
+        "ip": ip,
+        "mask": mask,
+        "expires": whitelist_expires,
+        "comment": f"Created from RTBH rule {rule_id}: {model.comment}",
+    }
+
+    # Delete the RTBH rule
+    success, delete_message = delete_rule(
+        rule_type=RuleTypes.RTBH,
+        rule_id=rule_id,
+        user_id=user_id,
+        user_email=user_email,
+        org_name=org_name,
+        allowed_rule_ids=allowed_rule_ids,
+    )
+
+    if not success:
+        return False, [delete_message], None
+
+    messages.append(delete_message)
+
+    # Create the whitelist entry
+    try:
+        whitelist_model, whitelist_messages = create_or_update_whitelist(
+            form_data=whitelist_data, user_id=user_id, org_id=org_id, user_email=user_email, org_name=org_name
+        )
+        messages.extend(whitelist_messages)
+        return True, messages, whitelist_model
+    except Exception as e:
+        current_app.logger.exception(f"Error creating whitelist entry: {e}")
+        messages.append(f"Rule deleted but failed to create whitelist: {str(e)}")
+        return False, messages, None

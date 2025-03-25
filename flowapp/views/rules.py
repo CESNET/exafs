@@ -29,7 +29,6 @@ from flowapp.models import (
     insert_initial_communities,
 )
 from flowapp.models.log import Log
-from flowapp.models.rules.whitelist import RuleWhitelistCache
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
 from flowapp.services import rule_service, announce_all_routes, delete_expired_whitelists
 from flowapp.utils import (
@@ -153,48 +152,74 @@ def reactivate_rule(rule_type, rule_id):
 def delete_rule(rule_type, rule_id):
     """
     Delete rule with given id and type
-    :param sort_key:
-    :param filter_text:
-    :param rstate:
-    :param rule_type: string - type of rule to be deleted
+    :param rule_type: integer - type of rule to be deleted
     :param rule_id: integer - rule id
     """
-    model_name = DATA_MODELS[rule_type]
-    route_model = ROUTE_MODELS[rule_type]
-
     # Convert the integer rule_type to RuleTypes enum
     enum_rule_type = RuleTypes(rule_type)
 
-    model = db.session.get(model_name, rule_id)
-    if model.id in session[constants.RULES_KEY]:
-        # withdraw route
-        command = route_model(model, constants.WITHDRAW)
-        route = Route(
-            author=f"{session['user_email']} / {session['user_org']}",
-            source=RouteSources.UI,
-            command=command,
+    # Use the service to delete the rule
+    success, message = rule_service.delete_rule(
+        rule_type=enum_rule_type,
+        rule_id=rule_id,
+        user_id=session["user_id"],
+        user_email=session["user_email"],
+        org_name=session["user_org"],
+        allowed_rule_ids=session.get(constants.RULES_KEY, []),
+    )
+
+    # Flash appropriate message based on result
+    flash(message, "alert-success" if success else "alert-warning")
+
+    # Redirect back to dashboard
+    return redirect(
+        url_for(
+            "dashboard.index",
+            rtype=session[constants.TYPE_ARG],
+            rstate=session[constants.RULE_ARG],
+            sort=session[constants.SORT_ARG],
+            squery=session[constants.SEARCH_ARG],
+            order=session[constants.ORDER_ARG],
         )
-        announce_route(route)
+    )
 
-        log_withdraw(
-            session["user_id"],
-            route.command,
-            enum_rule_type,
-            model.id,
-            f"{session['user_email']} / {session['user_org']}",
-        )
-        if enum_rule_type == RuleTypes.RTBH:
-            current_app.logger.debug(f"Deleting RTBH rule {rule_id} from cache")
-            RuleWhitelistCache.delete_by_rule_id(rule_id)
 
-        # delete from db
-        db.session.delete(model)
-        db.session.commit()
-        flash("Rule deleted", "alert-success")
+@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["GET"])
+@auth_required
+@user_or_admin_required
+def delete_and_whitelist(rule_type, rule_id):
+    """
+    Delete an RTBH rule and create a whitelist entry from it.
 
-    else:
-        flash("You can not delete this rule", "alert-warning")
+    :param rule_id: integer - id of the RTBH rule
+    """
+    if rule_type != RuleTypes.RTBH.value:
+        flash("Only RTBH rules can be converted to whitelists", "alert-warning")
+        return redirect(url_for("index"))
 
+    # Set whitelist expiration to 7 days from now by default
+    whitelist_expires = datetime.now() + timedelta(days=7)
+
+    # Use the service to delete RTBH and create whitelist
+    success, messages, whitelist = rule_service.delete_rtbh_and_create_whitelist(
+        rule_id=rule_id,
+        user_id=session["user_id"],
+        org_id=session["user_org_id"],
+        user_email=session["user_email"],
+        org_name=session["user_org"],
+        allowed_rule_ids=session.get(constants.RULES_KEY, []),
+        whitelist_expires=whitelist_expires,
+    )
+
+    # Flash all messages
+    for message in messages:
+        flash(message, "alert-success" if success else "alert-warning")
+
+    # If successful, flash additional message about whitelist
+    if success and whitelist:
+        flash(f"Created whitelist entry ID {whitelist.id} from RTBH rule", "alert-info")
+
+    # Redirect back to dashboard
     return redirect(
         url_for(
             "dashboard.index",

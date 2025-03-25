@@ -111,6 +111,9 @@
             <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
                 <i class="bi bi-x-lg"></i>
             </a>
+            <a class="btn btn-success btn-sm" href="{{ url_for('rules.delete_and_whitelist', rule_type=1, rule_id=rule.id) }}" role="button">
+                <i class="bi bi-shield-x"></i>
+            </a>
             {% endif %}
             {% if rule.comment %}
             <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
