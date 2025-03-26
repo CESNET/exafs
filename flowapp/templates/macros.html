@@ -1,5 +1,5 @@
 
-{% macro build_ip_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None) %}
+{% macro build_ip_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None, allowed_communities=None) %}
 <tbody>
     {% for rule in rules %}
         {% if rule.next_header is defined %}
@@ -77,7 +77,7 @@
 {% endmacro %}
 
 
-{% macro build_rtbh_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None) %}
+{% macro build_rtbh_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None, allowed_communities=None) %}
     <tbody>
 {% for rule in rules %}
     <tr 
@@ -105,15 +105,17 @@
         </td>
         <td>
             {% if editable %}
-            <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
-                <i class="bi bi-clock table-icon"></i>
-            </a>
-            <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
-                <i class="bi bi-x-lg"></i>
-            </a>
-            <a class="btn btn-success btn-sm" href="{{ url_for('rules.delete_and_whitelist', rule_type=1, rule_id=rule.id) }}" role="button">
-                <i class="bi bi-shield-x"></i>
-            </a>
+                <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+                    <i class="bi bi-clock table-icon"></i>
+                </a>
+                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% if rule.community.id in allowed_communities %}    
+                    <a class="btn btn-success btn-sm" href="{{ url_for('rules.delete_and_whitelist', rule_type=1, rule_id=rule.id) }}" role="button">
+                        <i class="bi bi-shield-x"></i>
+                    </a>
+                {% endif %}    
             {% endif %}
             {% if rule.comment %}
             <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
@@ -133,7 +135,7 @@
 {% endmacro %}
 
 
-{% macro build_whitelist_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None) %}
+{% macro build_whitelist_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None, allowed_communities=None) %}
     <tbody>
 {% for rule in rules %}
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>

@@ -576,6 +576,7 @@ def rtbh_rule():
     ] + user_communities
     form.community.choices = user_communities
     form.net_ranges = net_ranges
+    whitelistable = Community.get_whitelistable_communities(current_app.config["ALLOWED_COMMUNITIES"])
 
     if request.method == "POST" and form.validate():
         _model, messages = rule_service.create_or_update_rtbh_rule(
@@ -597,7 +598,11 @@ def rtbh_rule():
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
 
-    return render_template("forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule"))
+    print(whitelistable)
+
+    return render_template(
+        "forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule"), whitelistable=whitelistable
+    )
 
 
 @rules.route("/limit_reached/<rule_type>")

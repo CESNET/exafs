@@ -126,6 +126,8 @@ def index(rtype=None, rstate="active"):
     else:
         count_match = ""
 
+    allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
+
     return view_factory(
         rtype=rtype,
         rstate=rstate,
@@ -142,6 +144,7 @@ def index(rtype=None, rstate="active"):
         macro_thead=macro_thead,
         macro_tfoot=macro_tfoot,
         whitelist_rule_ids=whitelist_rule_ids,
+        allowed_communities=allowed_communities,
     )
 
 
@@ -153,6 +156,7 @@ def create_dashboard_table_body(
     macro_file="macros.html",
     macro_name="build_ip_tbody",
     whitelist_rule_ids=None,
+    allowed_communities=None,
 ):
     """
     create the table body for the dashboard using a jinja2 macro
@@ -167,7 +171,9 @@ def create_dashboard_table_body(
     tstring = "{% "
     tstring = tstring + f"from '{macro_file}' import {macro_name}"
     tstring = tstring + " %} {{"
-    tstring = tstring + f" {macro_name}(rules, today, editable, group_op, whitelist_rule_ids) " + "}}"
+    tstring = (
+        tstring + f" {macro_name}(rules, today, editable, group_op, whitelist_rule_ids, allowed_communities) " + "}}"
+    )
 
     dashboard_table_body = render_template_string(
         tstring,
@@ -176,6 +182,7 @@ def create_dashboard_table_body(
         editable=editable,
         group_op=group_op,
         whitelist_rule_ids=whitelist_rule_ids or set(),
+        allowed_communities=allowed_communities or [],
     )
     return dashboard_table_body
 
@@ -256,6 +263,7 @@ def create_admin_response(
     macro_thead="build_rules_thead",
     macro_tfoot="build_group_buttons_tfoot",
     whitelist_rule_ids=None,
+    allowed_communities=None,
 ):
     """
     Admin can see and edit any rules
@@ -275,6 +283,7 @@ def create_admin_response(
         macro_name=macro_tbody,
         group_op=group_op,
         whitelist_rule_ids=whitelist_rule_ids,
+        allowed_communities=allowed_communities,
     )
 
     dashboard_table_head = create_dashboard_table_head(
@@ -335,6 +344,7 @@ def create_user_response(
     macro_thead="build_rules_thead",
     macro_tfoot="build_rules_tfoot",
     whitelist_rule_ids=None,
+    allowed_communities=None,
 ):
     """
     Filter out the rules for normal users
@@ -366,6 +376,7 @@ def create_user_response(
         macro_file=macro_file,
         macro_name=macro_tbody,
         whitelist_rule_ids=whitelist_rule_ids,
+        allowed_communities=allowed_communities,
     )
 
     group_op = True if rtype != "whitelist" else False
@@ -377,6 +388,7 @@ def create_user_response(
         macro_name=macro_tbody,
         group_op=group_op,
         whitelist_rule_ids=whitelist_rule_ids,
+        allowed_communities=allowed_communities,
     )
     dashboard_table_editable_head = create_dashboard_table_head(
         rules_columns=table_columns,
@@ -454,6 +466,7 @@ def create_view_response(
     macro_thead="build_rules_thead",
     macro_tfoot="build_rules_tfoot",
     whitelist_rule_ids=None,
+    allowed_communities=None,
 ):
     """
     Filter out the rules for normal users
@@ -469,6 +482,7 @@ def create_view_response(
         macro_file=macro_file,
         macro_name=macro_tbody,
         whitelist_rule_ids=whitelist_rule_ids,
+        allowed_communities=allowed_communities,
     )
 
     dashboard_table_head = create_dashboard_table_head(

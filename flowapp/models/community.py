@@ -15,7 +15,24 @@ class Community(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey("role.id"), nullable=False)
     role = db.relationship("Role", backref="community")
 
-    # Methods and initializer
+    def __init__(self, name, comm, larcomm, extcomm, description, as_path, role_id):
+        self.name = name
+        self.comm = comm
+        self.larcomm = larcomm
+        self.extcomm = extcomm
+        self.description = description
+        self.as_path = as_path
+        self.role_id = role_id
+
+    @classmethod
+    def get_whitelistable_communities(cls, id_list):
+        return cls.query.filter(cls.id.in_(id_list)).all()
+
+    def __repr__(self):
+        return f"<Community {self.name}>"
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class ASPath(db.Model):

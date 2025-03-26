@@ -28,6 +28,11 @@
       <div class="row">
         {{ render_field(form.community) }}
       </div>
+      <div class="row">
+        Only 
+        {% for com in whitelistable %}
+          {{ com }}{% if not loop.last %}, {% endif %}
+        {% endfor %} communities can be whitelisted.
     </div>  
   </div>  
 
