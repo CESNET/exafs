@@ -29,9 +29,14 @@
         {{ render_field(form.community) }}
       </div>
       <div class="row">
-        {% for com in whitelistable %}
-          {{ com }}{% if not loop.last %}, {% endif %}
-        {% endfor %} communities can be whitelisted.
+        <h6>Following communities can be whitelisted:</h6>
+        <ul class="list-group">
+          {% for com in whitelistable %}
+            <li class="list-group-item">
+              {{ com }}
+            </li>
+          {% endfor %}
+        </ul>
     </div>  
   </div>  
 
@@ -40,9 +45,6 @@
       <div class="form-group">
         <label for="inputExpiration" class="control-label">Expiration date</label>
         <div class='input-group date' id='dateTimeExpires'>
-                      <!--
-                      <input type='text' name="expires" class="form-control" />
-                      -->
                       {{ form.expires(class_='form-control') }}
                       <span class="input-group-addon">
                           <span class="glyphicon glyphicon-calendar"></span>
