@@ -63,7 +63,6 @@ def authorize(user_key):
     :return: page with token
     """
     jwt_key = current_app.config.get("JWT_SECRET")
-
     # try normal user key first
     model = db.session.query(ApiKey).filter_by(key=user_key).first()
     # if not found try machine key
@@ -96,7 +95,7 @@ def authorize(user_key):
 
         return jsonify({"token": encoded})
     else:
-        return jsonify({"message": "auth token is invalid"}), 403
+        return jsonify({"message": f"auth token is not valid from machine {request.remote_addr}"}), 403
 
 
 def check_readonly(func):

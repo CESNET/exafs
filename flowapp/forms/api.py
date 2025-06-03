@@ -3,7 +3,7 @@ API key forms for the flowapp application.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, BooleanField, HiddenField
+from wtforms import SelectField, StringField, TextAreaField, BooleanField, HiddenField
 from wtforms.validators import DataRequired, IPAddress, Optional, Length
 
 from .base import MultiFormatDateTimeLocalField
@@ -37,9 +37,10 @@ class ApiKeyForm(FlaskForm):
 
 class MachineApiKeyForm(FlaskForm):
     """
-    ApiKey for Machines
+    ApiKey for Services / No login users.
     Each key / machine pair is unique
-    Only Admin can create new these keys
+    This form is used by Admin to create api key for services or users with no Shibboleth login
+    User must be created first and must have an organization
     """
 
     machine = StringField(
@@ -56,6 +57,12 @@ class MachineApiKeyForm(FlaskForm):
         unlimited=True,
     )
 
-    readonly = BooleanField("Read only key", default=False)
+    readonly = BooleanField("Read only key", default=True)
+
+    user = SelectField(
+        "User",
+        coerce=int,
+        validators=[DataRequired("Select user")],
+    )
 
     key = HiddenField("GeneratedKey")

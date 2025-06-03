@@ -153,6 +153,26 @@ def jwt_token(client, app, db, request):
 
 
 @pytest.fixture(scope="session")
+def machine_api_token(client, app, db, request):
+    """
+    Get the test_client from the app, for the whole test session.
+    """
+    mkey = "machinetestkey"
+
+    with app.app_context():
+        model = flowapp.models.MachineApiKey(machine="127.0.0.1", key=mkey, user_id=1, org_id=1)
+        db.session.add(model)
+        db.session.commit()
+
+    print("\n----- GET MACHINE API KEY TEST TOKEN\n")
+    url = "/api/v3/auth"
+    headers = {"x-api-key": mkey}
+    token = client.get(url, headers=headers)
+    data = json.loads(token.data)
+    return data["token"]
+
+
+@pytest.fixture(scope="session")
 def expired_auth_token(client, app, db, request):
     """
     Get the test_client from the app, for the whole test session.

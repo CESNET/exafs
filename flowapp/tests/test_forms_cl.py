@@ -372,12 +372,14 @@ class TestMachineApiKeyForm:
             "comment": "Test machine API key",
             "expires": valid_datetime,
             "readonly": "true",
+            "user": 1,
         }
 
     def test_valid_machine_key(self, app, valid_machine_key_data):
         with app.test_request_context():
             form_data = create_form_data(valid_machine_key_data)
             form = MachineApiKeyForm(formdata=form_data)
+            form.user.choices = [(1, "g.name"), (2, "test")]
             assert form.validate()
 
 
