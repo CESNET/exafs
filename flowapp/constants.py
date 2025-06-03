@@ -2,6 +2,7 @@
 This module contains constant values used in application
 """
 
+from enum import Enum
 from operator import ge, lt
 
 DEFAULT_SORT = "expires"
@@ -59,7 +60,12 @@ TCP_FLAGS = [
 FORM_TIME_PATTERN = "%Y-%m-%dT%H:%M"
 
 
-class RuleTypes:
+class RuleTypes(Enum):
     RTBH = 1
     IPv4 = 4
     IPv6 = 6
+
+
+class RuleOrigin(Enum):
+    USER = 1
+    WHITELIST = 2

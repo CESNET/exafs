@@ -1,4 +1,3 @@
-from operator import ge, lt
 from datetime import datetime, timedelta
 from flask import flash
 from flowapp.constants import (
@@ -73,7 +72,7 @@ def parse_api_time(apitime):
     except ValueError:
         mytime = False
 
-    return False
+    return mytime
 
 
 def quote_to_ent(comment):

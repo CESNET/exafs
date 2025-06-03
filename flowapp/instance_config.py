@@ -2,11 +2,18 @@
 
 # column names for tables
 RTBH_COLUMNS = (
-    ("ipv4", "IP adress (v4 or v6)"),
+    ("ipv4", "IP address (v4 or v6)"),
     ("community_id", "Community"),
     ("expires", "Expires"),
     ("user_id", "User"),
 )
+
+WHITELIST_COLUMNS = (
+    ("address", "IP address / network (v4 or v6)"),
+    ("expires", "Expires"),
+    ("user_id", "User"),
+)
+
 
 RULES_COLUMNS_V4 = (
     ("source", "Source addr."),
@@ -74,6 +81,7 @@ class InstanceConfig:
             {"name": "Add IPv4", "url": "rules.ipv4_rule"},
             {"name": "Add IPv6", "url": "rules.ipv6_rule"},
             {"name": "Add RTBH", "url": "rules.rtbh_rule"},
+            {"name": "Add Whitelist", "url": "whitelist.add"},
             {"name": "API Key", "url": "api_keys.all"},
         ],
         "admin": [
@@ -123,6 +131,14 @@ class InstanceConfig:
             "table_colspan": 5,
             "table_columns": RTBH_COLUMNS,
         },
+        "whitelist": {
+            "name": "Whitelist",
+            "macro_file": "macros.html",
+            "macro_tbody": "build_whitelist_tbody",
+            "macro_thead": "build_rules_thead",
+            "table_colspan": 4,
+            "table_columns": WHITELIST_COLUMNS,
+        },
     }
 
-    COUNT_MATCH = {"ipv4": 0, "ipv6": 0, "rtbh": 0}
+    COUNT_MATCH = {"ipv4": 0, "ipv6": 0, "rtbh": 0, "whitelist": 0}

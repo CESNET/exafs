@@ -1,11 +1,10 @@
 # flowapp/views/admin.py
 from datetime import datetime, timedelta
-from operator import ge, lt
 from collections import namedtuple
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
-from flowapp import constants, db, messages
+from flowapp import constants, db
 from flowapp.auth import (
     admin_required,
     auth_required,
@@ -24,19 +23,17 @@ from flowapp.models import (
     Organization,
     check_global_rule_limit,
     check_rule_limit,
-    get_ipv4_model_if_exists,
-    get_ipv6_model_if_exists,
-    get_rtbh_model_if_exists,
     get_user_actions,
     get_user_communities,
     get_user_nets,
     insert_initial_communities,
 )
+from flowapp.models.log import Log
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
+from flowapp.services import rule_service, announce_all_routes, delete_expired_whitelists
 from flowapp.utils import (
     flash_errors,
     get_state_by_time,
-    quote_to_ent,
     round_to_ten_minutes,
 )
 
@@ -61,13 +58,21 @@ DEFAULT_SORT = {1: "ivp4", 4: "source", 6: "source"}
 def reactivate_rule(rule_type, rule_id):
     """
     Set new time for the rule of given type identified by id
-    :param rule_type: string - type of rule
+    :param rule_type: integer - type of rule, corresponds to RuleTypes enum value
     :param rule_id: integer - id of the rule
     """
+    # Convert the integer rule_type to RuleTypes enum
+    enum_rule_type = RuleTypes(rule_type)
+
+    # Now use the enum value where needed but the integer for dictionary lookups
     model_name = DATA_MODELS[rule_type]
     form_name = DATA_FORMS[rule_type]
 
     model = db.session.get(model_name, rule_id)
+    if not model:
+        flash("Rule not found", "alert-danger")
+        return redirect(url_for("index"))
+
     form = form_name(request.form, obj=model)
     form.net_ranges = get_user_nets(session["user_id"])
 
@@ -75,72 +80,41 @@ def reactivate_rule(rule_type, rule_id):
         form.action.choices = [(g.id, g.name) for g in db.session.query(Action).order_by("name")]
         form.action.data = model.action_id
 
-    if rule_type == 1:
+    if rule_type == RuleTypes.RTBH.value:
         form.community.choices = get_user_communities(session["user_role_ids"])
         form.community.data = model.community_id
 
-    if rule_type == 4:
+    if rule_type == RuleTypes.IPv4.value:
         form.protocol.data = model.protocol
 
-    if rule_type == 6:
+    if rule_type == RuleTypes.IPv6.value:
         form.next_header.data = model.next_header
 
-    # do not need to validate - all is readonly
+    # Process form submission
     if request.method == "POST":
-        # check if rule will be reactivated
-        state = get_state_by_time(form.expires.data)
+        # Round expiration time to 10 minutes
+        expires = round_to_ten_minutes(form.expires.data)
 
-        # check global limit
-        check_gl = check_global_rule_limit(rule_type)
-        if state == 1 and check_gl:
+        # Use the service to reactivate the rule
+        _, messages = rule_service.reactivate_rule(
+            rule_type=enum_rule_type,
+            rule_id=rule_id,
+            expires=expires,
+            comment=form.comment.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
+        )
+
+        # Handle special messages (redirects)
+        if "global_limit_reached" in messages:
             return redirect(url_for("rules.global_limit_reached", rule_type=rule_type))
-        # check org limit
-        if state == 1 and check_rule_limit(session["user_org_id"], rule_type=rule_type):
+        if "limit_reached" in messages:
             return redirect(url_for("rules.limit_reached", rule_type=rule_type))
 
-        # set new expiration date
-        model.expires = round_to_ten_minutes(form.expires.data)
-        # set again the active state
-        model.rstate_id = get_state_by_time(form.expires.data)
-        model.comment = form.comment.data
-        db.session.commit()
-        flash("Rule successfully updated", "alert-success")
-
-        route_model = ROUTE_MODELS[rule_type]
-
-        if model.rstate_id == 1:
-            # announce route
-            command = route_model(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-            # log changes
-            log_route(
-                session["user_id"],
-                model,
-                rule_type,
-                f"{session['user_email']} / {session['user_org']}",
-            )
-        else:
-            # withdraw route
-            command = route_model(model, constants.WITHDRAW)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-            # log changes
-            log_withdraw(
-                session["user_id"],
-                route.command,
-                rule_type,
-                model.id,
-                f"{session['user_email']} / {session['user_org']}",
-            )
+        for message in messages:
+            flash(message, "alert-success")
 
         return redirect(
             url_for(
@@ -155,6 +129,7 @@ def reactivate_rule(rule_type, rule_id):
     else:
         flash_errors(form)
 
+    # For GET requests, prepare the form for display
     form.expires.data = model.expires
     for field in form:
         if field.name not in ["expires", "csrf_token", "comment"]:
@@ -177,42 +152,74 @@ def reactivate_rule(rule_type, rule_id):
 def delete_rule(rule_type, rule_id):
     """
     Delete rule with given id and type
-    :param sort_key:
-    :param filter_text:
-    :param rstate:
-    :param rule_type: string - type of rule to be deleted
+    :param rule_type: integer - type of rule to be deleted
     :param rule_id: integer - rule id
     """
-    model_name = DATA_MODELS[rule_type]
-    route_model = ROUTE_MODELS[rule_type]
+    # Convert the integer rule_type to RuleTypes enum
+    enum_rule_type = RuleTypes(rule_type)
 
-    model = db.session.get(model_name, rule_id)
-    if model.id in session[constants.RULES_KEY]:
-        # withdraw route
-        command = route_model(model, constants.WITHDRAW)
-        route = Route(
-            author=f"{session['user_email']} / {session['user_org']}",
-            source=RouteSources.UI,
-            command=command,
+    # Use the service to delete the rule
+    success, message = rule_service.delete_rule(
+        rule_type=enum_rule_type,
+        rule_id=rule_id,
+        user_id=session["user_id"],
+        user_email=session["user_email"],
+        org_name=session["user_org"],
+        allowed_rule_ids=session.get(constants.RULES_KEY, []),
+    )
+
+    # Flash appropriate message based on result
+    flash(message, "alert-success" if success else "alert-warning")
+
+    # Redirect back to dashboard
+    return redirect(
+        url_for(
+            "dashboard.index",
+            rtype=session[constants.TYPE_ARG],
+            rstate=session[constants.RULE_ARG],
+            sort=session[constants.SORT_ARG],
+            squery=session[constants.SEARCH_ARG],
+            order=session[constants.ORDER_ARG],
         )
-        announce_route(route)
+    )
 
-        log_withdraw(
-            session["user_id"],
-            route.command,
-            rule_type,
-            model.id,
-            f"{session['user_email']} / {session['user_org']}",
-        )
 
-        # delete from db
-        db.session.delete(model)
-        db.session.commit()
-        flash("Rule deleted", "alert-success")
+@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["GET"])
+@auth_required
+@user_or_admin_required
+def delete_and_whitelist(rule_type, rule_id):
+    """
+    Delete an RTBH rule and create a whitelist entry from it.
 
-    else:
-        flash("You can not delete this rule", "alert-warning")
+    :param rule_id: integer - id of the RTBH rule
+    """
+    if rule_type != RuleTypes.RTBH.value:
+        flash("Only RTBH rules can be converted to whitelists", "alert-warning")
+        return redirect(url_for("index"))
 
+    # Set whitelist expiration to 7 days from now by default
+    whitelist_expires = datetime.now() + timedelta(days=7)
+
+    # Use the service to delete RTBH and create whitelist
+    success, messages, whitelist = rule_service.delete_rtbh_and_create_whitelist(
+        rule_id=rule_id,
+        user_id=session["user_id"],
+        org_id=session["user_org_id"],
+        user_email=session["user_email"],
+        org_name=session["user_org"],
+        allowed_rule_ids=session.get(constants.RULES_KEY, []),
+        whitelist_expires=whitelist_expires,
+    )
+
+    # Flash all messages
+    for message in messages:
+        flash(message, "alert-success" if success else "alert-warning")
+
+    # If successful, flash additional message about whitelist
+    if success and whitelist:
+        flash(f"Created whitelist entry ID {whitelist.id} from RTBH rule", "alert-info")
+
+    # Redirect back to dashboard
     return redirect(
         url_for(
             "dashboard.index",
@@ -260,6 +267,7 @@ def group_delete():
     rule_type = session[constants.TYPE_ARG]
     model_name = DATA_MODELS_NAMED[rule_type]
     rule_type_int = constants.RULE_TYPES_DICT[rule_type]
+    enum_rule_type = RuleTypes(rule_type_int)
     route_model = ROUTE_MODELS[rule_type_int]
     rules = [str(x) for x in session[constants.RULES_KEY]]
     to_delete = request.form.getlist("delete-id")
@@ -279,7 +287,7 @@ def group_delete():
             log_withdraw(
                 session["user_id"],
                 route.command,
-                rule_type_int,
+                enum_rule_type,
                 model.id,
                 f"{session['user_email']} / {session['user_org']}",
             )
@@ -376,6 +384,7 @@ def group_update_save(rule_type):
 
     model_name = DATA_MODELS[rule_type]
     form_name = DATA_FORMS[rule_type]
+    enum_rule_type = RuleTypes(rule_type)
 
     form = form_name(request.form)
 
@@ -417,7 +426,7 @@ def group_update_save(rule_type):
             log_route(
                 session["user_id"],
                 model,
-                rule_type,
+                enum_rule_type,
                 f"{session['user_email']} / {session['user_org']}",
             )
         else:
@@ -433,7 +442,7 @@ def group_update_save(rule_type):
             log_withdraw(
                 session["user_id"],
                 route.command,
-                rule_type,
+                enum_rule_type,
                 model.id,
                 f"{session['user_email']} / {session['user_org']}",
             )
@@ -476,53 +485,16 @@ def ipv4_rule():
     form.net_ranges = net_ranges
 
     if request.method == "POST" and form.validate():
-        model = get_ipv4_model_if_exists(form.data, 1)
-
-        if model:
-            model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
-        else:
-            model = Flowspec4(
-                source=form.source.data,
-                source_mask=form.source_mask.data,
-                source_port=form.source_port.data,
-                destination=form.dest.data,
-                destination_mask=form.dest_mask.data,
-                destination_port=form.dest_port.data,
-                protocol=form.protocol.data,
-                flags=";".join(form.flags.data),
-                packet_len=form.packet_len.data,
-                fragment=";".join(form.fragment.data),
-                expires=round_to_ten_minutes(form.expires.data),
-                comment=quote_to_ent(form.comment.data),
-                action_id=form.action.data,
-                user_id=session["user_id"],
-                org_id=session["user_org_id"],
-                rstate_id=get_state_by_time(form.expires.data),
-            )
-            flash_message = "IPv4 Rule saved"
-            db.session.add(model)
-
-        db.session.commit()
-        flash(flash_message, "alert-success")
-
-        # announce route if model is in active state
-        if model.rstate_id == 1:
-            command = messages.create_ipv4(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-
-        # log changes
-        log_route(
-            session["user_id"],
-            model,
-            RuleTypes.IPv4,
-            f"{session['user_email']} / {session['user_org']}",
+        # Use the service to create/update the rule
+        _model, message = rule_service.create_or_update_ipv4_rule(
+            form_data=form.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
         )
+
+        flash(message, "alert-success")
 
         return redirect(url_for("index"))
     else:
@@ -560,52 +532,14 @@ def ipv6_rule():
     form.net_ranges = net_ranges
 
     if request.method == "POST" and form.validate():
-        model = get_ipv6_model_if_exists(form.data, 1)
-
-        if model:
-            model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = "Existing IPv4 Rule found. Expiration time was updated to new value."
-        else:
-            model = Flowspec6(
-                source=form.source.data,
-                source_mask=form.source_mask.data,
-                source_port=form.source_port.data,
-                destination=form.dest.data,
-                destination_mask=form.dest_mask.data,
-                destination_port=form.dest_port.data,
-                next_header=form.next_header.data,
-                flags=";".join(form.flags.data),
-                packet_len=form.packet_len.data,
-                expires=round_to_ten_minutes(form.expires.data),
-                comment=quote_to_ent(form.comment.data),
-                action_id=form.action.data,
-                user_id=session["user_id"],
-                org_id=session["user_org_id"],
-                rstate_id=get_state_by_time(form.expires.data),
-            )
-            flash_message = "IPv6 Rule saved"
-            db.session.add(model)
-
-        db.session.commit()
-        flash(flash_message, "alert-success")
-
-        # announce routes
-        if model.rstate_id == 1:
-            command = messages.create_ipv6(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-
-        # log changes
-        log_route(
-            session["user_id"],
-            model,
-            RuleTypes.IPv6,
-            f"{session['user_email']} / {session['user_org']}",
+        _model, message = rule_service.create_or_update_ipv6_rule(
+            form_data=form.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
         )
+        flash(message, "alert-success")
 
         return redirect(url_for("index"))
     else:
@@ -642,47 +576,18 @@ def rtbh_rule():
     ] + user_communities
     form.community.choices = user_communities
     form.net_ranges = net_ranges
+    whitelistable = Community.get_whitelistable_communities(current_app.config["ALLOWED_COMMUNITIES"])
 
     if request.method == "POST" and form.validate():
-        model = get_rtbh_model_if_exists(form.data, 1)
-
-        if model:
-            model.expires = round_to_ten_minutes(form.expires.data)
-            flash_message = "Existing RTBH Rule found. Expiration time was updated to new value."
-        else:
-            model = RTBH(
-                ipv4=form.ipv4.data,
-                ipv4_mask=form.ipv4_mask.data,
-                ipv6=form.ipv6.data,
-                ipv6_mask=form.ipv6_mask.data,
-                community_id=form.community.data,
-                expires=round_to_ten_minutes(form.expires.data),
-                comment=quote_to_ent(form.comment.data),
-                user_id=session["user_id"],
-                org_id=session["user_org_id"],
-                rstate_id=get_state_by_time(form.expires.data),
-            )
-            db.session.add(model)
-            db.session.commit()
-            flash_message = "RTBH Rule saved"
-
-        flash(flash_message, "alert-success")
-        # announce routes
-        if model.rstate_id == 1:
-            command = messages.create_rtbh(model, constants.ANNOUNCE)
-            route = Route(
-                author=f"{session['user_email']} / {session['user_org']}",
-                source=RouteSources.UI,
-                command=command,
-            )
-            announce_route(route)
-        # log changes
-        log_route(
-            session["user_id"],
-            model,
-            RuleTypes.RTBH,
-            f"{session['user_email']} / {session['user_org']}",
+        _model, messages = rule_service.create_or_update_rtbh_rule(
+            form_data=form.data,
+            user_id=session["user_id"],
+            org_id=session["user_org_id"],
+            user_email=session["user_email"],
+            org_name=session["user_org"],
         )
+        for message in messages:
+            flash(message, "alert-success")
 
         return redirect(url_for("index"))
     else:
@@ -693,7 +598,11 @@ def rtbh_rule():
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
 
-    return render_template("forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule"))
+    print(whitelistable)
+
+    return render_template(
+        "forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule"), whitelistable=whitelistable
+    )
 
 
 @rules.route("/limit_reached/<rule_type>")
@@ -775,64 +684,13 @@ def announce_all():
 @rules.route("/withdraw_expired", methods=["GET"])
 @localhost_only
 def withdraw_expired():
+    """
+    cleaning endpoint
+    deletes expired whitelists
+    withdraws all expired routes from ExaBGP
+    deletes logs older than 30 days
+    """
+    delete_expired_whitelists()
     announce_all_routes(constants.WITHDRAW)
+    Log.delete_old()
     return " "
-
-
-def announce_all_routes(action=constants.ANNOUNCE):
-    """
-    get routes from db and send it to ExaBGB api
-
-    @TODO take the request away, use some kind of messaging (maybe celery?)
-    :param action: action with routes - announce valid routes or withdraw expired routes
-    """
-    today = datetime.now()
-    comp_func = ge if action == constants.ANNOUNCE else lt
-
-    rules4 = (
-        db.session.query(Flowspec4)
-        .filter(Flowspec4.rstate_id == 1)
-        .filter(comp_func(Flowspec4.expires, today))
-        .order_by(Flowspec4.expires.desc())
-        .all()
-    )
-    rules6 = (
-        db.session.query(Flowspec6)
-        .filter(Flowspec6.rstate_id == 1)
-        .filter(comp_func(Flowspec6.expires, today))
-        .order_by(Flowspec6.expires.desc())
-        .all()
-    )
-    rules_rtbh = (
-        db.session.query(RTBH)
-        .filter(RTBH.rstate_id == 1)
-        .filter(comp_func(RTBH.expires, today))
-        .order_by(RTBH.expires.desc())
-        .all()
-    )
-
-    messages_v4 = [messages.create_ipv4(rule, action) for rule in rules4]
-    messages_v6 = [messages.create_ipv6(rule, action) for rule in rules6]
-    messages_rtbh = [messages.create_rtbh(rule, action) for rule in rules_rtbh]
-
-    messages_all = []
-    messages_all.extend(messages_v4)
-    messages_all.extend(messages_v6)
-    messages_all.extend(messages_rtbh)
-
-    author_action = "announce all" if action == constants.ANNOUNCE else "withdraw all expired"
-
-    for command in messages_all:
-        route = Route(
-            author=f"System call / {author_action} rules",
-            source=RouteSources.UI,
-            command=command,
-        )
-        announce_route(route)
-
-    if action == constants.WITHDRAW:
-        for ruleset in [rules4, rules6, rules_rtbh]:
-            for rule in ruleset:
-                rule.rstate_id = 2
-
-        db.session.commit()

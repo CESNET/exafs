@@ -73,15 +73,22 @@ def add_machine_key():
     """
     generated = secrets.token_hex(24)
     form = MachineApiKeyForm(request.form, key=generated)
+    form.user.choices = [(g.id, g.name) for g in db.session.query(User).order_by("name")]
 
     if request.method == "POST" and form.validate():
+        target_user = db.session.get(User, form.user.data)
+        target_org = target_user.organization.first() if target_user else None
+        current_user = session.get("user_name")
+        curent_email = session.get("user_uuid")
+        comment = f"created by: {current_user}/{curent_email}, comment: {form.comment.data}"
         model = MachineApiKey(
             machine=form.machine.data,
             key=form.key.data,
             expires=form.expires.data,
             readonly=form.readonly.data,
-            comment=form.comment.data,
-            user_id=session["user_id"],
+            comment=comment,
+            user_id=target_user.id,
+            org_id=target_org.id,
         )
 
         db.session.add(model)

@@ -1,0 +1,62 @@
+{% extends 'layouts/default.html' %}
+{% from 'forms/macros.html' import render_field %}
+{% block title %}Add Whitelist{% endblock %}
+{% block content %}
+  <h2>{{ title or 'New'}} Whitelist</h2>
+  <form action="{{ action_url }}" method="POST">
+  {{ form.hidden_tag() if form.hidden_tag }}
+  <div class="row">
+    <div class="col-sm-8">
+      <div class="row">
+        <div class="col-sm-8">
+          {{ render_field(form.ip) }}
+        </div>
+        <div class="col-sm-4">
+            {{ render_field(form.mask) }}
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="form-group">
+        <label for="inputExpiration" class="control-label">Expiration date</label>
+        <div class='input-group date' id='dateTimeExpires'>
+                      <!--
+                      <input type='text' name="expires" class="form-control" />
+
+                      -->
+                      {{ form.expires(class_='form-control') }}
+                      <span class="input-group-addon">
+                          <span class="glyphicon glyphicon-calendar"></span>
+                      </span>
+        </div>
+
+        {% if form.expires.errors %}
+            {% for e in form.expires.errors %}
+                <p class="help-block">{{ e }}</p>
+            {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-sm-8">
+    </div>  
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12">
+         {{ render_field(form.comment) }}
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-10">
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+  </form>
+{% endblock %}
