@@ -151,13 +151,12 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
         for cached_rule in cached_rules:
             rule_model_type = RuleTypes(cached_rule.rtype)
             cache_entries_count = RuleWhitelistCache.count_by_rule(cached_rule.rid, rule_model_type)
-            match rule_model_type:
-                case RuleTypes.IPv4:
-                    rule_model = db.session.get(Flowspec4, cached_rule.rid)
-                case RuleTypes.IPv6:
-                    rule_model = db.session.get(Flowspec6, cached_rule.rid)
-                case RuleTypes.RTBH:
-                    rule_model = db.session.get(RTBH, cached_rule.rid)
+            if rule_model_type == RuleTypes.IPv4:
+                rule_model = db.session.get(Flowspec4, cached_rule.rid)
+            elif rule_model_type == RuleTypes.IPv6:
+                rule_model = db.session.get(Flowspec6, cached_rule.rid)
+            elif rule_model_type == RuleTypes.RTBH:
+                rule_model = db.session.get(RTBH, cached_rule.rid)
             rorigin_type = RuleOrigin(cached_rule.rorigin)
             current_app.logger.debug(f"Rule {rule_model} has origin {rorigin_type}")
             if rorigin_type == RuleOrigin.WHITELIST:
