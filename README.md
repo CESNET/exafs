@@ -55,6 +55,15 @@ You may also need to monitor the ExaBGP and renew the commands after restart / s
 * [Local database instalation notes](./docs/DB_LOCAL.md)
 
 ## Change Log
+- 1.1.1 - Machine API Key rewrited. 
+    - API keys for machines are now tied to one of the existing users. If there is a need to have API access for machine, first create service user, and set the access rights. Then create machine key as Admin and assign it to this user. 
+- 1.1.0 - Major Architecture Refactoring and Whitelist Integration
+    - Code Organization and Architecture Improvements. Significant architectural refactoring focused on better separation of concerns and improved maintainability. The most notable change is the introduction of a dedicated **services layer** that extracts business logic from view controllers. Key service modules include `rule_service.py` for rule management operations, `whitelist_service.py` for whitelist functionality, and `whitelist_common.py` for shared whitelist utilities. 
+    - The **models structure** has been reorganized with better separation into logical modules. Rule models are now organized under `flowapp/models/rules/` with separate files for different rule types (`flowspec.py`, `rtbh.py`, `whitelist.py`), while maintaining backward compatibility through the main models `__init__.py`. Form handling has also been improved with better organization under `flowapp/forms/` and enhanced validation logic.
+    - **RTBH Whitelist Integration** This system automatically evaluates new RTBH rules against existing whitelists and can automatically modify or block rules that conflict with whitelisted networks. When an RTBH rule is created that intersects with a whitelist entry, the system can:
+        - **Automatically whitelist** rules that exactly match or are contained within whitelisted networks
+        - **Create subnet rules** when RTBH rules are supersets of whitelisted networks, automatically generating the non-whitelisted portions
+        - **Maintain rule cache** that tracks relationships between rules and whitelists for proper cleanup
 - 1.0.2 - fixed bug in IPv6 Flowspec messages
 - 1.0.1 . minor bug fixes
 - 1.0.0 . Major changes
