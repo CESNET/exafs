@@ -36,7 +36,7 @@ See how is ExaFS integrated into the network in the picture below.
 
 ![ExaFS schema](./docs/app_schema_en.png)
 
-The central part of the ExaFS is a web application, written in Python3.6 with Flask framework. It provides a user interface for ExaBGP rule CRUD operations. The application also provides the REST API with CRUD operations for the configuration rules. The web app uses Shibboleth authorization; the REST API is using token-based authorization. 
+The central part of the ExaFS is a web application, written in Python with Flask framework. It provides a user interface for ExaBGP rule CRUD operations. The application also provides the REST API with CRUD operations for the configuration rules. The web app uses Shibboleth authorization; the REST API is using token-based authorization. 
 
 The app creates the ExaBGP commands and forwards them to ExaBGP process. All rules are carefully validated, and only valid rules are stored in the database and sent to the ExaBGP connector.
  
