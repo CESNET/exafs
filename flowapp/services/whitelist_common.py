@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from functools import lru_cache
 import ipaddress
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from flowapp import db
 from flowapp.constants import RuleOrigin, RuleTypes
 from flowapp.models import RTBH, RuleWhitelistCache, Whitelist
@@ -59,7 +59,7 @@ def _is_same_ip_version(addr1: str, addr2: str) -> bool:
 
 
 @lru_cache(maxsize=1024)
-def get_network(address: str) -> ipaddress.IPv4Network | ipaddress.IPv6Network:
+def get_network(address: str) -> Union[ipaddress.IPv4Network, ipaddress.IPv6Network]:
     """
     Create and cache an IP network object.
 

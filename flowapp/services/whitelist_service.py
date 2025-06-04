@@ -84,37 +84,34 @@ def evaluate_whitelist_against_rtbh_check_results(
 
     for rule_key, whitelist_key, relation in results:
         current_app.logger.info(f"whitelist {whitelist_key} is {relation} to Rule {rule_key}")
-        match relation:
-            case Relation.EQUAL:
-                whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
-                withdraw_rtbh_route(rtbh_rule_cache[rule_key])
-                msg = "Existing active rule {rule_key} is equal to whitelist {whitelist_key}. Rule is now whitelisted."
+        if relation == Relation.EQUAL:
+            whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
+            withdraw_rtbh_route(rtbh_rule_cache[rule_key])
+            msg = "Existing active rule {rule_key} is equal to whitelist {whitelist_key}. Rule is now whitelisted."
+            flashes.append(msg)
+            current_app.logger.info(msg)
+        elif relation == Relation.SUBNET:
+            parts = subtract_network(target=rule_key, whitelist=whitelist_key)
+            wl_id = whitelist_model.id
+            msg = f"Rule {rule_key} is supernet of whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules will be created."
+            flashes.append(msg)
+            current_app.logger.info(msg)
+            for network in parts:
+                rule_model = rtbh_rule_cache[rule_key]
+                create_rtbh_from_whitelist_parts(rule_model, wl_id, whitelist_key, network)
+                msg = f"Created RTBH rule from {rule_model.id} {network} parted by whitelist {whitelist_key}."
                 flashes.append(msg)
                 current_app.logger.info(msg)
-            case Relation.SUBNET:
-                parts = subtract_network(target=rule_key, whitelist=whitelist_key)
-                wl_id = whitelist_model.id
-                msg = f"Rule {rule_key} is supernet of whitelist {whitelist_key}. Rule is whitelisted, {len(parts)} subnet rules will be created."
-                flashes.append(msg)
-                current_app.logger.info(msg)
-                for network in parts:
-                    rule_model = rtbh_rule_cache[rule_key]
-                    create_rtbh_from_whitelist_parts(rule_model, wl_id, whitelist_key, network)
-                    msg = f"Created RTBH rule from {rule_model.id} {network} parted by whitelist {whitelist_key}."
-                    flashes.append(msg)
-                    current_app.logger.info(msg)
-                rule_model.rstate_id = 4
-                add_rtbh_rule_to_cache(rule_model, wl_id, RuleOrigin.USER)
-                db.session.commit()
-            case Relation.SUPERNET:
+            rule_model.rstate_id = 4
+            add_rtbh_rule_to_cache(rule_model, wl_id, RuleOrigin.USER)
+            db.session.commit()
+        elif relation == Relation.SUPERNET:
 
-                whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
-                withdraw_rtbh_route(rtbh_rule_cache[rule_key])
-                msg = (
-                    f"Existing active rule {rule_key} is subnet of whitelist {whitelist_key}. Rule is now whitelisted."
-                )
-                current_app.logger.info(msg)
-                flashes.append(msg)
+            whitelist_rtbh_rule(rtbh_rule_cache[rule_key], whitelist_model)
+            withdraw_rtbh_route(rtbh_rule_cache[rule_key])
+            msg = f"Existing active rule {rule_key} is subnet of whitelist {whitelist_key}. Rule is now whitelisted."
+            current_app.logger.info(msg)
+            flashes.append(msg)
 
     return whitelist_model
 
@@ -154,13 +151,12 @@ def delete_whitelist(whitelist_id: int) -> List[str]:
         for cached_rule in cached_rules:
             rule_model_type = RuleTypes(cached_rule.rtype)
             cache_entries_count = RuleWhitelistCache.count_by_rule(cached_rule.rid, rule_model_type)
-            match rule_model_type:
-                case RuleTypes.IPv4:
-                    rule_model = db.session.get(Flowspec4, cached_rule.rid)
-                case RuleTypes.IPv6:
-                    rule_model = db.session.get(Flowspec6, cached_rule.rid)
-                case RuleTypes.RTBH:
-                    rule_model = db.session.get(RTBH, cached_rule.rid)
+            if rule_model_type == RuleTypes.IPv4:
+                rule_model = db.session.get(Flowspec4, cached_rule.rid)
+            elif rule_model_type == RuleTypes.IPv6:
+                rule_model = db.session.get(Flowspec6, cached_rule.rid)
+            elif rule_model_type == RuleTypes.RTBH:
+                rule_model = db.session.get(RTBH, cached_rule.rid)
             rorigin_type = RuleOrigin(cached_rule.rorigin)
             current_app.logger.debug(f"Rule {rule_model} has origin {rorigin_type}")
             if rorigin_type == RuleOrigin.WHITELIST:
