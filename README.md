@@ -53,6 +53,8 @@ It may also be necessary to monitor ExaBGP and re-announce rules after a restart
 * [Database backup configuration](./docs/DB_BACKUP.md)
 * [Local database instalation notes](./docs/DB_LOCAL.md)
 
+The REST API is documented using Swagger (OpenAPI). After installing and running the application, the API documentation is available locally at the /apidocs/ endpoint. This interactive documentation provides details about all available endpoints, request and response formats, and supported operations, making it easier to integrate and test the API.
+
 ## Change Log
 - 1.1.1 - Machine API Key rewrited. 
     - API keys for machines are now tied to one of the existing users. If there is a need to have API access for machine, first create service user, and set the access rights. Then create machine key as Admin and assign it to this user. 
