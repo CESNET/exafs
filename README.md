@@ -48,12 +48,15 @@ Each time this process receives a command from ExaFS, it outputs it to `stdout`,
 It may also be necessary to monitor ExaBGP and re-announce rules after a restart or shutdown. This can be handled via the ExaBGP service configuration, or by using an example system service called **Guarda**, described in the documentation. In either case, the key mechanism is calling the application endpoint `/rules/announce_all`. This endpoint is only accessible from `localhost`; a local IP address must be configured in the application settings.
 
 ## DOCS
+### Instalation related
+* [ExaFS Ansible deploy](https://github.com/CESNET/ExaFS-deploy) - repository with Ansbile playbook for deploying ExaFS with Docker Compose. 
 * [Install notes](./docs/INSTALL.md)
-* [API documentation ](https://exafs.docs.apiary.io/#)
 * [Database backup configuration](./docs/DB_BACKUP.md)
 * [Local database instalation notes](./docs/DB_LOCAL.md)
-
+### API
 The REST API is documented using Swagger (OpenAPI). After installing and running the application, the API documentation is available locally at the /apidocs/ endpoint. This interactive documentation provides details about all available endpoints, request and response formats, and supported operations, making it easier to integrate and test the API.
+
+
 
 ## Change Log
 - 1.1.1 - Machine API Key rewrited. 
