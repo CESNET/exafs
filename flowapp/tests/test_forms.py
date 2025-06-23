@@ -1,13 +1,5 @@
 import pytest
-from flask import Flask
 import flowapp.forms
-
-
-@pytest.fixture()
-def app():
-    app = Flask(__name__)
-    app.secret_key = "test"
-    return app
 
 
 @pytest.fixture()

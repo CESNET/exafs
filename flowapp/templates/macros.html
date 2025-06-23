@@ -1,5 +1,5 @@
 
-{% macro build_ip_tbody(rules, today, editable=True, group_op=True) %}
+{% macro build_ip_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None, allowed_communities=None) %}
 <tbody>
     {% for rule in rules %}
         {% if rule.next_header is defined %}
@@ -8,7 +8,11 @@
             {% set rtype_int = 4 %}
         {% endif %}
 
-        <tr {% if rule.expires < today %} class="warning" {% endif %}>
+        <tr 
+        {% if rule.expires < today %} class="table-warning" 
+        {% elif rule.rstate_id == 4 %} class="table-success" 
+        {% elif whitelist_rule_ids and rule.id in whitelist_rule_ids %} class="table-secondary"
+        {% endif %}>
             <td>
                 <span class="task">{{ rule.source }}</span>{% if rule.source_mask != none %}{{ '/' if rule.source_mask >= 0 else '' }}{{ rule.source_mask if rule.source_mask >= 0 else '' }}{% endif %}
             </td>
@@ -45,10 +49,10 @@
             </td>
             <td>
             {% if editable %}
-                <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button">
+                <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="set expiration">
                     <i class="bi bi-clock table-icon"></i>
                 </a>
-                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button">
+                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
                     <i class="bi bi-x-lg"></i>
                 </a>
             {% endif %}
@@ -73,23 +77,72 @@
 {% endmacro %}
 
 
-{% macro build_rtbh_tbody(rules, today, editable=True, group_op=True) %}
+{% macro build_rtbh_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None, allowed_communities=None) %}
+    <tbody>
+{% for rule in rules %}
+    <tr 
+    {% if rule.expires < today %} class="table-warning" 
+    {% elif rule.rstate_id == 4 %} class="table-success" 
+    {% elif whitelist_rule_ids and rule.id in whitelist_rule_ids %} class="table-secondary"
+    {% endif %}>
+        <td>
+        {% if rule.ipv4 %}
+            <span class="task">{{ rule.ipv4 }}</span>{{ '/' if rule.ipv4_mask else '' }}{{rule.ipv4_mask|default("", True)}}
+        {% endif %}
+        {% if rule.ipv6 %}
+            <span class="task">{{ rule.ipv6 }}</span>{{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
+        {% endif %}
+        </td>
+        <td>
+            {{ rule.community.name }}
+        </td>
+
+        <td>
+            {{ rule.expires|strftime }}
+        </td>
+        <td>
+            {{ rule.user.name }}
+        </td>
+        <td>
+            {% if editable %}
+                <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="set expiration">
+                    <i class="bi bi-clock table-icon"></i>
+                </a>
+                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% if rule.community.id in allowed_communities %}    
+                    <a class="btn btn-success btn-sm" href="{{ url_for('rules.delete_and_whitelist', rule_type=1, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="whitelist and delete">
+                        <i class="bi bi-shield-x"></i>
+                    </a>
+                {% endif %}    
+            {% endif %}
+            {% if rule.comment %}
+            <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
+                <i class="bi bi-chat-left-text-fill"></i>
+            </button>
+            {% endif %}
+        </td>
+        {% if editable and group_op %}
+                <td class="text-center">
+                    <input type="checkbox" name="delete-id" value="{{rule.id}}" />
+                </td>
+        {% endif %}
+
+    </tr>
+{% endfor %}
+</tbody>
+{% endmacro %}
+
+
+{% macro build_whitelist_tbody(rules, today, editable=True, group_op=True, whitelist_rule_ids=None, allowed_communities=None) %}
     <tbody>
 {% for rule in rules %}
     <tr {% if rule.expires < today %} class="warning"  {% endif %}>
     <td>
-    {% if rule.ipv4 %}
-        <span class="task">{{ rule.ipv4 }}</span>{{ '/' if rule.ipv4_mask else '' }}{{rule.ipv4_mask|default("", True)}}
-    {% endif %}
-    {% if rule.ipv6 %}
-        <span class="task">{{ rule.ipv6 }}</span>{{ '/' if rule.ipv6_mask else '' }} {{rule.ipv6_mask|default("", True)}}
-    {% endif %}
+        <span class="task">{{ rule.ip }}</span>{{ '/' if rule.mask else '' }}{{rule.mask|default("", True)}}
     </td>
-     <td>
-        {{ rule.community.name }}
-    </td>
-
-     <td>
+    <td>
         {{ rule.expires|strftime }}
     </td>
     <td>
@@ -97,10 +150,10 @@
     </td>
     <td>
         {% if editable %}
-        <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+        <a class="btn btn-info btn-sm" href="{{ url_for('whitelist.reactivate', wl_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="set expiration">
             <i class="bi bi-clock table-icon"></i>
         </a>
-        <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button">
+        <a class="btn btn-danger btn-sm" href="{{ url_for('whitelist.delete', wl_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
             <i class="bi bi-x-lg"></i>
         </a>
         {% endif %}
@@ -120,6 +173,7 @@
 {% endfor %}
 </tbody>
 {% endmacro %}
+
 
 
 {% macro build_rules_thead(rules_columns, rtype, rstate, sort_key, sort_order, search_query='', group_op=True) %}

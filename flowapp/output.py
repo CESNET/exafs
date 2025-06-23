@@ -4,6 +4,7 @@ Module for message announcing and logging
 
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from typing import Dict, Union, Callable, Any
 
 import requests
 import pika
@@ -11,9 +12,12 @@ import json
 from flask import current_app
 
 from flowapp import db, messages
+from flowapp.constants import RuleTypes
 from flowapp.models import Log
+from flowapp.models import Flowspec4, Flowspec6, RTBH
 
-ROUTE_MODELS = {
+
+ROUTE_MODELS: Dict[int, Callable[[Any], str]] = {
     1: messages.create_rtbh,
     4: messages.create_ipv4,
     6: messages.create_ipv6,
@@ -21,21 +25,21 @@ ROUTE_MODELS = {
 
 
 class RouteSources:
-    UI = "UI"
-    API = "API"
+    UI: str = "UI"
+    API: str = "API"
 
 
 @dataclass
 class Route:
     author: str
-    source: RouteSources
+    source: str  # Using str instead of RouteSources for flexibility
     command: str
 
-    def __dict__(self):
+    def __dict__(self) -> Dict[str, str]:
         return asdict(self)
 
 
-def announce_route(route: Route):
+def announce_route(route: Route) -> None:
     """
     Dispatch route as dict to ExaBGP API
     API must be set in app config.py
@@ -48,7 +52,7 @@ def announce_route(route: Route):
         announce_to_http(asdict(route))
 
 
-def announce_to_http(route):
+def announce_to_http(route: Dict[str, str]) -> None:
     """
     Announce route to ExaBGP HTTP API process
     """
@@ -64,7 +68,7 @@ def announce_to_http(route):
         current_app.logger.debug(f"Testing: {route}")
 
 
-def announce_to_rabbitmq(route):
+def announce_to_rabbitmq(route: Dict[str, str]) -> None:
     """
     Announce rout to ExaBGP RabbitMQ API process
     """
@@ -80,48 +84,57 @@ def announce_to_rabbitmq(route):
             credentials,
         )
 
-        connection = pika.BlockingConnection(parameters)
-        channel = connection.channel()
-        channel.queue_declare(queue=queue)
-        channel.basic_publish(exchange="", routing_key=queue, body=json.dumps(route))
+        with pika.BlockingConnection(parameters) as connection:
+            channel = connection.channel()
+            channel.queue_declare(queue=queue)
+            channel.basic_publish(exchange="", routing_key=queue, body=json.dumps(route))
     else:
-        current_app.logger.debug("Testing: {route}")
+        current_app.logger.debug(f"Testing: {route}")
 
 
-def log_route(user_id, route_model, rule_type, author):
+def log_route(user_id: int, route_model: Union[RTBH, Flowspec4, Flowspec6], rule_type: RuleTypes, author: str) -> None:
     """
     Convert route to EXAFS message and log it to database
     :param user_id : int curent user
-    :param route_model: model with route object
-    :param rule_type: string
+    :param route_model: model with route object (RTBH, Flowspec4, or Flowspec6)
+    :param rule_type: RuleTypes enum
+    :param author: str name of the author
     :return: None
     """
-    converter = ROUTE_MODELS[rule_type]
+    rule_type_value = rule_type.value
+    converter = ROUTE_MODELS[rule_type_value]
     task = converter(route_model)
     log = Log(
         time=datetime.now(),
         task=task,
-        rule_type=rule_type,
+        rule_type=rule_type_value,
         rule_id=route_model.id,
         user_id=user_id,
         author=author,
     )
     db.session.add(log)
+    current_app.logger.info(log)
     db.session.commit()
 
 
-def log_withdraw(user_id, task, rule_type, deleted_id, author):
+def log_withdraw(user_id: int, task: str, rule_type: RuleTypes, deleted_id: int, author: str) -> None:
     """
     Log the withdraw command to database
-    :param task: command message
+    :param user_id: int user ID
+    :param task: str command message
+    :param rule_type: RuleTypes enum
+    :param deleted_id: int ID of deleted rule
+    :param author: str name of the author
+    :return: None
     """
     log = Log(
         time=datetime.now(),
         task=task,
-        rule_type=rule_type,
+        rule_type=rule_type.value,
         rule_id=deleted_id,
         user_id=user_id,
         author=author,
     )
     db.session.add(log)
+    current_app.logger.info(log)
     db.session.commit()

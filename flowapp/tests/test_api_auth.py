@@ -11,6 +11,15 @@ def test_token(client, jwt_token):
     assert req.status_code == 200
 
 
+def test_machine_token(client, machine_api_token):
+    """
+    test that token authorization works
+    """
+    req = client.get("/api/v3/test_token", headers={"x-access-token": machine_api_token})
+
+    assert req.status_code == 200
+
+
 def test_expired_token(client, expired_auth_token):
     """
     test that expired token authorization return 401
@@ -37,7 +46,7 @@ def test_readonly_token(client, readonly_jwt_token):
 
     assert req.status_code == 200
     data = json.loads(req.data)
-    assert data['readonly']
+    assert data["readonly"]
 
 
 def test_readonly_token_ipv4_create(client, db, readonly_jwt_token):
