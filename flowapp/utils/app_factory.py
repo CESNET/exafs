@@ -217,5 +217,4 @@ def _register_user_to_session(uuid, db):
     roles = [i > 1 for i in session["user_role_ids"]]
     session["can_edit"] = True if all(roles) and roles else []
     # check if user has multiple organizations and return True if so
-    print(f"DEBUG SESSION {session}")
     return user, len(user.organization.all()) > 1

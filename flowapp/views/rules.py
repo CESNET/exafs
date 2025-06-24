@@ -502,7 +502,6 @@ def ipv4_rule():
             for error in errors:
                 current_app.logger.debug("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
-    print("NOW", datetime.now())
     default_expires = datetime.now() + timedelta(hours=1)
     form.expires.data = default_expires
 
@@ -597,8 +596,6 @@ def rtbh_rule():
 
     default_expires = datetime.now() + timedelta(days=7)
     form.expires.data = default_expires
-
-    print(whitelistable)
 
     return render_template(
         "forms/rtbh_rule.html", form=form, action_url=url_for("rules.rtbh_rule"), whitelistable=whitelistable

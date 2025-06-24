@@ -40,7 +40,6 @@ def add():
             for error in errors:
                 current_app.logger.debug("Error in the %s field - %s" % (getattr(form, field).label.text, error))
 
-    print("NOW", datetime.now())
     default_expires = datetime.now() + timedelta(hours=1)
     form.expires.data = default_expires
 

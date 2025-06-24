@@ -244,13 +244,11 @@ def get_user_actions(user_roles):
     Return list of actions based on current user role
     """
     max_role = max(user_roles)
-    print(max_role)
     if max_role == 3:
         actions = db.session.query(Action).order_by("id").all()
     else:
         actions = db.session.query(Action).filter_by(role_id=max_role).order_by("id").all()
     result = [(g.id, g.name) for g in actions]
-    print(actions, result)
     return result
 
 
