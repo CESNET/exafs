@@ -59,6 +59,7 @@ The REST API is documented using Swagger (OpenAPI). After installing and running
 
 
 ## Change Log
+- 1.1.2 - minor security updates (removed unused JS files), setup.py now reads dependencies from requirements.txt
 - 1.1.1 - Machine API Key rewrited. 
     - API keys for machines are now tied to one of the existing users. If there is a need to have API access for machine, first create service user, and set the access rights. Then create machine key as Admin and assign it to this user. 
 - 1.1.0 - Major Architecture Refactoring and Whitelist Integration
