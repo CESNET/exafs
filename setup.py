@@ -1,16 +1,26 @@
-"""
-Author(s): 
-Jiri Vrany <vrany@cesnet.cz>
-Petr Adamec <adamec@cesnet.cz>
-Jakub Man <Jakub.Man@cesnet.cz>
-
-Setuptools configuration
-"""
-
 import setuptools
+import os
 
-# Import the __version__ variable without having to import the flowapp package.
-# This prevents missing dependency error in new virtual environments.
+
+def read_requirements(filename="requirements.txt"):
+    """Read requirements from requirements.txt file."""
+    if not os.path.exists(filename):
+        return []
+
+    requirements = []
+    with open(filename, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            # Skip empty lines and comments
+            if line and not line.startswith("#"):
+                # Handle requirements with comments
+                if "#" in line:
+                    line = line.split("#")[0].strip()
+                requirements.append(line)
+    return requirements
+
+
+# Import the __version__ variable
 with open("flowapp/__about__.py") as f:
     exec(f.read())
 
@@ -21,26 +31,9 @@ setuptools.setup(
     description="Tool for creation, validation, and execution of ExaBGP messages.",
     url="https://github.com/CESNET/exafs",
     license="MIT",
-    py_modules=[
-        "flowapp",
-    ],
+    py_modules=["flowapp"],
     packages=setuptools.find_packages(),
     include_package_data=True,
     python_requires=">=3.11",
-    install_requires=[
-        "Flask>=2.0.2",
-        "Flask-SQLAlchemy>=2.2",
-        "Flask-SSO>=0.4.0",
-        "Flask-WTF>=1.0.0",
-        "Flask-Migrate>=3.0.0",
-        "Flask-Script>=2.0.0",
-        "PyJWT>=2.4.0",
-        "PyMySQL>=1.0.0",
-        "pytest>=7.0.0",
-        "requests>=2.20.0",
-        "babel>=2.7.0",
-        "mysqlclient>=2.0.0",
-        "email_validator>=1.1",
-        "pika>=1.3.0",
-    ],
+    install_requires=read_requirements(),
 )
