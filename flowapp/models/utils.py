@@ -22,7 +22,8 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
     :param rule_type: RuleType rule type
     :return: boolean
     """
-    flowspec_limit = current_app.config.get("FLOWSPEC_MAX_RULES", 9000)
+    flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
+    flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
     fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
     fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
@@ -32,10 +33,10 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
     org = Organization.query.filter_by(id=org_id).first()
     if rule_type == RuleTypes.IPv4 and org.limit_flowspec4 > 0:
         count = db.session.query(Flowspec4).filter_by(org_id=org_id, rstate_id=1).count()
-        return count >= org.limit_flowspec4 or fs4 >= flowspec_limit
+        return count >= org.limit_flowspec4 or fs4 >= flowspec4_limit
     if rule_type == RuleTypes.IPv6 and org.limit_flowspec6 > 0:
         count = db.session.query(Flowspec6).filter_by(org_id=org_id, rstate_id=1).count()
-        return count >= org.limit_flowspec6 or fs6 >= flowspec_limit
+        return count >= org.limit_flowspec6 or fs6 >= flowspec6_limit
     if rule_type == RuleTypes.RTBH and org.limit_rtbh > 0:
         count = db.session.query(RTBH).filter_by(org_id=org_id, rstate_id=1).count()
         return count >= org.limit_rtbh or rtbh >= rtbh_limit
