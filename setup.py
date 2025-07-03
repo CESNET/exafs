@@ -21,9 +21,22 @@ def read_requirements(filename="requirements.txt"):
 
 
 # Import the __version__ variable
-with open("flowapp/__about__.py") as f:
-    exec(f.read())
+import ast
 
+with open("flowapp/__about__.py", "r", encoding="utf-8") as f:
+    module_ast = ast.parse(f.read(), filename="flowapp/__about__.py")
+
+__version__ = None
+for node in module_ast.body:
+    if isinstance(node, ast.Assign) and len(node.targets) == 1:
+        target = node.targets[0]
+        if isinstance(target, ast.Name) and target.id == "__version__":
+            if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                __version__ = node.value.value
+                break
+
+if __version__ is None:
+    raise ValueError("Unable to find __version__ in flowapp/__about__.py")
 setuptools.setup(
     name="exafs",
     version=__version__,  # noqa: F821
