@@ -203,10 +203,12 @@ def limit_reached(count, rule_type, org_id):
 
 def global_limit_reached(count, rule_type):
     rule_name = RULE_NAMES_DICT[rule_type.value]
-    if rule_type == RuleTypes.IPv4 or rule_type == RuleTypes.IPv6:
-        limit = current_app.config.get("FLOWSPEC_MAX_RULES")
+    if rule_type == RuleTypes.IPv4:
+        limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
+    elif rule_type == RuleTypes.IPv6:
+        limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     elif rule_type == RuleTypes.RTBH:
-        limit = current_app.config.get("RTBH_MAX_RULES")
+        limit = current_app.config.get("RTBH_MAX_RULES", 100000)
 
     return (
         jsonify(
