@@ -311,8 +311,6 @@ def organizations():
     flowspec4_all_count = db.session.query(Flowspec4).filter(Flowspec4.rstate_id == 1).count()
     flowspec6_all_count = db.session.query(Flowspec6).filter(Flowspec6.rstate_id == 1).count()
     rtbh_all_count = db.session.query(RTBH).filter(RTBH.rstate_id == 1).count()
-    flowspec_limit = current_app.config.get("FLOWSPEC_MAX_RULES", 9000)
-    rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
 
     # Convert query result to a dictionary {org_id: count}
     rtbh_counts = {org_id: count for org_id, count in rtbh_counts_query}
@@ -328,8 +326,9 @@ def organizations():
         rtbh_all_count=rtbh_all_count,
         flowspec4_all_count=flowspec4_all_count,
         flowspec6_all_count=flowspec6_all_count,
-        flowspec_limit=flowspec_limit,
-        rtbh_limit=rtbh_limit,
+        flowspec4_limit=current_app.config.get("FLOWSPEC4_MAX_RULES", 9000),
+        flowspec6_limit=current_app.config.get("FLOWSPEC6_MAX_RULES", 9000),
+        rtbh_limit=current_app.config.get("RTBH_MAX_RULES", 100000),
     )
 
 
