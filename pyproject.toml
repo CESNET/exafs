@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exafs"
+dynamic = ["version"]
+authors = [
+    {name = "CESNET / Jiri Vrany, Petr Adamec, Josef Verich, Jakub Man"}
+]
+description = "Tool for creation, validation, and execution of ExaBGP messages."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "Flask>=2.0.2",
+    "Flask-SQLAlchemy>=2.2",
+    "Flask-SSO>=0.4.0",
+    "Flask-WTF>=1.0.0",
+    "Flask-Migrate>=3.0.0",
+    "Flask-Script>=2.0.0",
+    "Flask-Session",
+    "PyJWT>=2.4.0",
+    "PyMySQL>=1.0.0",
+    "requests>=2.20.0",
+    "babel>=2.7.0",
+    "email_validator>=1.1",
+    "pika>=1.3.0",
+    "loguru",
+    "flasgger",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    # Add other dev-only dependencies here if needed
+    # "black>=22.0",
+    # "mypy>=0.950",
+    # "flake8>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/CESNET/exafs"
+Repository = "https://github.com/CESNET/exafs"
+Issues = "https://github.com/CESNET/exafs/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "flowapp.__about__.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["flowapp*"]
+
+[tool.setuptools.package-data]
+"*" = ["*"]
