@@ -672,7 +672,6 @@ def update_set_org():
     user_with_multiple_orgs = {}
     for model in models:
         data_records = model.query.filter(model.org_id == 0).all()
-        print(f"Found {len(data_records)} records with org_id NULL in {model.__name__}")
         # Loop through each flowspec record and update org_id based on the user's organization
         updated = 0
         for row in data_records:
@@ -683,7 +682,6 @@ def update_set_org():
                     row.org_id = user_org.id
                     updated += 1
             else:
-                print(f"User {row.user.email} has multiple organizations")
                 user_with_multiple_orgs[row.user.email] = [org.name for org in orgs]
         # Commit the changes
         try:

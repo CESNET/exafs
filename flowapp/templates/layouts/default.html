@@ -94,7 +94,22 @@
             </li>
         </ul>
     </nav>
-    <p class="position-fixed bottom-0 end-0 form-text p-2 me-2">ExaFS {{ session['app_version'] }}</p>
+    <footer class="bg-light text-muted mt-5 pt-4 border-top">
+      <div class="container">
+        <div class="row justify-content-between align-items-center">
+          <div class="col-md-auto mb-2 mb-md-0">
+            <nav class="nav">
+              {% for item in footer_menu %}
+                <a class="nav-link px-2" href="{{ url_for(item.url) }}">{{ item.name }}</a>
+              {% endfor %}
+            </nav>
+          </div>
+          <div class="col-md-auto text-end small">
+            ExaFS {{ session['app_version'] }}
+          </div>
+        </div>
+      </div>
+    </footer>
 
     <script type="text/javascript" src="/static/js/ip_context.js"></script>  
     <script type="text/javascript" src="/static/js/enable_tooltips.js"></script>
