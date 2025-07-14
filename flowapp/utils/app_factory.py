@@ -108,6 +108,11 @@ def register_context_processors(app):
         """Inject dashboard config to templates."""
         return {"dashboard": app.config.get("DASHBOARD")}
 
+    @app.context_processor
+    def inject_footer_menu():
+        """Inject main menu config to templates."""
+        return {"footer_menu": app.config.get("FOOTER_MENU", [])}
+
     return app
 
 
