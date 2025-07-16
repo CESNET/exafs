@@ -73,7 +73,7 @@ def add_machine_key():
     """
     generated = secrets.token_hex(24)
     form = MachineApiKeyForm(request.form, key=generated)
-    form.user.choices = [(g.id, g.name) for g in db.session.query(User).order_by("name")]
+    form.user.choices = [(g.id, f"{g.name} ({g.uuid})") for g in db.session.query(User).order_by("name")]
 
     if request.method == "POST" and form.validate():
         target_user = db.session.get(User, form.user.data)
