@@ -56,6 +56,9 @@ class Config:
     RD_STRING = "7654:3210"
     RD_LABEL = "label for RD"
 
+    # list of RTBH Communities that are allowed to be used in whitelist, real ID from DB
+    ALLOWED_COMMUNITIES = [1, 2, 3]
+
 
 class ProductionConfig(Config):
     """
