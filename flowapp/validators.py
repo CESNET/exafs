@@ -12,12 +12,15 @@ def filter_rules_in_network(net_ranges, rules):
     :param rules: list of rules (ipv4 or ipv6
     :return: filtered list of rules
     """
-    return [
-        rule
-        for rule in rules
-        if network_in_range(rule.source, rule.source_mask, net_ranges)
-        or network_in_range(rule.dest, rule.dest_mask, net_ranges)
-    ]
+    try:
+        return [
+            rule
+            for rule in rules
+            if network_in_range(rule.source, rule.source_mask, net_ranges)
+            or network_in_range(rule.dest, rule.dest_mask, net_ranges)
+        ]
+    except AttributeError:
+        return rules  # If rules have no source or dest, return all rules
 
 
 def split_rules_for_user(net_ranges, rules):
@@ -30,12 +33,16 @@ def split_rules_for_user(net_ranges, rules):
     user_rules = []
     rest_rules = []
     for rule in rules:
-        if network_in_range(rule.source, rule.source_mask, net_ranges) or network_in_range(
-            rule.dest, rule.dest_mask, net_ranges
-        ):
+        try:
+            if network_in_range(rule.source, rule.source_mask, net_ranges) or network_in_range(
+                rule.dest, rule.dest_mask, net_ranges
+            ):
+                user_rules.append(rule)
+            else:
+                rest_rules.append(rule)
+        except AttributeError:
+            # If rule has no source or dest, the split is not possible
             user_rules.append(rule)
-        else:
-            rest_rules.append(rule)
 
     return user_rules, rest_rules
 
