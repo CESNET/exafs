@@ -89,9 +89,12 @@ def filter_rules_action(user_actions, rules):
     editable = []
     viewonly = []
     for rule in rules:
-        if rule.action_id in user_actions:
-            editable.append(rule)
-        else:
-            viewonly.append(rule)
+        try:
+            if rule.action_id in user_actions:
+                editable.append(rule)
+            else:
+                viewonly.append(rule)
+        except AttributeError:
+            editable.append(rule)  # If rule has no action_id, treat it as editable
 
     return editable, viewonly
