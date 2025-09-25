@@ -59,6 +59,7 @@ The REST API is documented using Swagger (OpenAPI). After installing and running
 
 
 ## Change Log
+- 1.1.4 - minor bug fixes and code cleanup
 - 1.1.3 - introduced configurable footer menu for links in bottom of the default template
 - 1.1.2 - minor security updates (removed unused JS files), setup.py now reads dependencies from requirements.txt
 - 1.1.1 - Machine API Key rewrited. 
