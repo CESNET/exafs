@@ -1,4 +1,5 @@
 config.py
+instance_config_override.py
 run.py
 migrations/
 

@@ -30,6 +30,12 @@ def create_app(config_object=None):
     if config_object:
         app.config.from_object(config_object)
 
+    # Allow override of instance config from external file
+    try:
+        app.config.from_pyfile("../instance_config_override.py", silent=False)
+    except FileNotFoundError:
+        pass  # No override file, use defaults
+
     app.config.setdefault("VERSION", __version__)
 
     # SSO configuration
