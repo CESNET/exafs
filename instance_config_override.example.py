@@ -1,4 +1,7 @@
+# This file can be simply ignored if you do not need to override anything
+
 # Example instance config override
+# If you need to override some settings, you can do it here.
 # Copy this to instance_config_override.py and customize
 
 
