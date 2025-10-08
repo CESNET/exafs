@@ -59,6 +59,9 @@ class Config:
     # list of RTBH Communities that are allowed to be used in whitelist, real ID from DB
     ALLOWED_COMMUNITIES = [1, 2, 3]
 
+    # treshold for expired rule retation in days
+    EXPIRATION_THRESHOLD = 30
+
 
 class ProductionConfig(Config):
     """

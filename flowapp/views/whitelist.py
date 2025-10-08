@@ -10,6 +10,8 @@ from flowapp.forms import WhitelistForm
 from flowapp.models import get_user_nets, Whitelist
 from flowapp.services import create_or_update_whitelist, delete_whitelist
 from flowapp.utils.base import flash_errors
+from flowapp.auth import check_user_can_modify_rule
+
 
 whitelist = Blueprint("whitelist", __name__, template_folder="templates")
 
@@ -106,7 +108,8 @@ def delete(wl_id):
     Delete whitelist
     :param wl_id: integer - id of the whitelist
     """
-    if wl_id in session[constants.RULES_KEY]:
+    # Check if user can modify this whitelist
+    if check_user_can_modify_rule(wl_id, "whitelist"):
         messages = delete_whitelist(wl_id)
         flash(f"Whitelist {wl_id} deleted", "alert-success")
         for message in messages:
