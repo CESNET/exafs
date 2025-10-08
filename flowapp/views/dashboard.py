@@ -124,9 +124,6 @@ def index(rtype=None, rstate="active"):
 
     allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
 
-    # temporary debug session content
-    current_app.logger.debug("Session content: %s" % session)
-
     return view_factory(
         rtype=rtype,
         rstate=rstate,
