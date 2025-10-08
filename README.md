@@ -59,6 +59,7 @@ The REST API is documented using Swagger (OpenAPI). After installing and running
 
 
 ## Change Log
+- 1.1.6 - Fixed problem with session overflow on too much rules id. Updated withdraw_expired method to delete also expired rules. Expiration treshold can be set in config - default to 30 days.
 - 1.1.5 - introduced instance config override. Copy the sample to instance_config_override.py and customize you dashboard menu items easily. For normal installations no override is needed.
 - 1.1.4 - minor bug fixes and code cleanup
 - 1.1.3 - introduced configurable footer menu for links in bottom of the default template
