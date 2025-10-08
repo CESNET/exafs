@@ -6,22 +6,34 @@ build-backend = "setuptools.build_meta"
 name = "exafs"
 dynamic = ["version"]
 authors = [
-    {name = "CESNET / Jiri Vrany, Petr Adamec, Josef Verich, Jakub Man"}
+    {name = "Jiri Vrany", email = "jiri.vrany@cesnet.cz"},
+    {name = "Petr Adamec"},
+    {name = "Josef Verich"},
+    {name = "Jakub Man"},
 ]
-description = "Tool for creation, validation, and execution of ExaBGP messages."
+maintainers = [
+    {name = "Jiri Vrany"}
+]
+description = "Tool for creation, validation, and execution of ExaBGP messages for network security."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
+keywords = ["bgp", "exabgp", "flowspec", "ddos", "network-security", "CESNET"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Telecommunications Industry",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Networking",
+    "Topic :: Security",
+    "Framework :: Flask",
 ]
 dependencies = [
     "Flask>=2.0.2",
@@ -45,16 +57,14 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    # Add other dev-only dependencies here if needed
-    # "black>=22.0",
-    # "mypy>=0.950",
-    # "flake8>=4.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/CESNET/exafs"
 Repository = "https://github.com/CESNET/exafs"
+Documentation = "https://github.com/CESNET/exafs/blob/master/README.md"
 Issues = "https://github.com/CESNET/exafs/issues"
+Changelog = "https://github.com/CESNET/exafs/blob/master/README.md#change-log"
 
 [tool.setuptools.dynamic]
 version = {attr = "flowapp.__about__.__version__"}
@@ -63,4 +73,12 @@ version = {attr = "flowapp.__about__.__version__"}
 include = ["flowapp*"]
 
 [tool.setuptools.package-data]
-"*" = ["*"]
+flowapp = [
+    "static/*",
+    "static/js/*",
+    "templates/*",
+    "templates/errors/*",
+    "templates/forms/*",
+    "templates/layouts/*",
+    "templates/pages/*",
+]

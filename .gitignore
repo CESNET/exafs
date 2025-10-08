@@ -3,6 +3,10 @@ instance_config_override.py
 run.py
 migrations/
 
+# PyPi
+.pypirc
+
+
 # PyCharm
 .idea/
 
