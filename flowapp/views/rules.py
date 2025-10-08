@@ -36,6 +36,8 @@ from flowapp.utils import (
     get_state_by_time,
     round_to_ten_minutes,
 )
+from flowapp.auth import get_user_allowed_rule_ids, check_user_can_modify_rule
+
 
 rules = Blueprint("rules", __name__, template_folder="templates")
 
@@ -158,6 +160,27 @@ def delete_rule(rule_type, rule_id):
     # Convert the integer rule_type to RuleTypes enum
     enum_rule_type = RuleTypes(rule_type)
 
+    # Get the rule type string for access checking
+    rule_type_map = {RuleTypes.IPv4.value: "ipv4", RuleTypes.IPv6.value: "ipv6", RuleTypes.RTBH.value: "rtbh"}
+    rule_type_str = rule_type_map.get(rule_type)
+
+    # Check if user can modify this rule
+    if not check_user_can_modify_rule(rule_id, rule_type_str):
+        flash("You cannot delete this rule", "alert-warning")
+        return redirect(
+            url_for(
+                "dashboard.index",
+                rtype=session[constants.TYPE_ARG],
+                rstate=session[constants.RULE_ARG],
+                sort=session[constants.SORT_ARG],
+                squery=session[constants.SEARCH_ARG],
+                order=session[constants.ORDER_ARG],
+            )
+        )
+
+    # Get allowed rule IDs for the service call
+    allowed_rule_ids = get_user_allowed_rule_ids(rule_type_str, session["user_id"], session["user_role_ids"])
+
     # Use the service to delete the rule
     success, message = rule_service.delete_rule(
         rule_type=enum_rule_type,
@@ -165,13 +188,11 @@ def delete_rule(rule_type, rule_id):
         user_id=session["user_id"],
         user_email=session["user_email"],
         org_name=session["user_org"],
-        allowed_rule_ids=session.get(constants.RULES_KEY, []),
+        allowed_rule_ids=allowed_rule_ids,
     )
 
-    # Flash appropriate message based on result
     flash(message, "alert-success" if success else "alert-warning")
 
-    # Redirect back to dashboard
     return redirect(
         url_for(
             "dashboard.index",
@@ -190,12 +211,18 @@ def delete_rule(rule_type, rule_id):
 def delete_and_whitelist(rule_type, rule_id):
     """
     Delete an RTBH rule and create a whitelist entry from it.
-
-    :param rule_id: integer - id of the RTBH rule
     """
     if rule_type != RuleTypes.RTBH.value:
         flash("Only RTBH rules can be converted to whitelists", "alert-warning")
         return redirect(url_for("index"))
+
+    # Check if user can modify this rule
+    if not check_user_can_modify_rule(rule_id, "rtbh"):
+        flash("You cannot delete this rule", "alert-warning")
+        return redirect(url_for("index"))
+
+    # Get allowed rule IDs
+    allowed_rule_ids = get_user_allowed_rule_ids("rtbh", session["user_id"], session["user_role_ids"])
 
     # Set whitelist expiration to 7 days from now by default
     whitelist_expires = datetime.now() + timedelta(days=7)
@@ -207,19 +234,16 @@ def delete_and_whitelist(rule_type, rule_id):
         org_id=session["user_org_id"],
         user_email=session["user_email"],
         org_name=session["user_org"],
-        allowed_rule_ids=session.get(constants.RULES_KEY, []),
+        allowed_rule_ids=allowed_rule_ids,
         whitelist_expires=whitelist_expires,
     )
 
-    # Flash all messages
     for message in messages:
         flash(message, "alert-success" if success else "alert-warning")
 
-    # If successful, flash additional message about whitelist
     if success and whitelist:
         flash(f"Created whitelist entry ID {whitelist.id} from RTBH rule", "alert-info")
 
-    # Redirect back to dashboard
     return redirect(
         url_for(
             "dashboard.index",
@@ -269,10 +293,15 @@ def group_delete():
     rule_type_int = constants.RULE_TYPES_DICT[rule_type]
     enum_rule_type = RuleTypes(rule_type_int)
     route_model = ROUTE_MODELS[rule_type_int]
-    rules = [str(x) for x in session[constants.RULES_KEY]]
+
+    # Get allowed rules for this user
+    allowed_rule_ids = get_user_allowed_rule_ids(rule_type, session["user_id"], session["user_role_ids"])
+    allowed_rules_str = [str(x) for x in allowed_rule_ids]
+
     to_delete = request.form.getlist("delete-id")
 
-    if set(to_delete).issubset(set(rules)) or is_admin(session["user_roles"]):
+    # Check if user has permission to delete these rules
+    if set(to_delete).issubset(set(allowed_rules_str)) or is_admin(session["user_roles"]):
         for rule_id in to_delete:
             # withdraw route
             model = db.session.get(model_name, rule_id)
@@ -321,11 +350,14 @@ def group_update():
     rule_type = session[constants.TYPE_ARG]
     form_name = DATA_FORMS_NAMED[rule_type]
     to_update = request.form.getlist("delete-id")
-    rule_type = session[constants.TYPE_ARG]
     rule_type_int = constants.RULE_TYPES_DICT[rule_type]
-    rules = [str(x) for x in session[constants.RULES_KEY]]
+
+    # Get allowed rules for this user
+    allowed_rule_ids = get_user_allowed_rule_ids(rule_type, session["user_id"], session["user_role_ids"])
+    allowed_rules_str = [str(x) for x in allowed_rule_ids]
+
     # redirect bad request
-    if not set(to_update).issubset(set(rules)) or is_admin(session["user_roles"]):
+    if not set(to_update).issubset(set(allowed_rules_str)) and not is_admin(session["user_roles"]):
         flash("You can't edit these rules!", "alert-danger")
         return redirect(
             url_for(
@@ -682,12 +714,25 @@ def announce_all():
 @localhost_only
 def withdraw_expired():
     """
-    cleaning endpoint
-    deletes expired whitelists
-    withdraws all expired routes from ExaBGP
-    deletes logs older than 30 days
+    Cleaning endpoint:
+    - Deletes expired whitelists
+    - Withdraws all expired routes from ExaBGP
+    - Deletes old expired rules
+    - Deletes logs older than 30 days
     """
-    delete_expired_whitelists()
+    # Delete expired whitelists
+    whitelist_messages = delete_expired_whitelists()
+    for msg in whitelist_messages:
+        current_app.logger.info(msg)
+
+    # Withdraw expired routes
     announce_all_routes(constants.WITHDRAW)
+
+    # Delete old expired rules (in batches if needed)
+    deletion_counts = rule_service.delete_expired_rules()
+    current_app.logger.info(f"Deleted rules: {deletion_counts}")
+
+    # Delete old logs
     Log.delete_old()
-    return " "
+
+    return "Cleanup completed"

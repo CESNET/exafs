@@ -531,3 +531,80 @@ def delete_rtbh_and_create_whitelist(
         current_app.logger.exception(f"Error creating whitelist entry: {e}")
         messages.append(f"Rule deleted but failed to create whitelist: {str(e)}")
         return False, messages, None
+
+
+def delete_expired_rules() -> Dict[str, int]:
+    """
+    Delete all expired rules older than EXPIRATION_THRESHOLD days.
+    Only deletes rules in withdrawn or deleted state.
+
+    Returns:
+        Dictionary with deletion counts per rule type
+    """
+    current_time = datetime.now()
+    expiration_threshold = current_app.config.get("EXPIRATION_THRESHOLD", 30)
+    deletion_date = current_time - timedelta(days=expiration_threshold)
+
+    deletion_counts = {"rtbh": 0, "ipv4": 0, "ipv6": 0, "total": 0}
+
+    model_map = {
+        "rtbh": (RTBH, RuleTypes.RTBH),
+        "ipv4": (Flowspec4, RuleTypes.IPv4),
+        "ipv6": (Flowspec6, RuleTypes.IPv6),
+    }
+
+    for rule_type, (model_class, rule_enum) in model_map.items():
+        # Get IDs of rules to delete
+        expired_rule_ids = [
+            r.id
+            for r in db.session.query(model_class.id)
+            .filter(
+                model_class.expires < deletion_date, model_class.rstate_id.in_([2, 3])  # withdrawn or deleted state
+            )
+            .all()
+        ]
+
+        if not expired_rule_ids:
+            current_app.logger.info(f"No expired {model_class.__name__} rules to delete")
+            continue
+
+        # Clean up whitelist cache first
+        cache_deleted = 0
+        for rule_id in expired_rule_ids:
+            cache_deleted += RuleWhitelistCache.delete_by_rule_id(rule_id)
+
+        if cache_deleted:
+            current_app.logger.info(
+                f"Deleted {cache_deleted} cache entries for {len(expired_rule_ids)} {model_class.__name__} rules"
+            )
+
+        # Bulk delete the rules
+        deleted = (
+            db.session.query(model_class).filter(model_class.id.in_(expired_rule_ids)).delete(synchronize_session=False)
+        )
+
+        deletion_counts[rule_type] = deleted
+        deletion_counts["total"] += deleted
+
+        current_app.logger.info(
+            f"Deleted {deleted} expired {model_class.__name__} rules " f"(older than {expiration_threshold} days)"
+        )
+
+    # Commit all deletions at once
+    if deletion_counts["total"] > 0:
+        try:
+            db.session.commit()
+            current_app.logger.info(
+                f"Successfully deleted {deletion_counts['total']} expired rules: "
+                f"RTBH={deletion_counts['rtbh']}, "
+                f"IPv4={deletion_counts['ipv4']}, "
+                f"IPv6={deletion_counts['ipv6']}"
+            )
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error committing rule deletions: {e}")
+            raise
+    else:
+        current_app.logger.info("No expired rules found to delete")
+
+    return deletion_counts

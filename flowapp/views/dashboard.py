@@ -15,7 +15,6 @@ from markupsafe import Markup
 from flowapp import models, validators, flowspec
 from flowapp.auth import auth_required
 from flowapp.constants import (
-    RULES_KEY,
     SORT_ARG,
     ORDER_ARG,
     DEFAULT_ORDER,
@@ -110,7 +109,6 @@ def index(rtype=None, rstate="active"):
     # Enrich rules with whitelist information
     rules, whitelist_rule_ids = enrich_rules_with_whitelist_info(rules, rtype)
 
-    session[RULES_KEY] = [rule.id for rule in rules]
     # search rules
     if get_search_query:
         count_match = current_app.config["COUNT_MATCH"]
