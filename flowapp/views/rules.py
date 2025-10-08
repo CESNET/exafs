@@ -682,12 +682,25 @@ def announce_all():
 @localhost_only
 def withdraw_expired():
     """
-    cleaning endpoint
-    deletes expired whitelists
-    withdraws all expired routes from ExaBGP
-    deletes logs older than 30 days
+    Cleaning endpoint:
+    - Deletes expired whitelists
+    - Withdraws all expired routes from ExaBGP
+    - Deletes old expired rules
+    - Deletes logs older than 30 days
     """
-    delete_expired_whitelists()
+    # Delete expired whitelists
+    whitelist_messages = delete_expired_whitelists()
+    for msg in whitelist_messages:
+        current_app.logger.info(msg)
+
+    # Withdraw expired routes
     announce_all_routes(constants.WITHDRAW)
+
+    # Delete old expired rules (in batches if needed)
+    deletion_counts = rule_service.delete_expired_rules()
+    current_app.logger.info(f"Deleted rules: {deletion_counts}")
+
+    # Delete old logs
     Log.delete_old()
-    return " "
+
+    return "Cleanup completed"
