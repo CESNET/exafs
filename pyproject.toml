@@ -64,7 +64,7 @@ Homepage = "https://github.com/CESNET/exafs"
 Repository = "https://github.com/CESNET/exafs"
 Documentation = "https://github.com/CESNET/exafs/blob/master/README.md"
 Issues = "https://github.com/CESNET/exafs/issues"
-Changelog = "https://github.com/CESNET/exafs/blob/master/README.md#change-log"
+Changelog = "https://github.com/CESNET/exafs/blob/master/README.md"
 
 [tool.setuptools.dynamic]
 version = {attr = "flowapp.__about__.__version__"}

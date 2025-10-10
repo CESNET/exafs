@@ -65,47 +65,4 @@ It may also be necessary to monitor ExaBGP and re-announce rules after a restart
 ### API
 The REST API is documented using Swagger (OpenAPI). After installing and running the application, the API documentation is available locally at the /apidocs/ endpoint. This interactive documentation provides details about all available endpoints, request and response formats, and supported operations, making it easier to integrate and test the API.
 
-
-
-## Change Log
-- 1.1.6 - Fixed problem with session overflow on too much rules id. Updated withdraw_expired method to delete also expired rules. Expiration treshold can be set in config - default to 30 days.
-- 1.1.5 - introduced instance config override. Copy the sample to instance_config_override.py and customize you dashboard menu items easily. For normal installations no override is needed.
-- 1.1.4 - minor bug fixes and code cleanup
-- 1.1.3 - introduced configurable footer menu for links in bottom of the default template
-- 1.1.2 - minor security updates (removed unused JS files), setup.py now reads dependencies from requirements.txt
-- 1.1.1 - Machine API Key rewrited. 
-    - API keys for machines are now tied to one of the existing users. If there is a need to have API access for machine, first create service user, and set the access rights. Then create machine key as Admin and assign it to this user. 
-- 1.1.0 - Major Architecture Refactoring and Whitelist Integration
-    - Code Organization and Architecture Improvements. Significant architectural refactoring focused on better separation of concerns and improved maintainability. The most notable change is the introduction of a dedicated **services layer** that extracts business logic from view controllers. Key service modules include `rule_service.py` for rule management operations, `whitelist_service.py` for whitelist functionality, and `whitelist_common.py` for shared whitelist utilities. 
-    - The **models structure** has been reorganized with better separation into logical modules. Rule models are now organized under `flowapp/models/rules/` with separate files for different rule types (`flowspec.py`, `rtbh.py`, `whitelist.py`), while maintaining backward compatibility through the main models `__init__.py`. Form handling has also been improved with better organization under `flowapp/forms/` and enhanced validation logic.
-    - **RTBH Whitelist Integration** This system automatically evaluates new RTBH rules against existing whitelists and can automatically modify or block rules that conflict with whitelisted networks. When an RTBH rule is created that intersects with a whitelist entry, the system can:
-        - **Automatically whitelist** rules that exactly match or are contained within whitelisted networks
-        - **Create subnet rules** when RTBH rules are supersets of whitelisted networks, automatically generating the non-whitelisted portions
-        - **Maintain rule cache** that tracks relationships between rules and whitelists for proper cleanup
-- 1.0.2 - fixed bug in IPv6 Flowspec messages
-- 1.0.1 . minor bug fixes
-- 1.0.0 . Major changes
-    - Limits for nuber of rules in the system introduced. There are now limits for rules for organization and overall limit for the instalation. Database changed / migration is required. Migrating the database to version 1.0.x is a bit more complicated, you need to link existing rules to organizations. [A more detailed description is in a separate document](./docs/DB_MIGRATIONS.md).
-    - Rules are now tied to organization. If the user belongs to more than one organization, the organization for the session must be selected after login.
-    - Bulk import for users enabled for admin.
-    - Introduced Swagger docs for API on the local system. Just open /apidocs url. 
-    - New format of message for ExaAPI - now sends information about author of rule (user) for logging purposes.
-    - ExaAPI and Guarda modules moved outside of the project.
-    - ExaAPI is now available as a [pip package exabgp-process](https://pypi.org/project/exabgp-process/), with own [github repostiory](https://github.com/CESNET/exabgp-process).
-    - Watch of exabgp restart can be still done by guarda service - see docs. Or it can be done by override of the exabgp service settings.  
-- 0.8.1 application is using Flask-Session stored in DB using SQL Alchemy driver. This can be configured for other drivers, however server side session is required for the application proper function.
-- 0.8.0 - API keys update.  **Run migration scripts to update your DB**.  Keys can now have expiration date and readonly flag. Admin can create special keys for certain machinnes.
-- 0.7.3 - New possibility of external auth proxy. 
-- 0.7.2 - Dashboard and Main menu are now customizable in config. App is ready to be packaged using setup.py.
-- 0.7.0 - ExaAPI now have two options - HTTP or RabbitMQ. ExaAPI process has been renamed, update of ExaBGP process value is needed for this version.
-- 0.6.2 - External config for ExaAPI 
-- 0.6.0 - Bootstrap 5 in UI
-- 0.5.5 - API v3 - auth api key in cookie not in url
-- 0.5.4 - Right click menu on adress / Whois or Copy to clipboard
-- 0.5.3 - Dashboard update, forms with default action
-- 0.5.2 - API v2 with new keys 
-- 0.5.1 - Bug fixes
-- 0.5.0 - New format of LOG table in database. **Run migration scripts to update your DB**. Removed foreign key user_id, author email is stored directly to logs for faster grep text search.
-- 0.4.8 - Enhanced String Filtering
-- 0.4.7 - Multi neighbor support enabled. See config example and update your config.py. 
-- 0.4.6 - Route Distinguisher for VRF is now supported. See config example and update your config.py.
+## [Change log](./CHANGELOG.md)
