@@ -83,7 +83,12 @@ Create a `run.py` file as the application entry point. Start from `run.example.p
 
 Create a `config.py` file with your ExaFS configuration. Start from `config.example.py` in the repository and make customizations if needed. 
 
-# Add other configuration as needed
+# You may need to add other configuration options, such as:
+# - Database connection settings (host, port, user, password)
+# - Logging configuration
+# - Secret keys and API tokens (use environment variables for sensitive data)
+# - Integration settings for external services (e.g., ExaBGP, monitoring)
+# For a full list of available options, see the ExaFS documentation or config.example.py in the repository.
 ```
 
 > **Important:** Always use environment variables for sensitive data like database passwords and secret keys.
