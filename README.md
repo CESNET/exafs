@@ -59,6 +59,7 @@ It may also be necessary to monitor ExaBGP and re-announce rules after a restart
 ### Instalation related
 * [ExaFS Ansible deploy](https://github.com/CESNET/ExaFS-deploy) - repository with Ansbile playbook for deploying ExaFS with Docker Compose. 
 * [Install notes](./docs/INSTALL.md)
+* [using Docker Image](./docs/DockerImage.md)
 * [Database backup configuration](./docs/DB_BACKUP.md)
 * [Local database instalation notes](./docs/DB_LOCAL.md)
 ### API
