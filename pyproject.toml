@@ -7,23 +7,21 @@ name = "exafs"
 dynamic = ["version"]
 authors = [
     {name = "Jiri Vrany", email = "jiri.vrany@cesnet.cz"},
-    {name = "Petr Adamec"},
+    {name = "Petr Adamec", email = "petr.adamec@cesnet.cz"},
     {name = "Josef Verich"},
-    {name = "Jakub Man"},
+    {name = "Jakub Man", email = "jakub.man@cesnet.cz"},
 ]
 maintainers = [
-    {name = "Jiri Vrany"}
+    {name = "Jiri Vrany", email = "jiri.vrany@cesnet.cz"}
 ]
 description = "Tool for creation, validation, and execution of ExaBGP messages for network security."
 readme = "README.md"
-license = {text = "MIT"}
 requires-python = ">=3.9"
 keywords = ["bgp", "exabgp", "flowspec", "ddos", "network-security", "CESNET"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: System Administrators",
     "Intended Audience :: Telecommunications Industry",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",

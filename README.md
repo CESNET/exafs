@@ -1,4 +1,12 @@
 # ExaFS
+
+[![PyPI version](https://badge.fury.io/py/exafs.svg)](https://badge.fury.io/py/exafs)
+[![Docker Image](https://img.shields.io/docker/v/jirivrany/exafs-base?label=docker&logo=docker)](https://hub.docker.com/r/jirivrany/exafs-base)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyTest](https://github.com/CESNET/exafs/actions/workflows/python-app.yml/badge.svg)](https://github.com/CESNET/exafs/actions/workflows/python-app.yml)
+[![CodeQL](https://github.com/CESNET/exafs/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/CESNET/exafs/actions/workflows/github-code-scanning/codeql)
+[![Python Version](https://img.shields.io/pypi/pyversions/exafs.svg)](https://pypi.org/project/exafs/)
+
 ExaFS brings new functionality to the environment of routing protocols configuration for backbone network hardware security. 
 
 The tool extends network administrators toolset by adding an extra layer for configuration rules creation, validation, and authorization. With this new layer, a larger group of network administrators can safely create new
@@ -99,4 +107,4 @@ The REST API is documented using Swagger (OpenAPI). After installing and running
 - 0.5.0 - New format of LOG table in database. **Run migration scripts to update your DB**. Removed foreign key user_id, author email is stored directly to logs for faster grep text search.
 - 0.4.8 - Enhanced String Filtering
 - 0.4.7 - Multi neighbor support enabled. See config example and update your config.py. 
-- 0.4.6 - Route Distinguisher for VRF is now supported. See config example and update your config.py. 
+- 0.4.6 - Route Distinguisher for VRF is now supported. See config example and update your config.py.
