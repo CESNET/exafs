@@ -5,6 +5,12 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2025-10-16
+
+### Fixed
+- Fixed config loading to use Flask instance folder
+- Resolves path issues when package is installed via pip
+
 ## [1.1.6] - 2025-10-08
 
 ### Fixed
@@ -269,3 +275,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.4.8]: https://github.com/CESNET/exafs/compare/v0.4.7...v0.4.8
 [0.4.7]: https://github.com/CESNET/exafs/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/CESNET/exafs/releases/tag/v0.4.6
+
