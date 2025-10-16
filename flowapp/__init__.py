@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from flask import Flask, redirect, render_template, session, url_for
 
 from flask_sso import SSO
@@ -23,7 +24,8 @@ swagger = Swagger(template_file="static/swagger.yml")
 
 
 def create_app(config_object=None):
-    app = Flask(__name__)
+    # Enable instance_relative_config to use /app/instance folder
+    app = Flask(__name__, instance_relative_config=True)
 
     # Load the default configuration for dashboard and main menu
     app.config.from_object(InstanceConfig)
@@ -31,10 +33,11 @@ def create_app(config_object=None):
         app.config.from_object(config_object)
 
     # Allow override of instance config from external file
+    # This now looks in /app/instance/config_override.py instead of ../instance_config_override.py
     try:
-        app.config.from_pyfile("../instance_config_override.py", silent=False)
-    except FileNotFoundError:
-        print("No instance_config_override.py found, using defaults.")
+        app.config.from_pyfile("config_override.py", silent=False)
+    except FileNotFoundError as e:
+        print(f"Instance config override file not found: {e.filename}, using defaults.")
         pass  # No override file, use defaults
 
     app.config.setdefault("VERSION", __version__)
