@@ -34,6 +34,7 @@ def create_app(config_object=None):
     try:
         app.config.from_pyfile("../instance_config_override.py", silent=False)
     except FileNotFoundError:
+        print("No instance_config_override.py found, using defaults.")
         pass  # No override file, use defaults
 
     app.config.setdefault("VERSION", __version__)
