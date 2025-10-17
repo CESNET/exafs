@@ -30,6 +30,12 @@ from flowapp.utils import active_css_rstate, other_rtypes
 
 dashboard = Blueprint("dashboard", __name__, template_folder="templates")
 
+# Pagination constants
+PAGE_ARG = "page"
+PER_PAGE_DEFAULT = 50  # Default number of items per page
+PER_PAGE_OPTIONS = [25, 50, 100, 200]  # Options for items per page
+PER_PAGE_ARG = "per_page"
+
 
 @dashboard.route("/whois/<string:ip_address>", methods=["GET"])
 @auth_required
@@ -48,7 +54,7 @@ def index(rtype=None, rstate="active"):
     """
     dispatcher object for the dashboard
     :param rtype:  ipv4, ipv6, rtbh, whitelist
-    :param rstate:
+    :param rstate: active, expired, all
     :return: view from view factory
     """
 
@@ -73,7 +79,6 @@ def index(rtype=None, rstate="active"):
         view_factory = create_view_response
 
     # get the macros for the current rule type from config
-    # warning no checks here, if the config is set to non existing macro the app will crash
     macro_file = current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.html")
     macro_tbody = current_app.config["DASHBOARD"].get(rtype).get("macro_tbody", "build_ip_tbody")
     macro_thead = current_app.config["DASHBOARD"].get(rtype).get("macro_thead", "build_rules_thead")
@@ -81,6 +86,18 @@ def index(rtype=None, rstate="active"):
 
     data_handler_module = current_app.config["DASHBOARD"].get(rtype).get("data_handler", models)
     data_handler_method = current_app.config["DASHBOARD"].get(rtype).get("data_handler_method", "get_ip_rules")
+    
+    # Get pagination parameters
+    page = request.args.get(PAGE_ARG, 1, type=int)
+    per_page = request.args.get(PER_PAGE_ARG, PER_PAGE_DEFAULT, type=int)
+    
+    # Validate per_page
+    if per_page not in PER_PAGE_OPTIONS:
+        per_page = PER_PAGE_DEFAULT
+    
+    # Determine if pagination should be used (only for 'expired' and 'all')
+    use_pagination = rstate in ['expired', 'all']
+    
     # get search query, sort order and sort key from request or session
     get_search_query = request.args.get(SEARCH_ARG, session.get(SEARCH_ARG, ""))
     get_sort_key = request.args.get(SORT_ARG, session.get(SORT_ARG, DEFAULT_SORT))
@@ -104,7 +121,21 @@ def index(rtype=None, rstate="active"):
 
     # get the handler and the data
     handler = getattr(data_handler_module, data_handler_method)
-    rules = handler(rtype, rstate, get_sort_key, get_sort_order)
+    
+    # Call handler with pagination if applicable
+    if use_pagination and not get_search_query:
+        # Use paginated version
+        rules_data = handler(rtype, rstate, get_sort_key, get_sort_order, page=page, per_page=per_page, paginate=True)
+        if isinstance(rules_data, tuple):
+            rules, pagination = rules_data
+        else:
+            # Fallback if handler doesn't support pagination yet
+            rules = rules_data
+            pagination = None
+    else:
+        # Use non-paginated version (for active or when searching)
+        rules = handler(rtype, rstate, get_sort_key, get_sort_order)
+        pagination = None
 
     # Enrich rules with whitelist information
     rules, whitelist_rule_ids = enrich_rules_with_whitelist_info(rules, rtype)
@@ -119,6 +150,8 @@ def index(rtype=None, rstate="active"):
             other_rules = handler(other_rtype, rstate)
             other_rules = filter_rules(other_rules, get_search_query)
             count_match[other_rtype] = len(other_rules)
+        # Disable pagination when searching
+        pagination = None
     else:
         count_match = ""
 
@@ -141,6 +174,9 @@ def index(rtype=None, rstate="active"):
         macro_tfoot=macro_tfoot,
         whitelist_rule_ids=whitelist_rule_ids,
         allowed_communities=allowed_communities,
+        pagination=pagination,
+        per_page=per_page,
+        per_page_options=PER_PAGE_OPTIONS,
     )
 
 
@@ -260,15 +296,15 @@ def create_admin_response(
     macro_tfoot="build_group_buttons_tfoot",
     whitelist_rule_ids=None,
     allowed_communities=None,
+    pagination=None,
+    per_page=PER_PAGE_DEFAULT,
+    per_page_options=PER_PAGE_OPTIONS,
 ):
     """
     Admin can see and edit any rules
-    :param rtype:
-    :param rstate:
-    :param rules:
-    :param all_actions:
-    :param sort_order:
-    :return:
+    :param pagination: SQLAlchemy pagination object (optional)
+    :param per_page: Number of items per page
+    :param per_page_options: Available options for items per page
     """
     group_op = True if rtype != "whitelist" else False
 
@@ -318,6 +354,9 @@ def create_admin_response(
             sort_key=sort_key,
             sort_order=sort_order,
             search_query=search_query,
+            pagination=pagination,
+            per_page=per_page,
+            per_page_options=per_page_options,
         )
     )
 
@@ -341,12 +380,15 @@ def create_user_response(
     macro_tfoot="build_rules_tfoot",
     whitelist_rule_ids=None,
     allowed_communities=None,
+    pagination=None,
+    per_page=PER_PAGE_DEFAULT,
+    per_page_options=PER_PAGE_OPTIONS,
 ):
     """
     Filter out the rules for normal users
-    :param rules:
-    :param rstate:
-    :return:
+    :param pagination: SQLAlchemy pagination object (optional)
+    :param per_page: Number of items per page
+    :param per_page_options: Available options for items per page
     """
 
     net_ranges = models.get_user_nets(session["user_id"])
@@ -440,6 +482,9 @@ def create_user_response(
             sort_order=sort_order,
             search_query=search_query,
             count_match=count_match,
+            pagination=pagination,
+            per_page=per_page,
+            per_page_options=per_page_options,
         )
     )
 
@@ -463,12 +508,15 @@ def create_view_response(
     macro_tfoot="build_rules_tfoot",
     whitelist_rule_ids=None,
     allowed_communities=None,
+    pagination=None,
+    per_page=PER_PAGE_DEFAULT,
+    per_page_options=PER_PAGE_OPTIONS,
 ):
     """
     Filter out the rules for normal users
-    :param rules:
-    :param rstate:
-    :return:
+    :param pagination: SQLAlchemy pagination object (optional)
+    :param per_page: Number of items per page
+    :param per_page_options: Available options for items per page
     """
     dashboard_table_body = create_dashboard_table_body(
         rules,
@@ -513,6 +561,9 @@ def create_view_response(
             dashboard_table_body=Markup(dashboard_table_body),
             dashboard_table_head=Markup(dashboard_table_head),
             dashboard_table_foot=Markup(dashboard_table_foot),
+            pagination=pagination,
+            per_page=per_page,
+            per_page_options=per_page_options,
         )
     )
 

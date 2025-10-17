@@ -290,69 +290,135 @@ def get_existing_community(name=None):
     return community.id if hasattr(community, "id") else None
 
 
-def get_ip_rules(rule_type, rule_state, sort="expires", order="desc"):
-    """
-    Returns list of rules sorted by sort column ordered asc or desc
-    :param sort: sorting column
-    :param order: asc or desc
-    :return: list
-    """
+def _get_flowspec4_rules(rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
+    """Get Flowspec4 rules with optional pagination"""
 
     today = datetime.now()
     comp_func = utils.get_comp_func(rule_state)
 
-    if rule_type == "ipv4":
-        sorter_ip4 = getattr(Flowspec4, sort, Flowspec4.id)
-        sorting_ip4 = getattr(sorter_ip4, order)
-        if comp_func:
-            rules4 = (
-                db.session.query(Flowspec4).filter(comp_func(Flowspec4.expires, today)).order_by(sorting_ip4()).all()
-            )
+    sorter = getattr(Flowspec4, sort, Flowspec4.id)
+    sorting = getattr(sorter, order)
+
+    query = db.session.query(Flowspec4)
+
+    if comp_func:
+        query = query.filter(comp_func(Flowspec4.expires, today))
+
+    query = query.order_by(sorting())
+
+    if paginate:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        return pagination.items, pagination
+    else:
+        return query.all()
+
+
+def _get_flowspec6_rules(rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
+    """Get Flowspec6 rules with optional pagination"""
+
+    today = datetime.now()
+    comp_func = utils.get_comp_func(rule_state)
+
+    sorter = getattr(Flowspec6, sort, Flowspec6.id)
+    sorting = getattr(sorter, order)
+
+    query = db.session.query(Flowspec6)
+
+    if comp_func:
+        query = query.filter(comp_func(Flowspec6.expires, today))
+
+    query = query.order_by(sorting())
+
+    if paginate:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        return pagination.items, pagination
+    else:
+        return query.all()
+
+
+def _get_rtbh_rules(rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
+    """Get RTBH rules with optional pagination"""
+
+    today = datetime.now()
+    comp_func = utils.get_comp_func(rule_state)
+
+    sorter = getattr(RTBH, sort, RTBH.id)
+    sorting = getattr(sorter, order)
+
+    query = db.session.query(RTBH)
+
+    if comp_func:
+        query = query.filter(comp_func(RTBH.expires, today))
+
+    query = query.order_by(sorting())
+
+    if paginate:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        return pagination.items, pagination
+    else:
+        return query.all()
+
+
+def _get_whitelist_rules(rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
+    """Get Whitelist rules with optional pagination"""
+
+    today = datetime.now()
+    comp_func = utils.get_comp_func(rule_state)
+
+    sorter = getattr(Whitelist, sort, Whitelist.id)
+    sorting = getattr(sorter, order)
+
+    query = db.session.query(Whitelist)
+
+    if comp_func:
+        query = query.filter(comp_func(Whitelist.expires, today))
+
+    query = query.order_by(sorting())
+
+    if paginate:
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        return pagination.items, pagination
+    else:
+        return query.all()
+
+
+# Facade function - keeps backward compatibility and config-based routing
+def get_ip_rules(rule_type, rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
+    """
+    Returns list of rules sorted by sort column ordered asc or desc, with optional pagination.
+    This is a facade function that delegates to type-specific handlers.
+
+    Args:
+        rule_type: Type of rule ('ipv4', 'ipv6', 'rtbh', 'whitelist')
+        rule_state: State filter ('active', 'expired', 'all')
+        sort: Column to sort by (default: 'expires')
+        order: Sort order 'asc' or 'desc' (default: 'desc')
+        page: Page number (1-indexed, default: 1)
+        per_page: Number of items per page (default: 50)
+        paginate: If True, return (items, pagination) tuple; if False, return all items
+
+    Returns:
+        If paginate=True: tuple of (list of rules, pagination object)
+        If paginate=False: list of all rules
+    """
+    # Dispatch to appropriate handler
+    handlers = {
+        "ipv4": _get_flowspec4_rules,
+        "ipv6": _get_flowspec6_rules,
+        "rtbh": _get_rtbh_rules,
+        "whitelist": _get_whitelist_rules,
+    }
+
+    handler = handlers.get(rule_type)
+
+    if handler:
+        return handler(rule_state, sort, order, page, per_page, paginate)
+    else:
+        # Unknown rule type
+        if paginate:
+            return [], None
         else:
-            rules4 = db.session.query(Flowspec4).order_by(sorting_ip4()).all()
-
-        return rules4
-
-    if rule_type == "ipv6":
-        sorter_ip6 = getattr(Flowspec6, sort, Flowspec6.id)
-        sorting_ip6 = getattr(sorter_ip6, order)
-        if comp_func:
-            rules6 = (
-                db.session.query(Flowspec6).filter(comp_func(Flowspec6.expires, today)).order_by(sorting_ip6()).all()
-            )
-        else:
-            rules6 = db.session.query(Flowspec6).order_by(sorting_ip6()).all()
-
-        return rules6
-
-    if rule_type == "rtbh":
-        sorter_rtbh = getattr(RTBH, sort, RTBH.id)
-        sorting_rtbh = getattr(sorter_rtbh, order)
-
-        if comp_func:
-            rules_rtbh = db.session.query(RTBH).filter(comp_func(RTBH.expires, today)).order_by(sorting_rtbh()).all()
-
-        else:
-            rules_rtbh = db.session.query(RTBH).order_by(sorting_rtbh()).all()
-
-        return rules_rtbh
-
-    if rule_type == "whitelist":
-        sorter_whitelist = getattr(Whitelist, sort, Whitelist.id)
-        sorting_whitelist = getattr(sorter_whitelist, order)
-
-        if comp_func:
-            rules_whitelist = (
-                db.session.query(Whitelist)
-                .filter(comp_func(Whitelist.expires, today))
-                .order_by(sorting_whitelist())
-                .all()
-            )
-
-        else:
-            rules_whitelist = db.session.query(Whitelist).order_by(sorting_whitelist()).all()
-
-        return rules_whitelist
+            return []
 
 
 def get_user_rules_ids(user_id, rule_type):

@@ -1,5 +1,6 @@
 {% extends 'layouts/default.html' %}
 {% from 'macros.html' import build_ip_tbody, build_rtbh_tbody, build_rules_thead %}
+{% from 'pagination_macro.html' import render_pagination %}
 
 
 {% block title %}Flowspec{% endblock %}
@@ -15,6 +16,9 @@
         {{ dashboard_table_body }}
 
         </table>
+        
+        {# Pagination controls #}
+        {{ render_pagination(pagination, rtype, rstate, sort_key, sort_order, search_query, per_page, per_page_options) }}
     {% else %}
         <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>
     {% endif %}
