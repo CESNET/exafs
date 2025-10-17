@@ -125,7 +125,8 @@ def register_template_filters(app):
             return app.config.get("MISSING_DATETIME_MESSAGE", "Never")
 
         format = "y/MM/dd HH:mm"
-        return babel.dates.format_datetime(value, format)
+        locale = app.config.get("BABEL_DEFAULT_LOCALE", "en_US_POSIX")
+        return babel.dates.format_datetime(value, format, locale=locale)
 
     @app.template_filter("unlimited")
     def unlimited_filter(value):

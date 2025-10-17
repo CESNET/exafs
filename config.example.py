@@ -3,6 +3,8 @@ class Config:
     Default config options
     """
 
+    # Locale for Babel
+    BABEL_DEFAULT_LOCALE = "en_US_POSIX"
     # Limits
     FLOWSPEC4_MAX_RULES = 9000
     FLOWSPEC6_MAX_RULES = 9000
