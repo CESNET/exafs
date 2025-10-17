@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "exafs"
 dynamic = ["version"]
 authors = [
-    {name = "Jiri Vrany", email = "jiri.vrany@cesnet.cz"},
-    {name = "Petr Adamec", email = "petr.adamec@cesnet.cz"},
+    {name = "Jiri Vrany"},
+    {name = "Petr Adamec"},
     {name = "Josef Verich"},
-    {name = "Jakub Man", email = "jakub.man@cesnet.cz"},
+    {name = "Jakub Man"},
 ]
 maintainers = [
     {name = "Jiri Vrany", email = "jiri.vrany@cesnet.cz"}
