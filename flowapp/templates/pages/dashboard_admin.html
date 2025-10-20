@@ -1,4 +1,5 @@
 {% extends 'layouts/default.html' %}
+{% from 'pagination_macro.html' import render_pagination %}
 
 
 {% block title %}Flowspec{% endblock %}
@@ -18,6 +19,10 @@
         </table>
         </form>
     </div>
+    
+    {# Pagination controls #}
+    {{ render_pagination(pagination, rtype, rstate, sort_key, sort_order, search_query, per_page, per_page_options) }}
+    
     <script type="text/javascript" src="{{ url_for('static', filename='js/check_all.js') }}"></script>
     {% else %}
         <h2>There are no {{ rstate|capitalize }} {{ table_title }}.</h2>

@@ -1,5 +1,6 @@
 import subprocess
 from datetime import datetime
+from dataclasses import dataclass
 
 from flask import (
     Blueprint,
@@ -10,7 +11,10 @@ from flask import (
     session,
     make_response,
     abort,
+    redirect,
+    url_for,
 )
+
 from markupsafe import Markup
 from flowapp import models, validators, flowspec
 from flowapp.auth import auth_required
@@ -30,6 +34,12 @@ from flowapp.utils import active_css_rstate, other_rtypes
 
 dashboard = Blueprint("dashboard", __name__, template_folder="templates")
 
+# Pagination constants
+PAGE_ARG = "page"
+PER_PAGE_DEFAULT = 50  # Default number of items per page
+PER_PAGE_OPTIONS = [25, 50, 100, 200]  # Options for items per page
+PER_PAGE_ARG = "per_page"
+
 
 @dashboard.route("/whois/<string:ip_address>", methods=["GET"])
 @auth_required
@@ -48,7 +58,7 @@ def index(rtype=None, rstate="active"):
     """
     dispatcher object for the dashboard
     :param rtype:  ipv4, ipv6, rtbh, whitelist
-    :param rstate:
+    :param rstate: active, expired, all
     :return: view from view factory
     """
 
@@ -73,7 +83,6 @@ def index(rtype=None, rstate="active"):
         view_factory = create_view_response
 
     # get the macros for the current rule type from config
-    # warning no checks here, if the config is set to non existing macro the app will crash
     macro_file = current_app.config["DASHBOARD"].get(rtype).get("macro_file", "macros.html")
     macro_tbody = current_app.config["DASHBOARD"].get(rtype).get("macro_tbody", "build_ip_tbody")
     macro_thead = current_app.config["DASHBOARD"].get(rtype).get("macro_thead", "build_rules_thead")
@@ -81,6 +90,15 @@ def index(rtype=None, rstate="active"):
 
     data_handler_module = current_app.config["DASHBOARD"].get(rtype).get("data_handler", models)
     data_handler_method = current_app.config["DASHBOARD"].get(rtype).get("data_handler_method", "get_ip_rules")
+
+    # Get pagination parameters
+    page = request.args.get(PAGE_ARG, 1, type=int)
+    per_page = request.args.get(PER_PAGE_ARG, PER_PAGE_DEFAULT, type=int)
+
+    # Validate per_page
+    if per_page not in PER_PAGE_OPTIONS:
+        per_page = PER_PAGE_DEFAULT
+
     # get search query, sort order and sort key from request or session
     get_search_query = request.args.get(SEARCH_ARG, session.get(SEARCH_ARG, ""))
     get_sort_key = request.args.get(SORT_ARG, session.get(SORT_ARG, DEFAULT_SORT))
@@ -104,23 +122,55 @@ def index(rtype=None, rstate="active"):
 
     # get the handler and the data
     handler = getattr(data_handler_module, data_handler_method)
-    rules = handler(rtype, rstate, get_sort_key, get_sort_order)
 
-    # Enrich rules with whitelist information
-    rules, whitelist_rule_ids = enrich_rules_with_whitelist_info(rules, rtype)
+    # Determine if we're searching
+    is_searching = bool(get_search_query)
 
-    # search rules
-    if get_search_query:
-        count_match = current_app.config["COUNT_MATCH"]
+    # Always fetch ALL rules first (no pagination at DB level when searching)
+    if is_searching:
+        # Get all rules for search
+        rules = handler(rtype, rstate, get_sort_key, get_sort_order, paginate=False)
+
+        # Perform search on all rules
         rules = filter_rules(rules, get_search_query)
-        # extended search in for all rule types
-        count_match[rtype] = len(rules)
+
+        # Now paginate the search results in memory
+        pagination = paginate_list(rules, page, per_page)
+        # Get the slice of rules for current page
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        rules = rules[start_idx:end_idx]
+
+        # Get counts for other rule types
+        count_match = current_app.config["COUNT_MATCH"]
+        count_match[rtype] = pagination.total
         for other_rtype in other_rtypes(rtype):
-            other_rules = handler(other_rtype, rstate)
+            other_rules = handler(other_rtype, rstate, get_sort_key, get_sort_order, paginate=False)
             other_rules = filter_rules(other_rules, get_search_query)
             count_match[other_rtype] = len(other_rules)
     else:
+        # No search - use normal pagination or fetch all
+        use_pagination = rstate in ["expired", "all"]
+
+        if use_pagination:
+            # Use paginated version from DB
+            rules_data = handler(
+                rtype, rstate, get_sort_key, get_sort_order, page=page, per_page=per_page, paginate=True
+            )
+            if isinstance(rules_data, tuple):
+                rules, pagination = rules_data
+            else:
+                rules = rules_data
+                pagination = None
+        else:
+            # Fetch all rules for 'active' state
+            rules = handler(rtype, rstate, get_sort_key, get_sort_order, paginate=False)
+            pagination = None
+
         count_match = ""
+
+    # Enrich rules with whitelist information
+    rules, whitelist_rule_ids = enrich_rules_with_whitelist_info(rules, rtype)
 
     allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
 
@@ -141,7 +191,88 @@ def index(rtype=None, rstate="active"):
         macro_tfoot=macro_tfoot,
         whitelist_rule_ids=whitelist_rule_ids,
         allowed_communities=allowed_communities,
+        pagination=pagination,
+        per_page=per_page,
+        per_page_options=PER_PAGE_OPTIONS,
     )
+
+
+# Add this route to your dashboard.py Blueprint
+
+
+@dashboard.route("/clear-search")
+@auth_required
+def clear_search():
+    """
+    Clear the search query from session and redirect back to the current view.
+    """
+    # Get current rtype and rstate before clearing
+    rtype = session.get(TYPE_ARG, next(iter(current_app.config["DASHBOARD"].keys())))
+    rstate = session.get(RULE_ARG, "active")
+    sort_key = session.get(SORT_ARG, DEFAULT_SORT)
+    sort_order = session.get(ORDER_ARG, DEFAULT_ORDER)
+
+    # Clear the search query from session
+    session[SEARCH_ARG] = ""
+
+    # Redirect back to dashboard with current settings but no search
+    return redirect(url_for("dashboard.index", rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order))
+
+
+# Helper functions
+
+
+@dataclass
+class Pagination:
+    page: int
+    per_page: int
+    total: int
+    pages: int
+    has_prev: bool
+    has_next: bool
+    prev_num: int = None
+    next_num: int = None
+    first: int = 0
+    last: int = 0
+
+
+def paginate_list(items, page, per_page):
+    """
+    Create a pagination object from a list of items.
+    This mimics SQLAlchemy's pagination for in-memory lists.
+
+    :param items: List of items to paginate
+    :param page: Current page number (1-indexed)
+    :param per_page: Number of items per page
+    :return: Pagination-like object
+    """
+    total = len(items)
+    pages = (total + per_page - 1) // per_page  # Ceiling division
+
+    has_prev = page > 1
+    has_next = page < pages
+
+    prev_num = page - 1 if has_prev else None
+    next_num = page + 1 if has_next else None
+
+    # Calculate first and last item numbers for display
+    first = (page - 1) * per_page + 1 if total > 0 else 0
+    last = min(page * per_page, total)
+
+    pagination = Pagination(
+        page=page,
+        per_page=per_page,
+        total=total,
+        pages=pages,
+        has_prev=has_prev,
+        has_next=has_next,
+        prev_num=prev_num,
+        next_num=next_num,
+        first=first,
+        last=last,
+    )
+
+    return pagination
 
 
 def create_dashboard_table_body(
@@ -260,15 +391,15 @@ def create_admin_response(
     macro_tfoot="build_group_buttons_tfoot",
     whitelist_rule_ids=None,
     allowed_communities=None,
+    pagination=None,
+    per_page=PER_PAGE_DEFAULT,
+    per_page_options=PER_PAGE_OPTIONS,
 ):
     """
     Admin can see and edit any rules
-    :param rtype:
-    :param rstate:
-    :param rules:
-    :param all_actions:
-    :param sort_order:
-    :return:
+    :param pagination: SQLAlchemy pagination object (optional)
+    :param per_page: Number of items per page
+    :param per_page_options: Available options for items per page
     """
     group_op = True if rtype != "whitelist" else False
 
@@ -318,6 +449,9 @@ def create_admin_response(
             sort_key=sort_key,
             sort_order=sort_order,
             search_query=search_query,
+            pagination=pagination,
+            per_page=per_page,
+            per_page_options=per_page_options,
         )
     )
 
@@ -341,12 +475,15 @@ def create_user_response(
     macro_tfoot="build_rules_tfoot",
     whitelist_rule_ids=None,
     allowed_communities=None,
+    pagination=None,
+    per_page=PER_PAGE_DEFAULT,
+    per_page_options=PER_PAGE_OPTIONS,
 ):
     """
     Filter out the rules for normal users
-    :param rules:
-    :param rstate:
-    :return:
+    :param pagination: SQLAlchemy pagination object (optional)
+    :param per_page: Number of items per page
+    :param per_page_options: Available options for items per page
     """
 
     net_ranges = models.get_user_nets(session["user_id"])
@@ -440,6 +577,9 @@ def create_user_response(
             sort_order=sort_order,
             search_query=search_query,
             count_match=count_match,
+            pagination=pagination,
+            per_page=per_page,
+            per_page_options=per_page_options,
         )
     )
 
@@ -463,12 +603,15 @@ def create_view_response(
     macro_tfoot="build_rules_tfoot",
     whitelist_rule_ids=None,
     allowed_communities=None,
+    pagination=None,
+    per_page=PER_PAGE_DEFAULT,
+    per_page_options=PER_PAGE_OPTIONS,
 ):
     """
     Filter out the rules for normal users
-    :param rules:
-    :param rstate:
-    :return:
+    :param pagination: SQLAlchemy pagination object (optional)
+    :param per_page: Number of items per page
+    :param per_page_options: Available options for items per page
     """
     dashboard_table_body = create_dashboard_table_body(
         rules,
@@ -513,6 +656,9 @@ def create_view_response(
             dashboard_table_body=Markup(dashboard_table_body),
             dashboard_table_head=Markup(dashboard_table_head),
             dashboard_table_foot=Markup(dashboard_table_foot),
+            pagination=pagination,
+            per_page=per_page,
+            per_page_options=per_page_options,
         )
     )
 
@@ -520,11 +666,25 @@ def create_view_response(
 
 
 def filter_rules(rules, get_search_query):
+    """
+    Filter rules based on search query.
+    Performs full-text search across all rule fields.
+
+    :param rules: List of rule objects
+    :param get_search_query: Search string
+    :return: Filtered list of rules
+    """
+    if not get_search_query:
+        return rules
+
     rules_serialized = [rule.dict() for rule in rules]
     result = []
+    search_lower = get_search_query.lower()
+
     for idx, rule in enumerate(rules_serialized):
-        full_text = " ".join("{}".format(c) for c in rule.values())
-        if get_search_query.lower() in full_text.lower():
+        # Create a full text string from all values
+        full_text = " ".join(str(val) for val in rule.values())
+        if search_lower in full_text.lower():
             result.append(rules[idx])
 
     return result

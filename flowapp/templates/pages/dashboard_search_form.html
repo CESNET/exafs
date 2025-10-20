@@ -1,0 +1,19 @@
+{% block dashboard_search_form %}
+<form id="dashboard-search" class="navbar-form mx-3" role="search"
+    action="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate) }}">
+    <div class="input-group">
+        <input class="form-control" type="search" name="squery" data-clear-url="{{ url_for('dashboard.clear_search') }}"
+            {% if search_query %} value="{{search_query}}" {% else %} placeholder="Search..." {% endif %}>
+        <button class="btn btn-outline-secondary" type="submit" title="Search">
+            <i class="bi bi-search"></i>
+        </button>
+        {% if search_query %}
+        <a href="{{ url_for('dashboard.clear_search') }}" class="btn btn-outline-danger" title="Clear search">
+            <i class="bi bi-x-circle"></i>
+        </a>
+        {% endif %}
+    </div>
+    <input type="hidden" name="sort" value="{{ sort_key }}" />
+    <input type="hidden" name="order" value="{{ sort_order }}" />
+</form>
+{% endblock %}

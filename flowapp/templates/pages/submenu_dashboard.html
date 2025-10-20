@@ -1,4 +1,3 @@
-
 {% block submenu_dashboard %}
     <div class="container" id="dashboard-nav">
     
@@ -21,34 +20,7 @@
         <div class="col-6">
             <ul class="nav nav-pills justify-content-end">
                 <li class="nav-item"> 
-                    <form id="dashboard-search" class="navbar-form mx-3" role="search" action="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate) }}">
-                     <div class="input-group">
-                        <input 
-                            class="form-control"
-                            type="search" 
-                            name="squery"
-                            {% if search_query %}
-                                value="{{search_query}}"
-                            {% else %}
-                                placeholder="Search..."
-                            {% endif %}    
-                        >
-                        <button class="btn btn-outline-secondary" type="submit">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    
-                    </div>
-                    <input
-                            type="hidden"
-                            name="sort"
-                            value={{ sort_key }}
-                        />
-                        <input
-                            type="hidden"
-                            name="order"
-                            value={{ sort_order }}
-                        />
-                </form>
+                    {% include 'pages/dashboard_search_form.html' %}
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{ css_classes['active'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='active') }}" >Active</a>
@@ -62,6 +34,28 @@
             </ul>
         </div>
     </div>
+    
+    {% if search_query %}
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="alert alert-info alert-dismissible fade show py-2" role="alert">
+                <small>
+                    <i class="bi bi-search"></i> Searching for: <strong>{{ search_query }}</strong>
+                    {% if count_match and count_match[rtype] is defined %}
+                        <span class="badge bg-primary ms-2">{{ count_match[rtype] }} results in {{ rtype|upper }}</span>
+                        {% for other_type, count in count_match.items() %}
+                            {% if other_type != rtype and count > 0 %}
+                                <span class="badge bg-secondary ms-1">{{ count }} in {{ other_type|upper }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </small>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" data-clear-url="{{ url_for('dashboard.clear_search') }}"></button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <hr />
 
 {% endblock %}

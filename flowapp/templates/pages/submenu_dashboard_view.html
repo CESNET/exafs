@@ -21,34 +21,17 @@
                  </div>
                  <div class="col-md-6">
                      <ul class="nav nav-pills pull-right">
-                         <li>
-                             <form class="navbar-form pull-right" role="search" action="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate) }}">
-                                <div class="input-group">
-                                    <input
-                                        class="form-control"
-                                        type="text"
-                                        name="squery"
-                                        {% if search_query %}
-                                            value="{{search_query}}"
-                                        {% else %}
-                                            placeholder="Search..."
-                                        {% endif %}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="sort"
-                                        value={{ sort_key }}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="order"
-                                        value={{ sort_order }}
-                                    />
-                                    <div class="input-group-btn">
-                                        <button class="btn btn-default"><i class="glyphicon glyphicon-search"></i></button>
-                                    </div>
-                                </div>
-                            </form>
+                         <li class="nav-item"> 
+                             {% include 'pages/dashboard_search_form.html' %}
+                         </li>
+                         <li class="nav-item">
+                             <a class="nav-link {{ css_classes['active'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='active') }}" >Active</a>
+                         </li>
+                         <li class="nav-item">
+                             <a class="nav-link {{ css_classes['expired'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='expired') }}" >Expired</a>
+                         </li>
+                         <li class="nav-item">
+                             <a class="nav-link {{ css_classes['all'] }}" href="{{ url_for('dashboard.index', rtype=rtype, rstate='all') }}" >All</a>
                          </li>
                      </ul>
                  </div>

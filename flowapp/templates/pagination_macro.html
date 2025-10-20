@@ -1,0 +1,105 @@
+{# 
+Pagination macro for dashboard tables
+Usage: {{ render_pagination(pagination, rtype, rstate, sort_key, sort_order, search_query, per_page, per_page_options) }}
+Parameters:
+  pagination        - Pagination object containing page info (required)
+  rtype             - Rule type filter (string, required)
+  rstate            - Rule state filter (string, required)
+  sort_key          - Key to sort by (string, required)
+  sort_order        - Sort order, e.g. 'asc' or 'desc' (string, required)
+  search_query      - Search query string (string, optional, default: '')
+  per_page          - Number of items per page (integer, optional, default: 50)
+  per_page_options  - List of selectable items per page (list of integers, optional, default: [25, 50, 100, 200])
+#}
+{% macro render_pagination(pagination, rtype, rstate, sort_key, sort_order, search_query='', per_page=50, per_page_options=[25, 50, 100, 200]) %}
+    {% if pagination %}
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {# Previous button #}
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{% if pagination.has_prev %}{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, page=pagination.prev_num, sort=sort_key, order=sort_order, squery=search_query, per_page=per_page) }}{% else %}#{% endif %}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    
+                    {# Page numbers #}
+                    {% set start_page = [1, pagination.page - 2]|max %}
+                    {% set end_page = [pagination.pages, pagination.page + 2]|min %}
+                    
+                    {# First page #}
+                    {% if start_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, page=1, sort=sort_key, order=sort_order, squery=search_query, per_page=per_page) }}">1</a>
+                    </li>
+                    {% if start_page > 2 %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endif %}
+                    
+                    {# Page range #}
+                    {% for page_num in range(start_page, end_page + 1) %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, page=page_num, sort=sort_key, order=sort_order, squery=search_query, per_page=per_page) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    
+                    {# Last page #}
+                    {% if end_page < pagination.pages %}
+                    {% if end_page < pagination.pages - 1 %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, page=pagination.pages, sort=sort_key, order=sort_order, squery=search_query, per_page=per_page) }}">
+                            {{ pagination.pages }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {# Next button #}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{% if pagination.has_next %}{{ url_for('dashboard.index', rtype=rtype, rstate=rstate, page=pagination.next_num, sort=sort_key, order=sort_order, squery=search_query, per_page=per_page) }}{% else %}#{% endif %}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        
+        <div class="col-md-3">
+            {# Pagination info #}
+            <p class="text-muted mt-2">
+                Showing {{ pagination.first }} - {{ pagination.last }} of {{ pagination.total }} rules
+            </p>
+        </div>
+        
+        <div class="col-md-3">
+            {# Items per page selector #}
+            <form method="GET" class="form-inline float-end">
+                <input type="hidden" name="rtype" value="{{ rtype }}">
+                <input type="hidden" name="rstate" value="{{ rstate }}">
+                <input type="hidden" name="sort" value="{{ sort_key }}">
+                <input type="hidden" name="order" value="{{ sort_order }}">
+                {% if search_query %}
+                <input type="hidden" name="squery" value="{{ search_query }}">
+                {% endif %}
+                <div class="input-group input-group-sm">
+                    <label class="input-group-text" for="per_page_select">Per page:</label>
+                    <select class="form-select" id="per_page_select" name="per_page" onchange="this.form.submit()">
+                        {% for option in per_page_options %}
+                        <option value="{{ option }}" {% if option == per_page %}selected{% endif %}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+{% endmacro %}
