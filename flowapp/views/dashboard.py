@@ -1,5 +1,6 @@
 import subprocess
 from datetime import datetime
+from dataclasses import dataclass
 
 from flask import (
     Blueprint,
@@ -218,7 +219,21 @@ def clear_search():
     return redirect(url_for("dashboard.index", rtype=rtype, rstate=rstate, sort=sort_key, order=sort_order))
 
 
-## Helper functions
+# Helper functions
+
+
+@dataclass
+class Pagination:
+    page: int
+    per_page: int
+    total: int
+    pages: int
+    has_prev: bool
+    has_next: bool
+    prev_num: int = None
+    next_num: int = None
+    first: int = 0
+    last: int = 0
 
 
 def paginate_list(items, page, per_page):
@@ -244,20 +259,18 @@ def paginate_list(items, page, per_page):
     first = (page - 1) * per_page + 1 if total > 0 else 0
     last = min(page * per_page, total)
 
-    class Pagination:
-        pass
-
-    pagination = Pagination()
-    pagination.page = page
-    pagination.per_page = per_page
-    pagination.total = total
-    pagination.pages = pages
-    pagination.has_prev = has_prev
-    pagination.has_next = has_next
-    pagination.prev_num = prev_num
-    pagination.next_num = next_num
-    pagination.first = first
-    pagination.last = last
+    pagination = Pagination(
+        page=page,
+        per_page=per_page,
+        total=total,
+        pages=pages,
+        has_prev=has_prev,
+        has_next=has_next,
+        prev_num=prev_num,
+        next_num=next_num,
+        first=first,
+        last=last,
+    )
 
     return pagination
 
@@ -670,7 +683,7 @@ def filter_rules(rules, get_search_query):
 
     for idx, rule in enumerate(rules_serialized):
         # Create a full text string from all values
-        full_text = " ".join(str(c) for c in rule.values())
+        full_text = " ".join(str(val) for val in rule.values())
         if search_lower in full_text.lower():
             result.append(rules[idx])
 
