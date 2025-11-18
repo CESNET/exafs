@@ -294,6 +294,7 @@ def create_or_update_rtbh_rule(
     flashes = []
     if model:
         model.expires = round_to_ten_minutes(form_data["expires"])
+        model.rstate_id = get_state_by_time(form_data["expires"])
         flashes.append("Existing RTBH Rule found. Expiration time was updated to new value.")
     else:
         # Create new model
