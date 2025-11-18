@@ -523,7 +523,7 @@ def test_create_rtbh_lmit(client, db, app, jwt_token):
     """
     with app.app_context():
         org = db.session.query(Organization).filter_by(id=1).first()
-        org.limit_rtbh = 2
+        org.limit_rtbh = 1
         db.session.commit()
 
     sources = ["147.230.17.42", "147.230.17.43"]
