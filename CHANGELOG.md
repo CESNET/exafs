@@ -5,6 +5,11 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.9] - 2025-11-18
+
+### Fixed
+- bugfix for #74 new RTBH records can be created in wrong state
+
 ## [1.1.8] - 2025-10-20
 
 ### Fixed
