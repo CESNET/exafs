@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
-from flask import Flask, redirect, render_template, session, url_for
+from flask import Flask, redirect, render_template, session, url_for, flash
 
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
@@ -128,11 +127,15 @@ def create_app(config_object=None):
         user = db.session.query(models.User).filter_by(uuid=uuid).first()
 
         if user is None:
-            return render_template("errors/404.html"), 404  # Handle missing user gracefully
+            return render_template("errors/404.html"), 404
 
         orgs = user.organization
         if org_id:
-            org = db.session.query(models.Organization).filter_by(id=org_id).first()
+            # Verify user belongs to this organization
+            org = user.organization.filter_by(id=org_id).first()
+            if not org:
+                flash("You don't have access to this organization", "alert-danger")
+                return redirect(url_for("index"))
             session["user_org_id"] = org.id
             session["user_org"] = org.name
             return redirect("/")

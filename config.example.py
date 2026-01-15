@@ -10,11 +10,6 @@ class Config:
     FLOWSPEC6_MAX_RULES = 9000
     RTBH_MAX_RULES = 100000
 
-    # Flask debugging
-    DEBUG = True
-    # Flask testing
-    TESTING = False
-
     # Choose your authentication method and set it to True here or
     # the production / development config
     # SSO auth enabled
@@ -104,6 +99,8 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = "Your Local Database URI"
     LOCAL_IP = "127.0.0.1"
     LOCAL_IP6 = "::ffff:127.0.0.1"
+
+    # Debug and Devel mode enabled
     DEBUG = True
     DEVEL = True
 
