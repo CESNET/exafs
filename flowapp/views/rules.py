@@ -148,7 +148,7 @@ def reactivate_rule(rule_type, rule_id):
     )
 
 
-@rules.route("/delete/<int:rule_type>/<int:rule_id>", methods=["GET"])
+@rules.route("/delete/<int:rule_type>/<int:rule_id>", methods=["POST"])
 @auth_required
 @user_or_admin_required
 def delete_rule(rule_type, rule_id):
@@ -205,7 +205,7 @@ def delete_rule(rule_type, rule_id):
     )
 
 
-@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["GET"])
+@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["POST"])
 @auth_required
 @user_or_admin_required
 def delete_and_whitelist(rule_type, rule_id):
