@@ -52,9 +52,12 @@
                 <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="set expiration">
                     <i class="bi bi-clock table-icon"></i>
                 </a>
-                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
-                    <i class="bi bi-x-lg"></i>
-                </a>
+                <form method="POST" action="{{ url_for('rules.delete_rule', rule_type=rtype_int, rule_id=rule.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this rule?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </form>
             {% endif %}
             {% if rule.comment %}
                 <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
@@ -108,14 +111,20 @@
                 <a class="btn btn-info btn-sm" href="{{ url_for('rules.reactivate_rule', rule_type=1, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="set expiration">
                     <i class="bi bi-clock table-icon"></i>
                 </a>
-                <a class="btn btn-danger btn-sm" href="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-                {% if rule.community.id in allowed_communities %}    
-                    <a class="btn btn-success btn-sm" href="{{ url_for('rules.delete_and_whitelist', rule_type=1, rule_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="whitelist and delete">
-                        <i class="bi bi-shield-x"></i>
-                    </a>
-                {% endif %}    
+                <form method="POST" action="{{ url_for('rules.delete_rule', rule_type=1, rule_id=rule.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this rule?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </form>
+                {% if rule.community.id in allowed_communities %}
+                    <form method="POST" action="{{ url_for('rules.delete_and_whitelist', rule_type=1, rule_id=rule.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to whitelist and delete this rule?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="whitelist and delete">
+                            <i class="bi bi-shield-x"></i>
+                        </button>
+                    </form>
+                {% endif %}
             {% endif %}
             {% if rule.comment %}
             <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">
@@ -153,9 +162,12 @@
         <a class="btn btn-info btn-sm" href="{{ url_for('whitelist.reactivate', wl_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="set expiration">
             <i class="bi bi-clock table-icon"></i>
         </a>
-        <a class="btn btn-danger btn-sm" href="{{ url_for('whitelist.delete', wl_id=rule.id) }}" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
-            <i class="bi bi-x-lg"></i>
-        </a>
+        <form method="POST" action="{{ url_for('whitelist.delete', wl_id=rule.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this whitelist?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="delete">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </form>
         {% endif %}
         {% if rule.comment %}
            <button type="button" class="btn btn-info btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ rule.comment }}">

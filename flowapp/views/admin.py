@@ -104,7 +104,7 @@ def add_machine_key():
     return render_template("forms/machine_api_key.html", form=form, generated_key=generated)
 
 
-@admin.route("/delete_machine_key/<int:key_id>", methods=["GET"])
+@admin.route("/delete_machine_key/<int:key_id>", methods=["POST"])
 @auth_required
 @admin_required
 def delete_machine_key(key_id):
@@ -113,6 +113,9 @@ def delete_machine_key(key_id):
     :param key_id: integer
     """
     model = db.session.get(MachineApiKey, key_id)
+    if not model:
+        flash("Key not found", "alert-danger")
+        return redirect(url_for("admin.machine_keys"))
     # delete from db
     db.session.delete(model)
     db.session.commit()
@@ -181,7 +184,7 @@ def edit_user(user_id):
     )
 
 
-@admin.route("/user/delete/<int:user_id>", methods=["GET"])
+@admin.route("/user/delete/<int:user_id>", methods=["POST"])
 @auth_required
 @admin_required
 def delete_user(user_id):
@@ -387,11 +390,14 @@ def edit_organization(org_id):
     )
 
 
-@admin.route("/organization/delete/<int:org_id>", methods=["GET"])
+@admin.route("/organization/delete/<int:org_id>", methods=["POST"])
 @auth_required
 @admin_required
 def delete_organization(org_id):
     org = db.session.get(Organization, org_id)
+    if not org:
+        flash("Organization not found", "alert-danger")
+        return redirect(url_for("admin.organizations"))
     aname = org.name
     db.session.delete(org)
     message = "Organization {} deleted".format(aname)
@@ -465,11 +471,14 @@ def edit_as_path(path_id):
     )
 
 
-@admin.route("/as-path/delete/<int:path_id>", methods=["GET"])
+@admin.route("/as-path/delete/<int:path_id>", methods=["POST"])
 @auth_required
 @admin_required
 def delete_as_path(path_id):
     pth = db.session.get(ASPath, path_id)
+    if not pth:
+        flash("AS path not found", "alert-danger")
+        return redirect(url_for("admin.as_paths"))
     db.session.delete(pth)
     message = f"AS path {pth.prefix} : {pth.as_path} deleted"
     alert_type = "alert-success"
@@ -544,11 +553,14 @@ def edit_action(action_id):
     )
 
 
-@admin.route("/action/delete/<int:action_id>", methods=["GET"])
+@admin.route("/action/delete/<int:action_id>", methods=["POST"])
 @auth_required
 @admin_required
 def delete_action(action_id):
     action = db.session.get(Action, action_id)
+    if not action:
+        flash("Action not found", "alert-danger")
+        return redirect(url_for("admin.actions"))
     aname = action.name
     db.session.delete(action)
 
@@ -628,11 +640,14 @@ def edit_community(community_id):
     )
 
 
-@admin.route("/community/delete/<int:community_id>", methods=["GET"])
+@admin.route("/community/delete/<int:community_id>", methods=["POST"])
 @auth_required
 @admin_required
 def delete_community(community_id):
     community = db.session.get(Community, community_id)
+    if not community:
+        flash("Community not found", "alert-danger")
+        return redirect(url_for("admin.communities"))
     aname = community.name
     db.session.delete(community)
     message = "Community {} deleted".format(aname)
