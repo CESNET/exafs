@@ -25,9 +25,12 @@
         <a class="btn btn-info btn-sm" href="{{ url_for('admin.edit_action', action_id=action.id) }}" role="button">
             <i class="bi bi-pen"></i>
         </a>
-        <a class="btn btn-danger btn-sm" href="{{ url_for('admin.delete_action', action_id=action.id) }}" role="button">
-            <i class="bi bi-x-lg"></i>
-        </a>
+        <form method="POST" action="{{ url_for('admin.delete_action', action_id=action.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this action?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </form>
         </td>
         </tr>
     {% endfor %}

@@ -48,11 +48,13 @@ def admin_required(f):
 def user_or_admin_required(f):
     """
     decorator for admin/user endpoints
+    Allows access if the user has at least one role with ID > 1 (user or admin)
+    Role IDs: 1=view (read-only), 2=user (can create/edit), 3=admin
     """
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not all(i > 1 for i in session["user_role_ids"]):
+        if not any(i > 1 for i in session["user_role_ids"]):
             return redirect(url_for("index"))
         return f(*args, **kwargs)
 

@@ -100,7 +100,7 @@ def reactivate(wl_id):
     )
 
 
-@whitelist.route("/delete/<int:wl_id>", methods=["GET"])
+@whitelist.route("/delete/<int:wl_id>", methods=["POST"])
 @auth_required
 @user_or_admin_required
 def delete(wl_id):

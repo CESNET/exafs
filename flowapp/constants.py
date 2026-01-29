@@ -35,9 +35,9 @@ IPV6_DEFMASK = 128
 MAX_PORT = 65535
 MAX_PACKET = 9216
 
-IPV6_NEXT_HEADER = {"tcp": "tcp", "udp": "udp", "icmp": "58", "all": ""}
+IPV6_NEXT_HEADER = {"tcp": "tcp", "udp": "udp", "icmp": "58", "gre": "gre", "all": ""}
 
-IPV4_PROTOCOL = {"tcp": "tcp", "udp": "udp", "icmp": "icmp", "all": ""}
+IPV4_PROTOCOL = {"tcp": "tcp", "udp": "udp", "icmp": "icmp", "gre": "gre", "all": ""}
 
 IPV4_FRAGMENT = {
     "dont": "dont-fragment",

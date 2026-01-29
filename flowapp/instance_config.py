@@ -102,8 +102,14 @@ class InstanceConfig:
                 "divide_before": True,
             },
             {"name": "Add action", "url": "admin.action"},
-            {"name": "RTBH Communities", "url": "admin.communities"},
+            {
+                "name": "RTBH Communities",
+                "url": "admin.communities",
+                "divide_before": True,
+            },
             {"name": "Add RTBH Comm.", "url": "admin.community"},
+            {"name": "AS Paths", "url": "admin.as_paths"},
+            {"name": "Add AS Path", "url": "admin.as_path"},
         ],
     }
     DASHBOARD = {

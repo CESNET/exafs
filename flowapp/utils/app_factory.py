@@ -169,17 +169,13 @@ def register_auth_handlers(app, ext):
 
     @app.route("/local-login")
     def local_login():
-        print("Local login started")
         if not app.config.get("LOCAL_AUTH", False):
-            print("Local auth not enabled")
             return render_template("errors/401.html")
 
         uuid = app.config.get("LOCAL_USER_UUID", False)
         if not uuid:
-            print("Local user not set")
             return render_template("errors/401.html")
 
-        print(f"Local login with {uuid}")
         return _handle_login(uuid, app)
 
     return app
@@ -211,9 +207,7 @@ def _register_user_to_session(uuid, db):
     """Register user information to session."""
     from flowapp.models import User
 
-    print(f"Registering user {uuid} to session")
     user = db.session.query(User).filter_by(uuid=uuid).first()
-    print(f"Got user {user} from DB")
     session["user_uuid"] = user.uuid
     session["user_email"] = user.uuid
     session["user_name"] = user.name

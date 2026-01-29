@@ -148,7 +148,7 @@ def reactivate_rule(rule_type, rule_id):
     )
 
 
-@rules.route("/delete/<int:rule_type>/<int:rule_id>", methods=["GET"])
+@rules.route("/delete/<int:rule_type>/<int:rule_id>", methods=["POST"])
 @auth_required
 @user_or_admin_required
 def delete_rule(rule_type, rule_id):
@@ -205,7 +205,7 @@ def delete_rule(rule_type, rule_id):
     )
 
 
-@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["GET"])
+@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["POST"])
 @auth_required
 @user_or_admin_required
 def delete_and_whitelist(rule_type, rule_id):
@@ -301,7 +301,7 @@ def group_delete():
     to_delete = request.form.getlist("delete-id")
 
     # Check if user has permission to delete these rules
-    if set(to_delete).issubset(set(allowed_rules_str)) or is_admin(session["user_roles"]):
+    if set(to_delete).issubset(set(allowed_rules_str)) or is_admin(session["user_role_ids"]):
         for rule_id in to_delete:
             # withdraw route
             model = db.session.get(model_name, rule_id)
@@ -357,7 +357,7 @@ def group_update():
     allowed_rules_str = [str(x) for x in allowed_rule_ids]
 
     # redirect bad request
-    if not set(to_update).issubset(set(allowed_rules_str)) and not is_admin(session["user_roles"]):
+    if not set(to_update).issubset(set(allowed_rules_str)) and not is_admin(session["user_role_ids"]):
         flash("You can't edit these rules!", "alert-danger")
         return redirect(
             url_for(
