@@ -5,6 +5,21 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-29
+
+### Security
+- Changed delete operations from GET to POST requests to prevent CSRF attacks
+- Fixed possible wrong behavior of `admin_or_user_required` auth decorator
+- Fixed wrong session key in `rules.py` `is_admin` function
+
+### Added
+- GRE protocol support
+- AS Paths added to admin menu
+
+### Changed
+- Tests moved outside `flowapp` package
+- Updated documentation schema
+
 ## [1.1.9] - 2025-11-18
 
 ### Fixed
@@ -264,6 +279,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Route Distinguisher for VRF now supported
 - See config example and update your `config.py`
 
+[1.2.0]: https://github.com/CESNET/exafs/compare/v1.1.9...v1.2.0
+[1.1.9]: https://github.com/CESNET/exafs/compare/v1.1.8...v1.1.9
+[1.1.8]: https://github.com/CESNET/exafs/compare/v1.1.7...v1.1.8
+[1.1.7]: https://github.com/CESNET/exafs/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/CESNET/exafs/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/CESNET/exafs/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/CESNET/exafs/compare/v1.1.3...v1.1.4
