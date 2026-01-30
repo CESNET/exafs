@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask_wtf.csrf import validate_csrf
+from wtforms import ValidationError
 
 from flowapp.auth import (
     auth_required,
@@ -100,7 +102,7 @@ def reactivate(wl_id):
     )
 
 
-@whitelist.route("/delete/<int:wl_id>", methods=["POST"])
+@whitelist.route("/delete/<int:wl_id>", methods=["GET"])
 @auth_required
 @user_or_admin_required
 def delete(wl_id):
@@ -108,6 +110,13 @@ def delete(wl_id):
     Delete whitelist
     :param wl_id: integer - id of the whitelist
     """
+    # Validate CSRF token from query parameter
+    try:
+        validate_csrf(request.args.get("csrf_token", ""))
+    except ValidationError:
+        flash("CSRF token missing or invalid.", "alert-danger")
+        return redirect(url_for("dashboard.index"))
+
     # Check if user can modify this whitelist
     if check_user_can_modify_rule(wl_id, "whitelist"):
         messages = delete_whitelist(wl_id)
