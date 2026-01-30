@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask_wtf.csrf import validate_csrf
+from wtforms import ValidationError
 
 from flowapp import constants, db
 from flowapp.auth import (
@@ -148,7 +150,7 @@ def reactivate_rule(rule_type, rule_id):
     )
 
 
-@rules.route("/delete/<int:rule_type>/<int:rule_id>", methods=["POST"])
+@rules.route("/delete/<int:rule_type>/<int:rule_id>", methods=["GET"])
 @auth_required
 @user_or_admin_required
 def delete_rule(rule_type, rule_id):
@@ -157,6 +159,13 @@ def delete_rule(rule_type, rule_id):
     :param rule_type: integer - type of rule to be deleted
     :param rule_id: integer - rule id
     """
+    # Validate CSRF token from query parameter
+    try:
+        validate_csrf(request.args.get("csrf_token", ""))
+    except ValidationError:
+        flash("CSRF token missing or invalid.", "alert-danger")
+        return redirect(url_for("dashboard.index"))
+
     # Convert the integer rule_type to RuleTypes enum
     enum_rule_type = RuleTypes(rule_type)
 
@@ -205,13 +214,20 @@ def delete_rule(rule_type, rule_id):
     )
 
 
-@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["POST"])
+@rules.route("/delete_and_whitelist/<int:rule_type>/<int:rule_id>", methods=["GET"])
 @auth_required
 @user_or_admin_required
 def delete_and_whitelist(rule_type, rule_id):
     """
     Delete an RTBH rule and create a whitelist entry from it.
     """
+    # Validate CSRF token from query parameter
+    try:
+        validate_csrf(request.args.get("csrf_token", ""))
+    except ValidationError:
+        flash("CSRF token missing or invalid.", "alert-danger")
+        return redirect(url_for("dashboard.index"))
+
     if rule_type != RuleTypes.RTBH.value:
         flash("Only RTBH rules can be converted to whitelists", "alert-warning")
         return redirect(url_for("index"))
