@@ -18,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Custom styles for this template -->
-    <link href="/static/mystyle.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='mystyle.css') }}" rel="stylesheet">
     <!-- Add more styles or javacsript if needed in template -->
     {% block head %}{% endblock %}
 
@@ -55,7 +55,7 @@
                   {% endfor %}
                   <li><hr class="dropdown-divider"></li>
                   <li><span class="dropdown-item">ExaFS version {{ session['app_version'] }}</span></li>
-                  <li><a class="dropdown-item" href="/apidocs/">API docs</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('flasgger.apidocs') }}">API docs</a></li>
                 </ul>
               </li>
               {% endif %}
@@ -111,9 +111,9 @@
       </div>
     </footer>
 
-    <script type="text/javascript" src="/static/js/ip_context.js"></script>  
-    <script type="text/javascript" src="/static/js/enable_tooltips.js"></script>
-    <script type="text/javascript" src="/static/js/search_helpers.js"></script>  
+    <script type="text/javascript" src="{{ url_for('static', filename='js/ip_context.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/enable_tooltips.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/search_helpers.js') }}"></script>  
     
   </body>
 </html>
