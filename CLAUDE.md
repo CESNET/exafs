@@ -115,7 +115,9 @@ exafs/
 ├── config.example.py         # Configuration template
 ├── instance_config_override.example.py # Dashboard override template
 ├── run.example.py            # Application run script template
-├── db-init.py                # Database initialization script
+├── db-init.py                # Database initialization (runs flask db upgrade)
+├── scripts/
+│   └── migrate_v0x_to_v1.py  # Optional v0.x to v1.0+ migration helper
 ├── pyproject.toml            # Project metadata and dependencies
 ├── setup.cfg                 # Setup configuration
 ├── CHANGELOG.md              # Version history
@@ -283,7 +285,7 @@ cp run.example.py run.py
 
 # Edit config.py with database credentials and settings
 
-# Initialize database
+# Initialize database (runs flask db upgrade)
 python db-init.py
 
 # Run tests
@@ -295,8 +297,10 @@ python run.py
 
 ### Database Migrations
 
+Migration files are tracked in `migrations/versions/` and committed to git.
+
 ```bash
-# Create a new migration
+# Create a new migration after model changes
 flask db migrate -m "Description of changes"
 
 # Apply migrations
@@ -304,6 +308,9 @@ flask db upgrade
 
 # Rollback migration
 flask db downgrade
+
+# For existing databases adopting migrations for the first time
+flask db stamp 001_baseline
 ```
 
 ### Running Tests
@@ -788,7 +795,9 @@ flask db upgrade                       # Apply migrations
 flake8 .                              # Lint code
 
 # Database
-python db-init.py                      # Initialize database
+python db-init.py                      # Initialize database (runs migrations)
+python db-init.py --reset              # Drop all tables and recreate (dev only)
+flask db stamp 001_baseline            # Mark existing DB as baseline
 flask db current                       # Show current migration
 flask db history                       # Show migration history
 
@@ -804,7 +813,7 @@ supervisorctl status                   # Check status
 When working with this codebase:
 
 1. **Always run tests** after making changes: `pytest`
-2. **Create migrations** for model changes: `flask db migrate`
+2. **Create migrations** for model changes: `flask db migrate` — commit migration files to git
 3. **Follow the service layer pattern** - business logic goes in services, not views
 4. **Use existing validators** in `flowapp/validators.py` for validation
 5. **Check authentication** - most routes need `@auth_required` decorator

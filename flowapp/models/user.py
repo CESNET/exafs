@@ -72,6 +72,7 @@ class Role(db.Model):
 
 
 # Event listeners for Role
+# Note: seed data is also defined in migrations/versions/001_baseline.py - keep in sync
 @event.listens_for(Role.__table__, "after_create")
 def insert_initial_roles(table, conn, *args, **kwargs):
     conn.execute(table.insert().values(name="view", description="just view, no edit"))

@@ -1,39 +1,46 @@
+"""
+Initialize the ExaFS database using Alembic migrations.
 
-from flask import Flask
-from flowapp import db
-from flowapp.models import *
+Usage:
+    python db-init.py            # Create database from baseline migration
+    python db-init.py --reset    # Drop all tables first, then recreate (DESTRUCTIVE)
+"""
 
-import config
-from os import environ
+import sys
+
+from flask_migrate import upgrade
+from flowapp import create_app, db
 
 
-def create_app():
-    app = Flask('FlowSpecDB init')
-    # Configurations
-    try:
-        env = environ['USERNAME']
-    except KeyError as e:
-        env = 'Production'
-
-    if env == 'albert':
-        print("DEVEL")
-        app.config.from_object(config.DevelopmentConfig)
-    else:
-        print("PRODUCTION")
-        app.config.from_object(config.ProductionConfig)
-
-    db.init_app(app)
+def init_db(reset=False):
+    app = create_app()
 
     with app.app_context():
-        print("#: cleaning database")
-        db.reflect()
-        db.drop_all()
-        print("#: creating tables")
-        db.create_all()
+        if reset:
+            print("#: WARNING - dropping all tables")
+            db.reflect()
+            db.drop_all()
+            # Also remove alembic_version if it exists
+            from sqlalchemy import text
+
+            try:
+                db.session.execute(text("DROP TABLE IF EXISTS alembic_version"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        print("#: running migrations (flask db upgrade)")
+        upgrade()
+        print("#: database initialized successfully")
 
 
-    return app
+if __name__ == "__main__":
+    reset = "--reset" in sys.argv
+    if reset:
+        print("Reset mode: all existing data will be DESTROYED.")
+        confirm = input("Are you sure? (yes/no): ")
+        if confirm.lower() != "yes":
+            print("Aborted.")
+            sys.exit(0)
 
-
-if __name__ == '__main__':
-    create_app().app_context().push()
+    init_db(reset=reset)

@@ -32,6 +32,7 @@ class Action(db.Model):
 
 
 # Event listeners for Rstate
+# Note: seed data is also defined in migrations/versions/001_baseline.py - keep in sync
 @event.listens_for(Rstate.__table__, "after_create")
 def insert_initial_rulestates(table, conn, *args, **kwargs):
     conn.execute(table.insert().values(description="active rule"))
@@ -40,6 +41,7 @@ def insert_initial_rulestates(table, conn, *args, **kwargs):
     conn.execute(table.insert().values(description="whitelisted rule"))
 
 
+# Note: seed data is also defined in migrations/versions/001_baseline.py - keep in sync
 @event.listens_for(Action.__table__, "after_create")
 def insert_initial_actions(table, conn, *args, **kwargs):
     conn.execute(

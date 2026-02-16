@@ -45,6 +45,7 @@ class ASPath(db.Model):
     # Methods and initializer
 
 
+# Note: seed data is also defined in migrations/versions/001_baseline.py - keep in sync
 @event.listens_for(Community.__table__, "after_create")
 def insert_initial_communities(table, conn, *args, **kwargs):
     conn.execute(
