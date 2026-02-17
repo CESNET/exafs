@@ -80,4 +80,6 @@ flowapp = [
     "templates/forms/*",
     "templates/layouts/*",
     "templates/pages/*",
+    "migrations/*",
+    "migrations/versions/*",
 ]

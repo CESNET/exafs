@@ -1,6 +1,6 @@
 # Database Migrations
 
-ExaFS uses [Flask-Migrate](https://flask-migrate.readthedocs.io/) (Alembic) for database schema management. All migration files are tracked in the `migrations/` directory.
+ExaFS uses [Flask-Migrate](https://flask-migrate.readthedocs.io/) (Alembic) for database schema management. Migration files are shipped inside the `flowapp` package (`flowapp/migrations/`) and are found automatically — no `flask db init` is needed.
 
 ## New Installation
 
@@ -38,9 +38,12 @@ Some deployments previously ran `flask db init` to create a local `migrations/` 
    ```bash
    rm -rf migrations/
    ```
-   Then pull or copy the project's `migrations/` directory from git.
+   Migrations are now bundled inside the `flowapp` pip package — no local directory needed.
 
-2. **Stamp the database** to register the baseline revision without re-running it (your schema is already up to date):
+2. **Clear the old alembic_version** and **stamp the baseline** to register with the official migration track (your schema is already up to date):
+   ```sql
+   DELETE FROM alembic_version;
+   ```
    ```bash
    flask db stamp 001_baseline
    ```
@@ -86,7 +89,7 @@ When you modify a database model, create a new migration:
 flask db migrate -m "Description of changes"
 ```
 
-Review the generated file in `migrations/versions/`, then apply it:
+Review the generated file in `flowapp/migrations/versions/`, then apply it:
 
 ```bash
 flask db upgrade

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+
 from flask import Flask, redirect, render_template, session, url_for, flash
 
 from flask_sso import SSO
@@ -13,9 +15,11 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from .__about__ import __version__
 from .instance_config import InstanceConfig
 
+# Migrations directory lives inside the package so it ships with pip install
+_migrations_dir = os.path.join(os.path.dirname(__file__), "migrations")
 
 db = SQLAlchemy()
-migrate = Migrate()
+migrate = Migrate(directory=_migrations_dir)
 csrf = CSRFProtect()
 ext = SSO()
 sess = Session()

@@ -1,4 +1,4 @@
-__version__ = "1.2.2"
+__version__ = "1.2.2b2"
 __title__ = "ExaFS"
 __description__ = "Tool for creation, validation, and execution of ExaBGP messages."
 __author__ = "CESNET / Jiri Vrany, Petr Adamec, Josef Verich, Jakub Man"
