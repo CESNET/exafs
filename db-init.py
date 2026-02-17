@@ -7,13 +7,22 @@ Usage:
 """
 
 import sys
+from os import environ
 
 from flask_migrate import upgrade
 from flowapp import create_app, db
 
+import config
+
 
 def init_db(reset=False):
-    app = create_app()
+    exafs_env = environ.get("EXAFS_ENV", "Production").lower()
+    if exafs_env in ("devel", "development"):
+        app = create_app(config.DevelopmentConfig)
+    else:
+        app = create_app(config.ProductionConfig)
+
+    db.init_app(app)
 
     with app.app_context():
         if reset:

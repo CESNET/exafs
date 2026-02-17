@@ -14,14 +14,23 @@ After running this script, stamp the baseline migration:
     flask db stamp 001_baseline
 """
 
-from flask import Flask
+from os import environ
+
 from flowapp import create_app, db
 from flowapp.models import Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey
 from sqlalchemy import text
 
+import config
+
 
 def migrate_org_data():
-    app = create_app()
+    exafs_env = environ.get("EXAFS_ENV", "Production").lower()
+    if exafs_env in ("devel", "development"):
+        app = create_app(config.DevelopmentConfig)
+    else:
+        app = create_app(config.ProductionConfig)
+
+    db.init_app(app)
 
     with app.app_context():
         # Step 1: Set NULL organization limits to 0
@@ -63,9 +72,7 @@ def migrate_org_data():
                     row.org_id = orgs[0].id
                     updated += 1
                 else:
-                    users_with_multiple_orgs[row.user.email] = [
-                        org.name for org in orgs
-                    ]
+                    users_with_multiple_orgs[row.user.email] = [org.name for org in orgs]
 
             try:
                 db.session.commit()
@@ -82,13 +89,9 @@ def migrate_org_data():
             print("\nUsers with multiple organizations (need manual assignment):")
             for email, orgs in users_with_multiple_orgs.items():
                 print(f"  {email}: {', '.join(orgs)}")
-            print(
-                "\nPlease manually assign org_id for rules belonging to these users."
-            )
+            print("\nPlease manually assign org_id for rules belonging to these users.")
         else:
             print("\nAll records assigned successfully.")
-
-        print("\nNext step: flask db stamp 001_baseline")
 
 
 if __name__ == "__main__":
