@@ -67,12 +67,18 @@ def migrate_org_data():
 
             updated = 0
             for row in data_records:
-                orgs = row.user.organization.all()
+                user = getattr(row, "user", None)
+                if user is None:
+                    # Skip records that have no associated user to avoid AttributeError
+                    # and leave them for potential manual investigation.
+                    print(f"  {model_name}: skipping record id={getattr(row, 'id', 'unknown')} with no associated user")
+                    continue
+                orgs = user.organization.all()
                 if len(orgs) == 1:
                     row.org_id = orgs[0].id
                     updated += 1
                 else:
-                    users_with_multiple_orgs[row.user.email] = [org.name for org in orgs]
+                    users_with_multiple_orgs[user.email] = [org.name for org in orgs]
 
             try:
                 db.session.commit()
