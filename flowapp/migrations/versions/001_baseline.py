@@ -41,7 +41,9 @@ def _column_exists(table_name, column_name):
 def _table_has_data(table_name):
     """Check if a table has any rows."""
     conn = op.get_bind()
-    result = conn.execute(sa.text(f"SELECT COUNT(*) FROM `{table_name}`"))
+    table_clause = sa.table(table_name)
+    stmt = sa.select(sa.func.count()).select_from(table_clause)
+    result = conn.execute(stmt)
     return result.scalar() > 0
 
 
