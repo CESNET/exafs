@@ -295,6 +295,18 @@ def upgrade():
                 nullable=False,
             ),
         )
+    else:
+        # Ensure machine_api_key has all expected columns
+        if not _column_exists("machine_api_key", "org_id"):
+            op.add_column(
+                "machine_api_key",
+                sa.Column(
+                    "org_id",
+                    sa.Integer(),
+                    sa.ForeignKey("organization.id"),
+                    nullable=True,
+                ),
+            )
 
     # --- Rule tables ---
 
