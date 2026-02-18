@@ -272,6 +272,7 @@ def upgrade():
                     sa.Integer(),
                     sa.ForeignKey("organization.id"),
                     nullable=True,
+                    server_default="0",
                 ),
             )
 
