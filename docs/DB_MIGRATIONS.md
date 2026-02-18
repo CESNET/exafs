@@ -76,8 +76,8 @@ python scripts/migrate_v0x_to_v1.py
 
 This script:
 1. Sets NULL organization limits to 0
-2. Assigns rules with `org_id=0` to the user's organization
-3. Reports users with multiple organizations that need manual assignment
+2. Helps assign existing rules to organizations based on users' organizations
+3. Reports users with multiple organizations or ambiguous rule ownership that need manual assignment
 
 Feel free to contact jiri.vrany@cesnet.cz if you need help with the migration.
 
