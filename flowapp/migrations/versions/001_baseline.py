@@ -129,6 +129,13 @@ def upgrade():
             sa.Column("rule_id", sa.Integer()),
             sa.Column("user_id", sa.Integer()),
         )
+    else:
+        # Add author column if missing (pre-v0.5 databases)
+        if not _column_exists("log", "author"):
+            op.add_column(
+                "log",
+                sa.Column("author", sa.String(length=1000)),
+            )
 
     # --- Junction tables ---
 
@@ -210,6 +217,13 @@ def upgrade():
             sa.column("role_id", sa.Integer),
         )
         _seed_communities = False
+        # Add community columns if missing (pre-v0.7 databases)
+        for col_name in ("comm", "larcomm", "extcomm"):
+            if not _column_exists("community", col_name):
+                op.add_column(
+                    "community",
+                    sa.Column(col_name, sa.String(length=2047)),
+                )
         # Add as_path column if missing (pre-v1.1 databases)
         if not _column_exists("community", "as_path"):
             op.add_column(
@@ -489,6 +503,19 @@ def upgrade():
                 },
             ],
         )
+
+    # Ensure rstate has the "whitelisted rule" entry (id=4, added in v1.1.0)
+    if not _seed_rstates and _table_has_data("rstate"):
+        conn = op.get_bind()
+        result = conn.execute(
+            sa.text("SELECT COUNT(*) FROM rstate WHERE id = 4")
+        )
+        if result.scalar() == 0:
+            conn.execute(
+                sa.text(
+                    "INSERT INTO rstate (id, description) VALUES (4, 'whitelisted rule')"
+                )
+            )
 
     if _seed_rstates and not _table_has_data("rstate"):
         op.bulk_insert(
