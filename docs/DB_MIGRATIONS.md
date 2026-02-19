@@ -13,7 +13,7 @@ flask db upgrade
 Or use the init script:
 
 ```bash
-python db-init.py
+python scripts/db-init.py
 ```
 
 ## Upgrading Between Versions
@@ -102,7 +102,7 @@ Commit the migration file to git so other deployments can apply it.
 To completely reset the database during development:
 
 ```bash
-python db-init.py --reset
+python scripts/db-init.py --reset
 ```
 
 This drops all tables and recreates them from scratch. **Do not use in production.**

@@ -115,8 +115,9 @@ exafs/
 ├── config.example.py         # Configuration template
 ├── instance_config_override.example.py # Dashboard override template
 ├── run.example.py            # Application run script template
-├── db-init.py                # Database initialization (runs flask db upgrade)
 ├── scripts/
+│   ├── db-init.py            # Database initialization (runs flask db upgrade)
+│   ├── create-admin.py       # Interactive first admin user setup
 │   └── migrate_v0x_to_v1.py  # Optional v0.x to v1.0+ migration helper
 ├── pyproject.toml            # Project metadata and dependencies
 ├── setup.cfg                 # Setup configuration
@@ -286,7 +287,10 @@ cp run.example.py run.py
 # Edit config.py with database credentials and settings
 
 # Initialize database (runs flask db upgrade)
-python db-init.py
+python scripts/db-init.py
+
+# Create the first admin user and organization
+python scripts/create-admin.py
 
 # Run tests
 pytest
@@ -795,8 +799,9 @@ flask db upgrade                       # Apply migrations
 flake8 .                              # Lint code
 
 # Database
-python db-init.py                      # Initialize database (runs migrations)
-python db-init.py --reset              # Drop all tables and recreate (dev only)
+python scripts/db-init.py             # Initialize database (runs migrations)
+python scripts/db-init.py --reset     # Drop all tables and recreate (dev only)
+python scripts/create-admin.py        # Create first admin user interactively
 flask db stamp 001_baseline            # Mark existing DB as baseline
 flask db current                       # Show current migration
 flask db history                       # Show migration history

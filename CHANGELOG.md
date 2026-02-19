@@ -5,7 +5,7 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.2] - 2026-02-16
+## [1.2.2] - 2026-02-19
 
 ### Changed
 - **Database migrations now tracked in git** — `migrations/` removed from `.gitignore`
@@ -13,11 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed one-time `/admin/set-org-if-zero` endpoint, replaced with standalone `scripts/migrate_v0x_to_v1.py`
 - Fixed Flask-SQLAlchemy deprecation warning in Alembic `env.py`
 - Template URLs changed to use `url_for` helper, removed unused `rule.html` template
+- **`db-init.py` and `create-admin.py` moved to `scripts/`** — all setup scripts now live under `scripts/`
 
 ### Added
 - Idempotent baseline migration (`001_baseline`) that brings any ExaFS database (from v0.4+ to current) to the v1.2.2 schema
 - Optional `scripts/migrate_v0x_to_v1.py` helper for v0.x to v1.0+ data migration (org_id backfill)
-- `db-init.py --reset` flag for development database reset
+- `scripts/create-admin.py` — interactive script to create the first admin user and organization (replaces manual SQL inserts)
+- `scripts/db-init.py --reset` flag for development database reset
+- Migration test suite (`tests/test_migration.py`) — 46 tests covering fresh install, idempotency, upgrade from v0.4/v0.8/v1.0 schemas, and real 2019 production backup upgrade
 - `PYTHONPATH` set in Docker dev container for easier development
 
 ## [1.2.1] - 2026-01-30

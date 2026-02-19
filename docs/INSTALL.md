@@ -126,26 +126,19 @@ You can skip this section if you are using a different deployment method, such a
 
 #### Final steps - as deploy user
 
-1. Copy config.example.py to config.py and fill out the DB credetials. 
+1. Copy config.example.py to config.py and fill out the DB credentials.
 
-2. Create and populate database tables.
+2. Create and populate database tables (roles, actions, rule states):
 ```
 cd ~/www
 source venv/bin/activate
-python db-init.py
+python scripts/db-init.py
 ```
-DB-init script inserts default roles, actions, rule states and two organizations (TUL and Cesnet). But no users.
 
-3. Before start, **use your favorite mysql admin tool and insert some users into database**. 
-The **uuid** of user should be set the **eppn** value provided by Shibboleth. 
-
-You can use following MYSQL commands to insert the user, give him role 'admin' and add him to the the organization 'Cesnet'.
-
+3. Create the first admin user and organization using the interactive setup script:
 ```
-insert into user (uuid,email,name) values ('example@cesnet.cz', 'example@cesnet.cz', 'Mr. Example Admin');
-insert into user_role (user_id,role_id) values (1, 3);
-insert into user_organization (user_id,organization_id) values (1, 2);
-``` 
-You can also modify the models.py for your own default values for db-init.
+python scripts/create-admin.py
+```
+The script will prompt you for the admin's UUID (Shibboleth eppn), name, email, phone, and then create or select an organization with its network address range. It assigns the admin role automatically.
 
 The application is installed and should be working now. The next step is to configure ExaBGP and connect it to the ExaAPI application. We also provide simple service called guarda to reload all the rules in case of ExaBGP restart.

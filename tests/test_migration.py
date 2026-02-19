@@ -11,8 +11,6 @@ Verifies that the idempotent migration correctly handles:
 - Preserving existing data during migration
 """
 
-import os
-
 import pytest
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
