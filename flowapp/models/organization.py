@@ -29,6 +29,7 @@ class Organization(db.Model):
 
 
 # Event listeners for Organization
+# Note: seed data is also defined in migrations/versions/001_baseline.py - keep in sync
 @event.listens_for(Organization.__table__, "after_create")
 def insert_initial_organizations(table, conn, *args, **kwargs):
     conn.execute(table.insert().values(name="TU Liberec", arange="147.230.0.0/16\n2001:718:1c01::/48"))

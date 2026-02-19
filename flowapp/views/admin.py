@@ -3,7 +3,7 @@ from io import StringIO
 from datetime import datetime, timedelta
 import secrets
 
-from sqlalchemy import func, text
+from sqlalchemy import func
 from flask import Blueprint, render_template, redirect, flash, request, session, url_for, current_app
 import sqlalchemy
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -11,7 +11,6 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from ..forms import ASPathForm, BulkUserForm, MachineApiKeyForm, UserForm, ActionForm, OrganizationForm, CommunityForm
 from ..models import (
     ASPath,
-    ApiKey,
     MachineApiKey,
     User,
     Action,
@@ -660,49 +659,3 @@ def delete_community(community_id):
 
     flash(message, alert_type)
     return redirect(url_for("admin.communities"))
-
-
-@admin.route("/set-org-if-zero", methods=["GET"])
-@auth_required
-@admin_required
-def update_set_org():
-    # Define the raw SQL update statement
-    update_statement = update_statement = text(
-        """
-        UPDATE organization 
-        SET limit_flowspec4 = 0, limit_flowspec6 = 0, limit_rtbh = 0 
-        WHERE limit_flowspec4 IS NULL OR limit_flowspec6 IS NULL OR limit_rtbh IS NULL;
-    """
-    )
-    try:
-        # Execute the update query
-        db.session.execute(update_statement)
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error updating organizations: {e}", "alert-danger")
-
-    # Get all flowspec records where org_id is NULL (if this is needed)
-    models = [Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey]
-    user_with_multiple_orgs = {}
-    for model in models:
-        data_records = model.query.filter(model.org_id == 0).all()
-        # Loop through each flowspec record and update org_id based on the user's organization
-        updated = 0
-        for row in data_records:
-            orgs = row.user.organization.all()
-            if len(orgs) == 1:
-                user_org = orgs[0]
-                if user_org:
-                    row.org_id = user_org.id
-                    updated += 1
-            else:
-                user_with_multiple_orgs[row.user.email] = [org.name for org in orgs]
-        # Commit the changes
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Error updating {model.__name__}: {e}", "alert-danger")
-
-    return render_template("pages/user_list.html", users=user_with_multiple_orgs, updated=updated)

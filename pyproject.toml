@@ -53,6 +53,10 @@ dependencies = [
     "python-dotenv",
 ]
 
+[project.scripts]
+exafs-db-init = "flowapp.scripts.db_init:main"
+exafs-create-admin = "flowapp.scripts.create_admin:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
@@ -80,4 +84,6 @@ flowapp = [
     "templates/forms/*",
     "templates/layouts/*",
     "templates/pages/*",
+    "migrations/*",
+    "migrations/versions/*",
 ]
