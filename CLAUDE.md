@@ -798,10 +798,16 @@ flask db migrate -m "message"          # Create migration
 flask db upgrade                       # Apply migrations
 flake8 .                              # Lint code
 
-# Database
+# Database (source install)
 python scripts/db-init.py             # Initialize database (runs migrations)
 python scripts/db-init.py --reset     # Drop all tables and recreate (dev only)
 python scripts/create-admin.py        # Create first admin user interactively
+
+# Database (PyPI install — run from directory containing config.py)
+exafs-db-init                         # Initialize database (runs migrations)
+exafs-db-init --reset                 # Drop all tables and recreate (dev only)
+exafs-create-admin                    # Create first admin user interactively
+
 flask db stamp 001_baseline            # Mark existing DB as baseline
 flask db current                       # Show current migration
 flask db history                       # Show migration history

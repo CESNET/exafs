@@ -10,10 +10,16 @@ For a fresh database, run the migrations to create all tables and seed data:
 flask db upgrade
 ```
 
-Or use the init script:
+Or use the init script (source install):
 
 ```bash
 python scripts/db-init.py
+```
+
+Or the installed command (PyPI install):
+
+```bash
+exafs-db-init
 ```
 
 ## Upgrading Between Versions
@@ -102,7 +108,8 @@ Commit the migration file to git so other deployments can apply it.
 To completely reset the database during development:
 
 ```bash
-python scripts/db-init.py --reset
+python scripts/db-init.py --reset   # source install
+exafs-db-init --reset               # PyPI install
 ```
 
 This drops all tables and recreates them from scratch. **Do not use in production.**

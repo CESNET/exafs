@@ -67,18 +67,51 @@ FLUSH PRIVILEGES;
 exit;
 ```
 
-#### App instalation
-Create new user called **deploy** in the system.
+#### App installation
 
-As deploy user pull the source codes from GH, create virtualenv and install required python dependencies.
+Create a user called **deploy** in the system, then switch to that user.
+
 ```
 su - deploy
-clone source from repository: git clone https://github.com/CESNET/exafs.git www
+```
+
+There are two ways to install ExaFS. Choose the one that fits your workflow:
+
+---
+
+**Option A — Install from PyPI (recommended)**
+
+This is the simplest approach. The `flowapp` package is installed into the virtualenv. All templates, static files, migrations, and setup commands (`exafs-db-init`, `exafs-create-admin`) are included automatically.
+
+```
+mkdir ~/www && cd ~/www
+virtualenv --python=python3.9 venv
+source venv/bin/activate
+pip install exafs
+```
+
+You still need `config.py` and `run.py` in the working directory. Download the example files from the repository:
+
+```
+curl -O https://raw.githubusercontent.com/CESNET/exafs/master/config.example.py
+curl -O https://raw.githubusercontent.com/CESNET/exafs/master/run.example.py
+```
+
+---
+
+**Option B — Install from source**
+
+Use this if you want to track a specific branch, contribute changes, or pin to a git commit.
+
+```
+git clone https://github.com/CESNET/exafs.git www
 cd www
 virtualenv --python=python3.9 venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
+
+---
 
 #### Next steps (as root)
 
@@ -126,19 +159,38 @@ You can skip this section if you are using a different deployment method, such a
 
 #### Final steps - as deploy user
 
-1. Copy config.example.py to config.py and fill out the DB credentials.
+1. Copy `config.example.py` to `config.py` and fill out the DB credentials.
 
-2. Create and populate database tables (roles, actions, rule states):
-```
-cd ~/www
-source venv/bin/activate
-python scripts/db-init.py
-```
+2. Copy `run.example.py` to `run.py`. This is the WSGI entry point used by uWSGI.
 
-3. Create the first admin user and organization using the interactive setup script:
-```
-python scripts/create-admin.py
-```
-The script will prompt you for the admin's UUID (Shibboleth eppn), name, email, phone, and then create or select an organization with its network address range. It assigns the admin role automatically.
+3. Create and populate database tables (roles, actions, rule states).
+
+   **PyPI install** — run from `~/www` (where `config.py` lives):
+   ```
+   cd ~/www && source venv/bin/activate
+   exafs-db-init
+   ```
+
+   **Source install:**
+   ```
+   cd ~/www && source venv/bin/activate
+   python scripts/db-init.py
+   ```
+
+4. Create the first admin user and organization using the interactive setup script.
+
+   **PyPI install:**
+   ```
+   exafs-create-admin
+   ```
+
+   **Source install:**
+   ```
+   python scripts/create-admin.py
+   ```
+
+   The script will prompt you for the admin's UUID (Shibboleth eppn), name, email, phone, and then create or select an organization with its network address range. It assigns the admin role automatically.
+
+   > **Note:** Both commands must be run from the directory containing `config.py`, as they load the database credentials from that file.
 
 The application is installed and should be working now. The next step is to configure ExaBGP and connect it to the ExaAPI application. We also provide simple service called guarda to reload all the rules in case of ExaBGP restart.
