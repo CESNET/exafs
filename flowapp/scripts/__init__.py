@@ -5,11 +5,13 @@ from os import environ
 def _load_config():
     """Load config.py from the current working directory."""
     import os
+
     cwd = os.getcwd()
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
     try:
         import config
+
         return config
     except ImportError:
         print("Error: config.py not found in the current directory.")

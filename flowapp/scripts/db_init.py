@@ -25,6 +25,7 @@ def init_db(reset=False):
             db.reflect()
             db.drop_all()
             from sqlalchemy import text
+
             try:
                 db.session.execute(text("DROP TABLE IF EXISTS alembic_version"))
                 db.session.commit()

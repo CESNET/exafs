@@ -23,10 +23,24 @@ import flowapp
 # --- Expected schema (v1.2.2) ---
 
 EXPECTED_TABLES = {
-    "role", "organization", "rstate", "user", "as_path", "log",
-    "user_role", "user_organization", "action", "community",
-    "api_key", "machine_api_key", "flowspec4", "flowspec6",
-    "RTBH", "whitelist", "rule_whitelist_cache", "alembic_version",
+    "role",
+    "organization",
+    "rstate",
+    "user",
+    "as_path",
+    "log",
+    "user_role",
+    "user_organization",
+    "action",
+    "community",
+    "api_key",
+    "machine_api_key",
+    "flowspec4",
+    "flowspec6",
+    "RTBH",
+    "whitelist",
+    "rule_whitelist_cache",
+    "alembic_version",
 }
 
 EXPECTED_COLUMNS = {
@@ -35,23 +49,63 @@ EXPECTED_COLUMNS = {
     "log": {"id", "time", "task", "author", "rule_type", "rule_id", "user_id"},
     "api_key": {"id", "machine", "key", "readonly", "expires", "comment", "user_id", "org_id"},
     "flowspec4": {
-        "id", "source", "source_mask", "source_port", "dest", "dest_mask",
-        "dest_port", "protocol", "flags", "packet_len", "fragment",
-        "comment", "expires", "created", "action_id", "user_id", "org_id", "rstate_id",
+        "id",
+        "source",
+        "source_mask",
+        "source_port",
+        "dest",
+        "dest_mask",
+        "dest_port",
+        "protocol",
+        "flags",
+        "packet_len",
+        "fragment",
+        "comment",
+        "expires",
+        "created",
+        "action_id",
+        "user_id",
+        "org_id",
+        "rstate_id",
     },
     "flowspec6": {
-        "id", "source", "source_mask", "source_port", "dest", "dest_mask",
-        "dest_port", "next_header", "flags", "packet_len",
-        "comment", "expires", "created", "action_id", "user_id", "org_id", "rstate_id",
+        "id",
+        "source",
+        "source_mask",
+        "source_port",
+        "dest",
+        "dest_mask",
+        "dest_port",
+        "next_header",
+        "flags",
+        "packet_len",
+        "comment",
+        "expires",
+        "created",
+        "action_id",
+        "user_id",
+        "org_id",
+        "rstate_id",
     },
     "RTBH": {
-        "id", "ipv4", "ipv4_mask", "ipv6", "ipv6_mask", "community_id",
-        "comment", "expires", "created", "user_id", "org_id", "rstate_id",
+        "id",
+        "ipv4",
+        "ipv4_mask",
+        "ipv6",
+        "ipv6_mask",
+        "community_id",
+        "comment",
+        "expires",
+        "created",
+        "user_id",
+        "org_id",
+        "rstate_id",
     },
 }
 
 
 # --- Helpers ---
+
 
 def _create_app(db_uri):
     """
@@ -133,47 +187,73 @@ def _create_real_2019_schema(db_uri):
     """
     engine = create_engine(db_uri)
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE role (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(20) UNIQUE,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO role VALUES
             (1,'view','just view, no edit'),
             (2,'user','can edit'),
             (3,'admin','admin')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE organization (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(150) UNIQUE,
                 arange TEXT
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO organization VALUES
             (1,'University Alpha','192.0.2.0/24'),
             (2,'Research Net','198.51.100.0/24')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE rstate (
                 id INTEGER PRIMARY KEY,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO rstate VALUES
             (1,'active rule'),
             (2,'withdrawed rule'),
             (3,'deleted rule')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user (
                 id INTEGER PRIMARY KEY,
                 uuid VARCHAR(180) UNIQUE,
@@ -182,38 +262,62 @@ def _create_real_2019_schema(db_uri):
                 name VARCHAR(255),
                 phone VARCHAR(255)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO user VALUES
             (1,'alice@example.edu','test comment','alice@example.edu','Alice Test','+1 555 0101'),
             (3,'bob@example.org','Bob Admin','bob@example.org','Bob Admin','+1 555 0102'),
             (4,'charlie@example.org','Charlie Ops','charlie@example.org','Charlie Ops','+1 555 0103')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_role (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 role_id INTEGER NOT NULL REFERENCES role(id),
                 PRIMARY KEY (user_id, role_id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO user_role VALUES (1,3),(3,3),(4,3)
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_organization (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 organization_id INTEGER NOT NULL REFERENCES organization(id),
                 PRIMARY KEY (user_id, organization_id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO user_organization VALUES (1,1),(3,2),(4,2)
-        """))
+        """
+            )
+        )
 
         # 2019 log table — no 'author' column
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE log (
                 id INTEGER PRIMARY KEY,
                 time DATETIME,
@@ -222,14 +326,22 @@ def _create_real_2019_schema(db_uri):
                 rule_id INTEGER,
                 user_id INTEGER REFERENCES user(id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO log VALUES
             (1,'2018-03-05 17:50:39','withdraw flow route',4,45,4),
             (2,'2018-03-06 09:55:01','announce flow route',4,52,3)
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE action (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
@@ -237,17 +349,25 @@ def _create_real_2019_schema(db_uri):
                 description VARCHAR(260),
                 role_id INTEGER REFERENCES role(id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO action VALUES
             (1,'QoS 0.1 Mbps','rate-limit 12800','QoS',2),
             (7,'Discard','discard','Discard',2),
             (9,'Redirect to scrubber','redirect 65535:1001','Redirect',2)
-        """))
+        """
+            )
+        )
 
         # 2019 community — has 'command' column (later removed),
         # no comm/larcomm/extcomm/as_path
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE community (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
@@ -255,29 +375,45 @@ def _create_real_2019_schema(db_uri):
                 description VARCHAR(260),
                 role_id INTEGER REFERENCES role(id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO community VALUES
             (4,'RTBH IXP','65535:666','IXP RTBH community',2),
             (5,'RTBH Internal','64496:9999','Internal RTBH',2)
-        """))
+        """
+            )
+        )
 
         # 2019 api_key — no readonly, expires, comment, org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE api_key (
                 id INTEGER PRIMARY KEY,
                 machine VARCHAR(255),
                 key VARCHAR(255),
                 user_id INTEGER REFERENCES user(id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO api_key VALUES
             (3,'192.0.2.10','a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',3)
-        """))
+        """
+            )
+        )
 
         # 2019 flowspec4 — no fragment, no org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec4 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -296,15 +432,23 @@ def _create_real_2019_schema(db_uri):
                 user_id INTEGER REFERENCES user(id),
                 rstate_id INTEGER REFERENCES rstate(id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO flowspec4 VALUES
             (16,'203.0.113.0',24,'','',NULL,'22','tcp','','','','2019-02-08 12:30:00','2019-01-27 14:19:44',1,3,1),
             (27,'198.51.100.1',32,'','',NULL,'','tcp','SYN','300-9000','Suspicious SYN','2019-02-10 00:00:00','2019-02-06 12:50:56',7,4,1)
-        """))
+        """
+            )
+        )
 
         # 2019 flowspec6 — no org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec6 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -323,10 +467,14 @@ def _create_real_2019_schema(db_uri):
                 user_id INTEGER REFERENCES user(id),
                 rstate_id INTEGER REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
         # 2019 RTBH — no org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE RTBH (
                 id INTEGER PRIMARY KEY,
                 ipv4 VARCHAR(255),
@@ -340,17 +488,27 @@ def _create_real_2019_schema(db_uri):
                 rstate_id INTEGER REFERENCES rstate(id),
                 community_id INTEGER REFERENCES community(id)
             )
-        """))
+        """
+            )
+        )
 
         # alembic_version with old user-generated revision
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE alembic_version (
                 version_num VARCHAR(32) PRIMARY KEY
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO alembic_version VALUES ('7a816ca986b3')
-        """))
+        """
+            )
+        )
 
         conn.commit()
     engine.dispose()
@@ -366,46 +524,72 @@ def _create_v04_schema(db_uri):
     """
     engine = create_engine(db_uri)
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE role (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(20) UNIQUE,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO role (id, name, description) VALUES
             (1, 'view', 'just view, no edit'),
             (2, 'user', 'can edit'),
             (3, 'admin', 'admin')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE organization (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(150) UNIQUE,
                 arange TEXT
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO organization (id, name, arange) VALUES
             (1, 'TestOrg', '10.0.0.0/8')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE rstate (
                 id INTEGER PRIMARY KEY,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO rstate (id, description) VALUES
             (1, 'active rule'),
             (2, 'withdrawed rule'),
             (3, 'deleted rule')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user (
                 id INTEGER PRIMARY KEY,
                 uuid VARCHAR(180) UNIQUE,
@@ -414,30 +598,46 @@ def _create_v04_schema(db_uri):
                 name VARCHAR(255),
                 phone VARCHAR(255)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO user (id, uuid, email) VALUES (1, 'test@test.cz', 'test@test.cz')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_role (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 role_id INTEGER NOT NULL REFERENCES role(id),
                 PRIMARY KEY (user_id, role_id)
             )
-        """))
+        """
+            )
+        )
         conn.execute(text("INSERT INTO user_role (user_id, role_id) VALUES (1, 3)"))
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_organization (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 organization_id INTEGER NOT NULL REFERENCES organization(id),
                 PRIMARY KEY (user_id, organization_id)
             )
-        """))
+        """
+            )
+        )
         conn.execute(text("INSERT INTO user_organization (user_id, organization_id) VALUES (1, 1)"))
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE log (
                 id INTEGER PRIMARY KEY,
                 time DATETIME,
@@ -446,9 +646,13 @@ def _create_v04_schema(db_uri):
                 rule_id INTEGER,
                 user_id INTEGER
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE action (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
@@ -456,38 +660,58 @@ def _create_v04_schema(db_uri):
                 description VARCHAR(260),
                 role_id INTEGER NOT NULL REFERENCES role(id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO action (id, name, command, description, role_id) VALUES
             (1, 'Discard', 'discard', 'Discard', 2)
-        """))
+        """
+            )
+        )
 
         # Community without comm, larcomm, extcomm, as_path
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE community (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
                 description VARCHAR(255),
                 role_id INTEGER NOT NULL REFERENCES role(id)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO community (id, name, description, role_id) VALUES
             (1, '65535:65283', 'local-as', 2)
-        """))
+        """
+            )
+        )
 
         # api_key without comment, readonly, expires, org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE api_key (
                 id INTEGER PRIMARY KEY,
                 machine VARCHAR(255),
                 key VARCHAR(255),
                 user_id INTEGER NOT NULL REFERENCES user(id)
             )
-        """))
+        """
+            )
+        )
 
         # flowspec4 without fragment and org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec4 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -506,10 +730,14 @@ def _create_v04_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
         # flowspec6 without org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec6 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -528,10 +756,14 @@ def _create_v04_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
         # RTBH without org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE RTBH (
                 id INTEGER PRIMARY KEY,
                 ipv4 VARCHAR(255),
@@ -545,7 +777,9 @@ def _create_v04_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
         conn.commit()
     engine.dispose()
@@ -561,42 +795,64 @@ def _create_v08_schema(db_uri):
     """
     engine = create_engine(db_uri)
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE role (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(20) UNIQUE,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO role (id, name, description) VALUES
             (1, 'view', 'just view, no edit'),
             (2, 'user', 'can edit'),
             (3, 'admin', 'admin')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE organization (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(150) UNIQUE,
                 arange TEXT
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE rstate (
                 id INTEGER PRIMARY KEY,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO rstate (id, description) VALUES
             (1, 'active rule'),
             (2, 'withdrawed rule'),
             (3, 'deleted rule')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user (
                 id INTEGER PRIMARY KEY,
                 uuid VARCHAR(180) UNIQUE,
@@ -605,25 +861,37 @@ def _create_v08_schema(db_uri):
                 name VARCHAR(255),
                 phone VARCHAR(255)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_role (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 role_id INTEGER NOT NULL REFERENCES role(id),
                 PRIMARY KEY (user_id, role_id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_organization (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 organization_id INTEGER NOT NULL REFERENCES organization(id),
                 PRIMARY KEY (user_id, organization_id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE log (
                 id INTEGER PRIMARY KEY,
                 time DATETIME,
@@ -633,9 +901,13 @@ def _create_v08_schema(db_uri):
                 rule_id INTEGER,
                 user_id INTEGER
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE action (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
@@ -643,10 +915,14 @@ def _create_v08_schema(db_uri):
                 description VARCHAR(260),
                 role_id INTEGER NOT NULL REFERENCES role(id)
             )
-        """))
+        """
+            )
+        )
 
         # Community with comm, larcomm, extcomm but no as_path
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE community (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
@@ -656,10 +932,14 @@ def _create_v08_schema(db_uri):
                 description VARCHAR(255),
                 role_id INTEGER NOT NULL REFERENCES role(id)
             )
-        """))
+        """
+            )
+        )
 
         # api_key with readonly and expires but no org_id or comment
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE api_key (
                 id INTEGER PRIMARY KEY,
                 machine VARCHAR(255),
@@ -668,10 +948,14 @@ def _create_v08_schema(db_uri):
                 expires DATETIME,
                 user_id INTEGER NOT NULL REFERENCES user(id)
             )
-        """))
+        """
+            )
+        )
 
         # flowspec4 with fragment but no org_id
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec4 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -691,9 +975,13 @@ def _create_v08_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec6 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -712,9 +1000,13 @@ def _create_v08_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE RTBH (
                 id INTEGER PRIMARY KEY,
                 ipv4 VARCHAR(255),
@@ -728,7 +1020,9 @@ def _create_v08_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
         conn.commit()
     engine.dispose()
@@ -743,21 +1037,31 @@ def _create_v10_schema(db_uri):
     """
     engine = create_engine(db_uri)
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE role (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(20) UNIQUE,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO role (id, name, description) VALUES
             (1, 'view', 'just view, no edit'),
             (2, 'user', 'can edit'),
             (3, 'admin', 'admin')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE organization (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(150) UNIQUE,
@@ -766,22 +1070,34 @@ def _create_v10_schema(db_uri):
                 limit_flowspec6 INTEGER DEFAULT 0,
                 limit_rtbh INTEGER DEFAULT 0
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE rstate (
                 id INTEGER PRIMARY KEY,
                 description VARCHAR(260)
             )
-        """))
-        conn.execute(text("""
+        """
+            )
+        )
+        conn.execute(
+            text(
+                """
             INSERT INTO rstate (id, description) VALUES
             (1, 'active rule'),
             (2, 'withdrawed rule'),
             (3, 'deleted rule')
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user (
                 id INTEGER PRIMARY KEY,
                 uuid VARCHAR(180) UNIQUE,
@@ -790,25 +1106,37 @@ def _create_v10_schema(db_uri):
                 name VARCHAR(255),
                 phone VARCHAR(255)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_role (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 role_id INTEGER NOT NULL REFERENCES role(id),
                 PRIMARY KEY (user_id, role_id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE user_organization (
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 organization_id INTEGER NOT NULL REFERENCES organization(id),
                 PRIMARY KEY (user_id, organization_id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE log (
                 id INTEGER PRIMARY KEY,
                 time DATETIME,
@@ -818,9 +1146,13 @@ def _create_v10_schema(db_uri):
                 rule_id INTEGER,
                 user_id INTEGER
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE action (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
@@ -828,10 +1160,14 @@ def _create_v10_schema(db_uri):
                 description VARCHAR(260),
                 role_id INTEGER NOT NULL REFERENCES role(id)
             )
-        """))
+        """
+            )
+        )
 
         # Community with comm columns but no as_path
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE community (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(120) UNIQUE,
@@ -841,9 +1177,13 @@ def _create_v10_schema(db_uri):
                 description VARCHAR(255),
                 role_id INTEGER NOT NULL REFERENCES role(id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE api_key (
                 id INTEGER PRIMARY KEY,
                 machine VARCHAR(255),
@@ -854,9 +1194,13 @@ def _create_v10_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 org_id INTEGER REFERENCES organization(id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE machine_api_key (
                 id INTEGER PRIMARY KEY,
                 machine VARCHAR(255),
@@ -867,9 +1211,13 @@ def _create_v10_schema(db_uri):
                 user_id INTEGER NOT NULL REFERENCES user(id),
                 org_id INTEGER NOT NULL REFERENCES organization(id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec4 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -890,9 +1238,13 @@ def _create_v10_schema(db_uri):
                 org_id INTEGER NOT NULL REFERENCES organization(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE flowspec6 (
                 id INTEGER PRIMARY KEY,
                 source VARCHAR(255),
@@ -912,9 +1264,13 @@ def _create_v10_schema(db_uri):
                 org_id INTEGER NOT NULL REFERENCES organization(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text(
+                """
             CREATE TABLE RTBH (
                 id INTEGER PRIMARY KEY,
                 ipv4 VARCHAR(255),
@@ -929,13 +1285,16 @@ def _create_v10_schema(db_uri):
                 org_id INTEGER NOT NULL REFERENCES organization(id),
                 rstate_id INTEGER NOT NULL REFERENCES rstate(id)
             )
-        """))
+        """
+            )
+        )
 
         conn.commit()
     engine.dispose()
 
 
 # --- Fixtures ---
+
 
 @pytest.fixture
 def migration_db(tmp_path):
@@ -950,6 +1309,7 @@ def migration_db(tmp_path):
 
 
 # --- Tests ---
+
 
 class TestFreshInstall:
     """Test migration on a completely empty database."""
@@ -988,24 +1348,18 @@ class TestFreshInstall:
         for table_name, expected_cols in EXPECTED_COLUMNS.items():
             actual_cols = _get_columns(db_uri, table_name)
             for col in expected_cols:
-                assert col in actual_cols, (
-                    f"Missing column {table_name}.{col}"
-                )
+                assert col in actual_cols, f"Missing column {table_name}.{col}"
 
     def test_creates_catchall_organization(self, migration_db):
         app, db_uri = migration_db
         _run_migration(app)
-        count = _query_scalar(
-            db_uri, "SELECT COUNT(*) FROM organization WHERE name = 'Uncategorized'"
-        )
+        count = _query_scalar(db_uri, "SELECT COUNT(*) FROM organization WHERE name = 'Uncategorized'")
         assert count == 1
 
     def test_catchall_organization_covers_all_addresses(self, migration_db):
         app, db_uri = migration_db
         _run_migration(app)
-        arange = _query_scalar(
-            db_uri, "SELECT arange FROM organization WHERE name = 'Uncategorized'"
-        )
+        arange = _query_scalar(db_uri, "SELECT arange FROM organization WHERE name = 'Uncategorized'")
         assert "0.0.0.0/0" in arange
         assert "::/0" in arange
 
@@ -1039,33 +1393,31 @@ class TestUpgradeFromV04:
 
         # Check all expected columns exist after migration
         for table_name, expected_cols in EXPECTED_COLUMNS.items():
-            actual_cols = _get_columns(db_uri,table_name)
+            actual_cols = _get_columns(db_uri, table_name)
             for col in expected_cols:
-                assert col in actual_cols, (
-                    f"Missing column {table_name}.{col} after v0.4 upgrade"
-                )
+                assert col in actual_cols, f"Missing column {table_name}.{col} after v0.4 upgrade"
 
     def test_adds_log_author(self, migration_db):
         app, db_uri = migration_db
         _create_v04_schema(db_uri)
 
         # Verify author is missing before migration
-        assert "author" not in _get_columns(db_uri,"log")
+        assert "author" not in _get_columns(db_uri, "log")
 
         _run_migration(app)
-        assert "author" in _get_columns(db_uri,"log")
+        assert "author" in _get_columns(db_uri, "log")
 
     def test_adds_community_columns(self, migration_db):
         app, db_uri = migration_db
         _create_v04_schema(db_uri)
 
         # Verify columns are missing before migration
-        community_cols = _get_columns(db_uri,"community")
+        community_cols = _get_columns(db_uri, "community")
         assert "comm" not in community_cols
         assert "as_path" not in community_cols
 
         _run_migration(app)
-        community_cols = _get_columns(db_uri,"community")
+        community_cols = _get_columns(db_uri, "community")
         assert "comm" in community_cols
         assert "larcomm" in community_cols
         assert "extcomm" in community_cols
@@ -1075,12 +1427,12 @@ class TestUpgradeFromV04:
         app, db_uri = migration_db
         _create_v04_schema(db_uri)
 
-        cols = _get_columns(db_uri,"flowspec4")
+        cols = _get_columns(db_uri, "flowspec4")
         assert "fragment" not in cols
         assert "org_id" not in cols
 
         _run_migration(app)
-        cols = _get_columns(db_uri,"flowspec4")
+        cols = _get_columns(db_uri, "flowspec4")
         assert "fragment" in cols
         assert "org_id" in cols
 
@@ -1116,11 +1468,11 @@ class TestUpgradeFromV04:
         app, db_uri = migration_db
         _create_v04_schema(db_uri)
 
-        cols = _get_columns(db_uri,"organization")
+        cols = _get_columns(db_uri, "organization")
         assert "limit_flowspec4" not in cols
 
         _run_migration(app)
-        cols = _get_columns(db_uri,"organization")
+        cols = _get_columns(db_uri, "organization")
         assert "limit_flowspec4" in cols
         assert "limit_flowspec6" in cols
         assert "limit_rtbh" in cols
@@ -1129,13 +1481,13 @@ class TestUpgradeFromV04:
         app, db_uri = migration_db
         _create_v04_schema(db_uri)
 
-        cols = _get_columns(db_uri,"api_key")
+        cols = _get_columns(db_uri, "api_key")
         assert "comment" not in cols
         assert "readonly" not in cols
         assert "org_id" not in cols
 
         _run_migration(app)
-        cols = _get_columns(db_uri,"api_key")
+        cols = _get_columns(db_uri, "api_key")
         assert "comment" in cols
         assert "readonly" in cols
         assert "expires" in cols
@@ -1150,34 +1502,32 @@ class TestUpgradeFromV08:
         _create_v08_schema(db_uri)
 
         for table in ("flowspec4", "flowspec6", "RTBH"):
-            assert "org_id" not in _get_columns(db_uri,table)
+            assert "org_id" not in _get_columns(db_uri, table)
 
         _run_migration(app)
 
         for table in ("flowspec4", "flowspec6", "RTBH"):
-            assert "org_id" in _get_columns(db_uri,table), (
-                f"Missing org_id on {table} after v0.8 upgrade"
-            )
+            assert "org_id" in _get_columns(db_uri, table), f"Missing org_id on {table} after v0.8 upgrade"
 
     def test_adds_community_as_path(self, migration_db):
         app, db_uri = migration_db
         _create_v08_schema(db_uri)
 
-        assert "as_path" not in _get_columns(db_uri,"community")
+        assert "as_path" not in _get_columns(db_uri, "community")
 
         _run_migration(app)
-        assert "as_path" in _get_columns(db_uri,"community")
+        assert "as_path" in _get_columns(db_uri, "community")
 
     def test_adds_api_key_comment_and_org_id(self, migration_db):
         app, db_uri = migration_db
         _create_v08_schema(db_uri)
 
-        cols = _get_columns(db_uri,"api_key")
+        cols = _get_columns(db_uri, "api_key")
         assert "comment" not in cols
         assert "org_id" not in cols
 
         _run_migration(app)
-        cols = _get_columns(db_uri,"api_key")
+        cols = _get_columns(db_uri, "api_key")
         assert "comment" in cols
         assert "org_id" in cols
 
@@ -1303,9 +1653,7 @@ class TestUpgradeFromRealBackup:
         for table_name, expected_cols in EXPECTED_COLUMNS.items():
             actual_cols = _get_columns(db_uri, table_name)
             for col in expected_cols:
-                assert col in actual_cols, (
-                    f"Missing column {table_name}.{col} after 2019 backup upgrade"
-                )
+                assert col in actual_cols, f"Missing column {table_name}.{col} after 2019 backup upgrade"
 
     def test_adds_missing_log_author(self, migration_db):
         app, db_uri = migration_db
@@ -1352,9 +1700,7 @@ class TestUpgradeFromRealBackup:
         _clear_alembic_version(db_uri)
         _run_migration(app)
         for table in ("flowspec4", "flowspec6", "RTBH"):
-            assert "org_id" in _get_columns(db_uri, table), (
-                f"Missing org_id on {table} after 2019 backup upgrade"
-            )
+            assert "org_id" in _get_columns(db_uri, table), f"Missing org_id on {table} after 2019 backup upgrade"
 
     def test_adds_missing_api_key_columns(self, migration_db):
         app, db_uri = migration_db
@@ -1388,23 +1734,17 @@ class TestUpgradeFromRealBackup:
         _clear_alembic_version(db_uri)
         _run_migration(app)
         assert _query_scalar(db_uri, "SELECT COUNT(*) FROM rstate") == 4
-        assert _query_scalar(
-            db_uri, "SELECT description FROM rstate WHERE id = 4"
-        ) == "whitelisted rule"
+        assert _query_scalar(db_uri, "SELECT description FROM rstate WHERE id = 4") == "whitelisted rule"
 
     def test_preserves_existing_users(self, migration_db):
         _, db_uri = self._setup_and_migrate(migration_db)
         assert _query_scalar(db_uri, "SELECT COUNT(*) FROM user") == 3
-        assert _query_scalar(
-            db_uri, "SELECT uuid FROM user WHERE id = 1"
-        ) == "alice@example.edu"
+        assert _query_scalar(db_uri, "SELECT uuid FROM user WHERE id = 1") == "alice@example.edu"
 
     def test_preserves_existing_rules(self, migration_db):
         _, db_uri = self._setup_and_migrate(migration_db)
         assert _query_scalar(db_uri, "SELECT COUNT(*) FROM flowspec4") == 2
-        assert _query_scalar(
-            db_uri, "SELECT source FROM flowspec4 WHERE id = 16"
-        ) == "203.0.113.0"
+        assert _query_scalar(db_uri, "SELECT source FROM flowspec4 WHERE id = 16") == "203.0.113.0"
 
     def test_preserves_existing_logs(self, migration_db):
         _, db_uri = self._setup_and_migrate(migration_db)
@@ -1414,9 +1754,7 @@ class TestUpgradeFromRealBackup:
         """Existing communities should not be overwritten or duplicated."""
         _, db_uri = self._setup_and_migrate(migration_db)
         assert _query_scalar(db_uri, "SELECT COUNT(*) FROM community") == 2
-        assert _query_scalar(
-            db_uri, "SELECT name FROM community WHERE id = 4"
-        ) == "RTBH IXP"
+        assert _query_scalar(db_uri, "SELECT name FROM community WHERE id = 4") == "RTBH IXP"
 
     def test_does_not_duplicate_seed_data(self, migration_db):
         """Seed data should not be inserted when tables already have data."""
@@ -1431,28 +1769,20 @@ class TestUpgradeFromRealBackup:
     def test_alembic_version_updated(self, migration_db):
         """After clearing old revision and upgrading, version should be baseline."""
         _, db_uri = self._setup_and_migrate(migration_db)
-        assert _query_scalar(
-            db_uri, "SELECT version_num FROM alembic_version"
-        ) == "001_baseline"
+        assert _query_scalar(db_uri, "SELECT version_num FROM alembic_version") == "001_baseline"
 
     def test_org_id_backfilled_with_catchall(self, migration_db):
         """Existing rules with no org_id should be assigned the catchall org after migration."""
         _, db_uri = self._setup_and_migrate(migration_db)
-        catchall_id = _query_scalar(
-            db_uri, "SELECT id FROM organization WHERE name = 'Uncategorized'"
-        )
+        catchall_id = _query_scalar(db_uri, "SELECT id FROM organization WHERE name = 'Uncategorized'")
         assert catchall_id is not None
         # No NULLs anywhere
         for table in ("flowspec4", "flowspec6", "RTBH", "api_key", "machine_api_key"):
-            null_count = _query_scalar(
-                db_uri, f"SELECT COUNT(*) FROM {table} WHERE org_id IS NULL"
-            )
+            null_count = _query_scalar(db_uri, f"SELECT COUNT(*) FROM {table} WHERE org_id IS NULL")
             assert null_count == 0, f"NULL org_id found in {table} after migration"
         # Tables that have rows in the 2019 backup should point to catchall
         for table in ("flowspec4",):
-            catchall_count = _query_scalar(
-                db_uri, f"SELECT COUNT(*) FROM {table} WHERE org_id = {catchall_id}"
-            )
+            catchall_count = _query_scalar(db_uri, f"SELECT COUNT(*) FROM {table} WHERE org_id = {catchall_id}")
             assert catchall_count > 0, f"Expected rows in {table} to be assigned to catchall org"
 
     def test_fails_without_clearing_old_revision(self, migration_db):

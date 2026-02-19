@@ -69,7 +69,7 @@ def migrate_org_data():
             data_records = model.query.filter(model.org_id == catchall.id).all()
 
             if not data_records:
-                print(f"  {model_name}: no records with org_id=0")
+                print(f"  {model_name}: no records assigned to catchall organization")
                 continue
 
             updated = 0
