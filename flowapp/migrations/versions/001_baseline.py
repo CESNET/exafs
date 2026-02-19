@@ -14,6 +14,7 @@ Revises:
 Create Date: 2026-02-13
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -76,16 +77,12 @@ def upgrade():
             sa.Column("limit_flowspec6", sa.Integer(), default=0),
             sa.Column("limit_rtbh", sa.Integer(), default=0),
         )
-        _seed_orgs = True
     else:
         organization_table = None
-        _seed_orgs = False
         # Add limit columns if missing (pre-v1.0 databases)
         for col_name in ("limit_flowspec4", "limit_flowspec6", "limit_rtbh"):
             if not _column_exists("organization", col_name):
-                op.add_column(
-                    "organization", sa.Column(col_name, sa.Integer(), default=0)
-                )
+                op.add_column("organization", sa.Column(col_name, sa.Integer(), default=0))
 
     if not _table_exists("rstate"):
         rstate_table = op.create_table(
@@ -144,21 +141,15 @@ def upgrade():
     if not _table_exists("user_role"):
         op.create_table(
             "user_role",
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
-            sa.Column(
-                "role_id", sa.Integer(), sa.ForeignKey("role.id"), nullable=False
-            ),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
+            sa.Column("role_id", sa.Integer(), sa.ForeignKey("role.id"), nullable=False),
             sa.PrimaryKeyConstraint("user_id", "role_id"),
         )
 
     if not _table_exists("user_organization"):
         op.create_table(
             "user_organization",
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
             sa.Column(
                 "organization_id",
                 sa.Integer(),
@@ -177,9 +168,7 @@ def upgrade():
             sa.Column("name", sa.String(length=120), unique=True),
             sa.Column("command", sa.String(length=120), unique=True),
             sa.Column("description", sa.String(length=260)),
-            sa.Column(
-                "role_id", sa.Integer(), sa.ForeignKey("role.id"), nullable=False
-            ),
+            sa.Column("role_id", sa.Integer(), sa.ForeignKey("role.id"), nullable=False),
         )
         _seed_actions = True
     else:
@@ -202,9 +191,7 @@ def upgrade():
             sa.Column("extcomm", sa.String(length=2047)),
             sa.Column("description", sa.String(length=255)),
             sa.Column("as_path", sa.Boolean(), default=False),
-            sa.Column(
-                "role_id", sa.Integer(), sa.ForeignKey("role.id"), nullable=False
-            ),
+            sa.Column("role_id", sa.Integer(), sa.ForeignKey("role.id"), nullable=False),
         )
         _seed_communities = True
     else:
@@ -244,9 +231,7 @@ def upgrade():
             sa.Column("readonly", sa.Boolean(), default=False),
             sa.Column("expires", sa.DateTime(), nullable=True),
             sa.Column("comment", sa.String(length=255)),
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
             sa.Column(
                 "org_id",
                 sa.Integer(),
@@ -272,7 +257,6 @@ def upgrade():
                 sa.Column(
                     "org_id",
                     sa.Integer(),
-                    sa.ForeignKey("organization.id"),
                     nullable=True,
                     server_default="0",
                 ),
@@ -287,9 +271,7 @@ def upgrade():
             sa.Column("readonly", sa.Boolean(), default=True),
             sa.Column("expires", sa.DateTime(), nullable=True),
             sa.Column("comment", sa.String(length=255)),
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
             sa.Column(
                 "org_id",
                 sa.Integer(),
@@ -305,7 +287,6 @@ def upgrade():
                 sa.Column(
                     "org_id",
                     sa.Integer(),
-                    sa.ForeignKey("organization.id"),
                     nullable=True,
                 ),
             )
@@ -329,21 +310,15 @@ def upgrade():
             sa.Column("comment", sa.Text()),
             sa.Column("expires", sa.DateTime()),
             sa.Column("created", sa.DateTime()),
-            sa.Column(
-                "action_id", sa.Integer(), sa.ForeignKey("action.id"), nullable=False
-            ),
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
+            sa.Column("action_id", sa.Integer(), sa.ForeignKey("action.id"), nullable=False),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
             sa.Column(
                 "org_id",
                 sa.Integer(),
                 sa.ForeignKey("organization.id"),
                 nullable=False,
             ),
-            sa.Column(
-                "rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False
-            ),
+            sa.Column("rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False),
         )
     else:
         if not _column_exists("flowspec4", "fragment"):
@@ -357,7 +332,6 @@ def upgrade():
                 sa.Column(
                     "org_id",
                     sa.Integer(),
-                    sa.ForeignKey("organization.id"),
                     nullable=True,
                 ),
             )
@@ -378,21 +352,15 @@ def upgrade():
             sa.Column("comment", sa.Text()),
             sa.Column("expires", sa.DateTime()),
             sa.Column("created", sa.DateTime()),
-            sa.Column(
-                "action_id", sa.Integer(), sa.ForeignKey("action.id"), nullable=False
-            ),
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
+            sa.Column("action_id", sa.Integer(), sa.ForeignKey("action.id"), nullable=False),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
             sa.Column(
                 "org_id",
                 sa.Integer(),
                 sa.ForeignKey("organization.id"),
                 nullable=False,
             ),
-            sa.Column(
-                "rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False
-            ),
+            sa.Column("rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False),
         )
     else:
         if not _column_exists("flowspec6", "org_id"):
@@ -401,7 +369,6 @@ def upgrade():
                 sa.Column(
                     "org_id",
                     sa.Integer(),
-                    sa.ForeignKey("organization.id"),
                     nullable=True,
                 ),
             )
@@ -423,18 +390,14 @@ def upgrade():
             sa.Column("comment", sa.Text()),
             sa.Column("expires", sa.DateTime()),
             sa.Column("created", sa.DateTime()),
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
             sa.Column(
                 "org_id",
                 sa.Integer(),
                 sa.ForeignKey("organization.id"),
                 nullable=False,
             ),
-            sa.Column(
-                "rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False
-            ),
+            sa.Column("rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False),
         )
     else:
         if not _column_exists("RTBH", "org_id"):
@@ -443,7 +406,6 @@ def upgrade():
                 sa.Column(
                     "org_id",
                     sa.Integer(),
-                    sa.ForeignKey("organization.id"),
                     nullable=True,
                 ),
             )
@@ -457,18 +419,14 @@ def upgrade():
             sa.Column("comment", sa.Text()),
             sa.Column("expires", sa.DateTime()),
             sa.Column("created", sa.DateTime()),
-            sa.Column(
-                "user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
-            ),
+            sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
             sa.Column(
                 "org_id",
                 sa.Integer(),
                 sa.ForeignKey("organization.id"),
                 nullable=False,
             ),
-            sa.Column(
-                "rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False
-            ),
+            sa.Column("rstate_id", sa.Integer(), sa.ForeignKey("rstate.id"), nullable=False),
         )
 
     if not _table_exists("rule_whitelist_cache"):
@@ -498,39 +456,12 @@ def upgrade():
             ],
         )
 
-    if _seed_orgs and organization_table is not None:
-        op.bulk_insert(
-            organization_table,
-            [
-                {
-                    "name": "TU Liberec",
-                    "arange": "147.230.0.0/16\n2001:718:1c01::/48",
-                    "limit_flowspec4": 0,
-                    "limit_flowspec6": 0,
-                    "limit_rtbh": 0,
-                },
-                {
-                    "name": "Cesnet",
-                    "arange": "147.230.0.0/16\n2001:718:1c01::/48",
-                    "limit_flowspec4": 0,
-                    "limit_flowspec6": 0,
-                    "limit_rtbh": 0,
-                },
-            ],
-        )
-
     # Ensure rstate has the "whitelisted rule" entry (id=4, added in v1.1.0)
     if not _seed_rstates and _table_has_data("rstate"):
         conn = op.get_bind()
-        result = conn.execute(
-            sa.text("SELECT COUNT(*) FROM rstate WHERE id = 4")
-        )
+        result = conn.execute(sa.text("SELECT COUNT(*) FROM rstate WHERE id = 4"))
         if result.scalar() == 0:
-            conn.execute(
-                sa.text(
-                    "INSERT INTO rstate (id, description) VALUES (4, 'whitelisted rule')"
-                )
-            )
+            conn.execute(sa.text("INSERT INTO rstate (id, description) VALUES (4, 'whitelisted rule')"))
 
     if _seed_rstates and not _table_has_data("rstate"):
         op.bulk_insert(
