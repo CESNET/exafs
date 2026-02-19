@@ -986,11 +986,28 @@ class TestFreshInstall:
         app, db_uri = migration_db
         _run_migration(app)
         for table_name, expected_cols in EXPECTED_COLUMNS.items():
-            actual_cols = _get_columns(db_uri,table_name)
+            actual_cols = _get_columns(db_uri, table_name)
             for col in expected_cols:
                 assert col in actual_cols, (
                     f"Missing column {table_name}.{col}"
                 )
+
+    def test_creates_catchall_organization(self, migration_db):
+        app, db_uri = migration_db
+        _run_migration(app)
+        count = _query_scalar(
+            db_uri, "SELECT COUNT(*) FROM organization WHERE name = 'Uncategorized'"
+        )
+        assert count == 1
+
+    def test_catchall_organization_covers_all_addresses(self, migration_db):
+        app, db_uri = migration_db
+        _run_migration(app)
+        arange = _query_scalar(
+            db_uri, "SELECT arange FROM organization WHERE name = 'Uncategorized'"
+        )
+        assert "0.0.0.0/0" in arange
+        assert "::/0" in arange
 
 
 class TestIdempotent:
@@ -1417,6 +1434,26 @@ class TestUpgradeFromRealBackup:
         assert _query_scalar(
             db_uri, "SELECT version_num FROM alembic_version"
         ) == "001_baseline"
+
+    def test_org_id_backfilled_with_catchall(self, migration_db):
+        """Existing rules with no org_id should be assigned the catchall org after migration."""
+        _, db_uri = self._setup_and_migrate(migration_db)
+        catchall_id = _query_scalar(
+            db_uri, "SELECT id FROM organization WHERE name = 'Uncategorized'"
+        )
+        assert catchall_id is not None
+        # No NULLs anywhere
+        for table in ("flowspec4", "flowspec6", "RTBH", "api_key", "machine_api_key"):
+            null_count = _query_scalar(
+                db_uri, f"SELECT COUNT(*) FROM {table} WHERE org_id IS NULL"
+            )
+            assert null_count == 0, f"NULL org_id found in {table} after migration"
+        # Tables that have rows in the 2019 backup should point to catchall
+        for table in ("flowspec4",):
+            catchall_count = _query_scalar(
+                db_uri, f"SELECT COUNT(*) FROM {table} WHERE org_id = {catchall_id}"
+            )
+            assert catchall_count > 0, f"Expected rows in {table} to be assigned to catchall org"
 
     def test_fails_without_clearing_old_revision(self, migration_db):
         """Migration should fail if old alembic_version is not cleared first."""

@@ -254,12 +254,7 @@ def upgrade():
         if not _column_exists("api_key", "org_id"):
             op.add_column(
                 "api_key",
-                sa.Column(
-                    "org_id",
-                    sa.Integer(),
-                    nullable=True,
-                    server_default="0",
-                ),
+                sa.Column("org_id", sa.Integer(), nullable=True),
             )
 
     if not _table_exists("machine_api_key"):
@@ -504,6 +499,40 @@ def upgrade():
                 },
             ],
         )
+
+    # Ensure the catch-all organization exists.
+    # Used as a temporary placeholder for rules/keys that have no org_id yet
+    # (added in v1.0). Run migrate_v0x_to_v1.py afterwards to reassign them.
+    conn = op.get_bind()
+    catchall_name = "Uncategorized"
+    result = conn.execute(
+        sa.text("SELECT id FROM organization WHERE name = :name"),
+        {"name": catchall_name},
+    )
+    catchall_row = result.fetchone()
+    if catchall_row is None:
+        conn.execute(
+            sa.text(
+                "INSERT INTO organization (name, arange, limit_flowspec4, limit_flowspec6, limit_rtbh)"
+                " VALUES (:name, :arange, 0, 0, 0)"
+            ),
+            {"name": catchall_name, "arange": "0.0.0.0/0 ::/0"},
+        )
+        result = conn.execute(
+            sa.text("SELECT id FROM organization WHERE name = :name"),
+            {"name": catchall_name},
+        )
+        catchall_row = result.fetchone()
+    catchall_id = catchall_row[0]
+
+    # Backfill NULL org_id on existing rows with the catch-all org id.
+    # migrate_v0x_to_v1.py will reassign these to the real organization.
+    for tbl in ("flowspec4", "flowspec6", "RTBH", "api_key", "machine_api_key"):
+        if _table_exists(tbl) and _column_exists(tbl, "org_id"):
+            conn.execute(
+                sa.text(f"UPDATE {tbl} SET org_id = :cid WHERE org_id IS NULL"),  # noqa: S608
+                {"cid": catchall_id},
+            )
 
     if _seed_communities and not _table_has_data("community"):
         op.bulk_insert(

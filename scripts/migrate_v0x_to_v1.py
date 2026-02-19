@@ -17,10 +17,12 @@ After running this script, stamp the baseline migration:
 from os import environ
 
 from flowapp import create_app, db
-from flowapp.models import Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey
+from flowapp.models import Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey, Organization
 from sqlalchemy import text
 
 import config
+
+CATCHALL_ORG_NAME = "Uncategorized"
 
 
 def migrate_org_data():
@@ -43,23 +45,28 @@ def migrate_org_data():
             """
         )
         try:
-            result = db.session.execute(update_statement)
+            db.session.execute(update_statement)
             db.session.commit()
-            print(f"  Updated organization limits.")
+            print("  Updated organization limits.")
         except Exception as e:
             db.session.rollback()
             print(f"  Error updating organizations: {e}")
             return
 
-        # Step 2: Assign rules with org_id=0 to user's organization
-        print("\nAssigning rules with org_id=0 to user organizations...")
+        # Step 2: Assign rules belonging to the catch-all org to the user's real organization
+        catchall = Organization.query.filter_by(name=CATCHALL_ORG_NAME).first()
+        if catchall is None:
+            print(f"\nNo '{CATCHALL_ORG_NAME}' organization found — nothing to reassign.")
+            return
+
+        print(f"\nAssigning rules with org_id={catchall.id} ('{CATCHALL_ORG_NAME}') to user organizations...")
         models = [Flowspec4, Flowspec6, RTBH, ApiKey, MachineApiKey]
         users_with_multiple_orgs = {}
         total_updated = 0
 
         for model in models:
             model_name = model.__name__
-            data_records = model.query.filter(model.org_id == 0).all()
+            data_records = model.query.filter(model.org_id == catchall.id).all()
 
             if not data_records:
                 print(f"  {model_name}: no records with org_id=0")
@@ -98,6 +105,8 @@ def migrate_org_data():
             print("\nPlease manually assign org_id for rules belonging to these users.")
         else:
             print("\nAll records assigned successfully.")
+            print(f"\nYou may now delete the '{CATCHALL_ORG_NAME}' organization")
+            print("from the admin interface if no records remain assigned to it.")
 
 
 if __name__ == "__main__":
