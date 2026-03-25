@@ -6,11 +6,36 @@ from flowapp.constants import (
     MAX_PACKET,
     IPV4_PROTOCOL,
     IPV6_NEXT_HEADER,
+    IPV4_FRAGMENT_V5,
 )
 from flowapp.flowspec import translate_sequence as trps
 from flask import current_app
 from flowapp.models import ASPath
 from flowapp import db
+
+
+def format_tcp_flags(flagstring, version=4):
+    """
+    Format tcp-flags string for ExaBGP message.
+    v4: tcp-flags SYN ACK;
+    v5: tcp-flags [ syn ack ];
+    """
+    if version == 5:
+        flags_lower = flagstring.lower()
+        return "tcp-flags [ {} ];".format(flags_lower)
+    return "tcp-flags {};".format(flagstring)
+
+
+def format_fragment(fragment_string, version=4):
+    """
+    Format fragment string for ExaBGP message.
+    v5 uses IPV4_FRAGMENT_V5 which includes !is-fragment for 'not'.
+    """
+    if version == 5:
+        parts = fragment_string.split()
+        translated = " ".join(IPV4_FRAGMENT_V5.get(p, p) for p in parts)
+        return "fragment [ {} ];".format(translated)
+    return "fragment [ {} ];".format(fragment_string)
 
 
 def create_ipv4(rule, message_type=ANNOUNCE):
@@ -19,16 +44,17 @@ def create_ipv4(rule, message_type=ANNOUNCE):
     @param rule models.Flowspec4
     @return string message
     """
+    exabgp_version = current_app.config.get("EXABGP_MAJOR_VERSION", 4)
+
     protocol = ""
     if rule.protocol and rule.protocol != "all":
         protocol = "protocol ={};".format(IPV4_PROTOCOL[rule.protocol])
 
     flagstring = rule.flags.replace(";", " ") if rule.flags else ""
-
-    flags = "tcp-flags {};".format(flagstring) if rule.flags and rule.protocol == "tcp" else ""
+    flags = format_tcp_flags(flagstring, exabgp_version) if rule.flags and rule.protocol == "tcp" else ""
 
     fragment_string = rule.fragment.replace(";", " ") if rule.fragment else ""
-    fragment = "fragment [ {} ];".format(fragment_string) if rule.fragment else ""
+    fragment = format_fragment(fragment_string, exabgp_version) if rule.fragment else ""
 
     spec = {
         "protocol": protocol,
@@ -47,11 +73,13 @@ def create_ipv6(rule, message_type=ANNOUNCE):
     @return string message
     :param message_type:
     """
+    exabgp_version = current_app.config.get("EXABGP_MAJOR_VERSION", 4)
+
     protocol = ""
     if rule.next_header and rule.next_header != "all":
         protocol = "next-header ={};".format(IPV6_NEXT_HEADER[rule.next_header])
-    flagstring = rule.flags.replace(";", " ")
-    flags = "tcp-flags {};".format(flagstring) if rule.flags and rule.next_header == "tcp" else ""
+    flagstring = rule.flags.replace(";", " ") if rule.flags else ""
+    flags = format_tcp_flags(flagstring, exabgp_version) if rule.flags and rule.next_header == "tcp" else ""
 
     spec = {"protocol": protocol, "mask": IPV6_DEFMASK, "flags": flags}
 

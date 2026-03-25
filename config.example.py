@@ -3,6 +3,9 @@ class Config:
     Default config options
     """
 
+    # config ExaBGP major version
+    EXABGP_MAJOR_VERSION = 4
+
     # Locale for Babel
     BABEL_DEFAULT_LOCALE = "en_US_POSIX"
     # Limits
