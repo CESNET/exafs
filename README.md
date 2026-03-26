@@ -65,4 +65,14 @@ It may also be necessary to monitor ExaBGP and re-announce rules after a restart
 ### API
 The REST API is documented using Swagger (OpenAPI). After installing and running the application, the API documentation is available locally at the /apidocs/ endpoint. This interactive documentation provides details about all available endpoints, request and response formats, and supported operations, making it easier to integrate and test the API.
 
+## ExaBGP version
+
+ExaFS supports both ExaBGP 4.x and 5.x. Set `EXABGP_MAJOR_VERSION` in your `config.py` to select the version (default is `4`):
+
+```python
+EXABGP_MAJOR_VERSION = 5
+```
+
+When set to `5`, ExaFS adjusts the generated BGP flow route messages to match ExaBGP 5.x syntax (e.g. TCP flags in lowercase bracket notation).
+
 ## [Change log](./CHANGELOG.md)

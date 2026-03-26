@@ -5,6 +5,15 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-25
+
+### Added
+- ExaBGP 5.x support via `EXABGP_MAJOR_VERSION` config option (default: `4`)
+  - TCP flags formatted as `tcp-flags [ syn ack ];` (lowercase, bracketed) when version is 5
+  - Fragment conditions use updated `!is-fragment` syntax for version 5
+  - `IPV4_FRAGMENT_V5` constants dict added for version 5 fragment mappings
+- Unit tests for ExaBGP message formatting helpers (`tests/test_messages.py`)
+
 ## [1.2.2] - 2026-02-19
 
 ### Changed
@@ -304,6 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Route Distinguisher for VRF now supported
 - See config example and update your `config.py`
 
+[1.3.0]: https://github.com/CESNET/exafs/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/CESNET/exafs/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/CESNET/exafs/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/CESNET/exafs/compare/v1.1.9...v1.2.0
