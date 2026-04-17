@@ -1,6 +1,5 @@
 import json
 
-
 from flowapp.models import Flowspec4, Organization
 
 V_PREFIX = "/api/v3"
@@ -609,3 +608,107 @@ def test_overall_limit(client, db, app, jwt_token):
     data = json.loads(req.data)
     assert data["message"]
     assert data["message"].startswith("System limit")
+
+
+def test_normal_user_sees_foreign_ipv4_rule_as_readonly(client, app, db, normal_user_jwt_token):
+    """
+    An IPv4 rule on a subnet outside the normal user's org ranges must appear in
+    flowspec_ipv4_ro (not flowspec_ipv4_rw) when fetched by the normal user.
+    """
+    from datetime import datetime
+    from flowapp.models import Flowspec4
+
+    with app.app_context():
+        rule = Flowspec4(
+            source="200.200.200.1",
+            source_mask=32,
+            source_port="",
+            destination=None,
+            destination_mask=None,
+            destination_port="",
+            protocol="tcp",
+            flags="",
+            packet_len="",
+            fragment="",
+            expires=datetime(2050, 10, 15, 14, 46),
+            user_id=1,
+            org_id=1,
+            action_id=2,
+        )
+        db.session.add(rule)
+        db.session.commit()
+
+    req = client.get(f"{V_PREFIX}/rules", headers={"x-access-token": normal_user_jwt_token})
+    assert req.status_code == 200
+    data = json.loads(req.data)
+    sources_rw = [r["source"] for r in data["flowspec_ipv4_rw"]]
+    sources_ro = [r["source"] for r in data["flowspec_ipv4_ro"]]
+    assert "200.200.200.1" not in sources_rw
+    assert "200.200.200.1" in sources_ro
+
+
+def test_normal_user_sees_foreign_ipv6_rule_as_readonly(client, app, db, normal_user_jwt_token):
+    """
+    An IPv6 rule on a subnet outside the normal user's org ranges must appear in
+    flowspec_ipv6_ro (not flowspec_ipv6_rw) when fetched by the normal user.
+    """
+    from datetime import datetime
+    from flowapp.models import Flowspec6
+
+    with app.app_context():
+        rule = Flowspec6(
+            source="2002:db8::1",
+            source_mask=128,
+            source_port="",
+            destination=None,
+            destination_mask=None,
+            destination_port="",
+            next_header="tcp",
+            flags="",
+            packet_len="",
+            expires=datetime(2050, 10, 15, 14, 46),
+            user_id=1,
+            org_id=1,
+            action_id=2,
+        )
+        db.session.add(rule)
+        db.session.commit()
+
+    req = client.get(f"{V_PREFIX}/rules", headers={"x-access-token": normal_user_jwt_token})
+    assert req.status_code == 200
+    data = json.loads(req.data)
+    sources_rw = [r["source"] for r in data["flowspec_ipv6_rw"]]
+    sources_ro = [r["source"] for r in data["flowspec_ipv6_ro"]]
+    assert "2002:db8::1" not in sources_rw
+    assert "2002:db8::1" in sources_ro
+
+
+def test_normal_user_sees_foreign_rtbh_rule_as_readonly(client, app, db, normal_user_jwt_token):
+    """
+    An RTBH rule on a subnet outside the normal user's org ranges must appear in
+    rtbh_any_ro (not rtbh_any_rw) when fetched by the normal user.
+    """
+    from datetime import datetime
+    from flowapp.models import RTBH
+
+    with app.app_context():
+        rule = RTBH(
+            ipv4="200.200.200.2",
+            ipv4_mask=32,
+            ipv6=None,
+            ipv6_mask=None,
+            community_id=1,
+            expires=datetime(2050, 10, 25, 14, 46),
+            user_id=1,
+            org_id=1,
+        )
+        db.session.add(rule)
+        db.session.commit()
+
+    req = client.get(f"{V_PREFIX}/rules", headers={"x-access-token": normal_user_jwt_token})
+    assert req.status_code == 200
+    data = json.loads(req.data)
+    rtbh_rw = [r["ipv4"] for r in data["rtbh_any_rw"]]
+    rtbh_ro = [r["ipv4"] for r in data["rtbh_any_ro"]]
+    assert "200.200.200.2" not in rtbh_rw
+    assert "200.200.200.2" in rtbh_ro

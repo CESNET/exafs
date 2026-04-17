@@ -138,9 +138,9 @@ def index(current_user: Dict[str, Any], key_map: Dict[str, str]) -> Response:
         return jsonify(payload)
     # filter out the rules for normal users
     else:
-        rules4 = validators.filter_rules_in_network(net_ranges, rules4)
-        rules6 = validators.filter_rules_in_network(net_ranges, rules6)
-        rules_rtbh = validators.filter_rtbh_rules(net_ranges, rules_rtbh)
+        rules4, rules4_outside_nets = validators.split_rules_for_user(net_ranges, rules4)
+        rules6, rules6_outside_nets = validators.split_rules_for_user(net_ranges, rules6)
+        rules_rtbh, rules_rtbh_outside_nets = validators.split_rtbh_rules_for_user(net_ranges, rules_rtbh)
 
         user_actions: List[Tuple[int, str]] = get_user_actions(current_user["role_ids"])
         user_actions_ids: List[int] = [act[0] for act in user_actions]
@@ -156,9 +156,10 @@ def index(current_user: Dict[str, Any], key_map: Dict[str, str]) -> Response:
         payload = {
             key_map["ipv4_rules"]: [rule.to_dict(prefered_tf) for rule in rules4_editable],
             key_map["ipv6_rules"]: [rule.to_dict(prefered_tf) for rule in rules6_editable],
-            key_map["ipv4_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules4_visible],
-            key_map["ipv6_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules6_visible],
+            key_map["ipv4_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules4_visible + rules4_outside_nets],
+            key_map["ipv6_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules6_visible + rules6_outside_nets],
             key_map["rtbh_rules"]: [rule.to_dict(prefered_tf) for rule in rules_rtbh],
+            key_map["rtbh_rules_readonly"]: [rule.to_dict(prefered_tf) for rule in rules_rtbh_outside_nets],
         }
         return jsonify(payload)
 

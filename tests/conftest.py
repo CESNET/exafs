@@ -230,3 +230,24 @@ def reset_org_limits(db, app):
             org.limit_flowspec6 = 0
             org.limit_rtbh = 0
             db.session.commit()
+
+
+@pytest.fixture(scope="session")
+def normal_user_jwt_token(client, app, db, request):
+    """
+    JWT token for a normal (non-admin) user belonging to org 1.
+    The user's org covers 147.230.0.0/16 and 2001:718:1c01::/48,
+    so rules on e.g. 200.200.200.0/24 or 2002::/16 are outside their nets.
+    """
+    normal_key = "normal-user-testkey"
+    with app.app_context():
+        flowapp.models.insert_users([{"name": "normal.user@cesnet.cz", "role_id": 2, "org_id": 1}])
+        user = flowapp.models.User.query.filter_by(uuid="normal.user@cesnet.cz").first()
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=normal_key, user_id=user.id, org_id=1)
+        db.session.add(model)
+        db.session.commit()
+
+    url = "/api/v3/auth"
+    token = client.get(url, headers={"x-api-key": normal_key})
+    data = json.loads(token.data)
+    return data["token"]
