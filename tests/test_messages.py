@@ -1,8 +1,8 @@
-import pytest
 from flowapp.messages import format_tcp_flags, format_fragment
 
 
 # --- format_tcp_flags ---
+
 
 def test_tcp_flags_v4_single():
     assert format_tcp_flags("SYN", 4) == "tcp-flags SYN;"
@@ -30,6 +30,7 @@ def test_tcp_flags_v5_already_lowercase():
 
 
 # --- format_fragment ---
+
 
 def test_fragment_v4_single():
     assert format_fragment("is-fragment", 4) == "fragment [ is-fragment ];"

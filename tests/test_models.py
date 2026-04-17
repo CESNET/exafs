@@ -6,8 +6,6 @@ from flowapp.models import (
     ApiKey,
     MachineApiKey,
     Rstate,
-    Community,
-    Action,
     Flowspec6,
     Whitelist,
 )
