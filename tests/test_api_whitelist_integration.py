@@ -9,6 +9,7 @@ import json
 import pytest
 from datetime import datetime, timedelta
 
+from sqlalchemy import func, select
 from flowapp.constants import RuleTypes, RuleOrigin
 from flowapp.models import RTBH, RuleWhitelistCache, Organization
 from flowapp.services import whitelist_service
@@ -50,7 +51,7 @@ def test_create_rtbh_equal_to_whitelist(client, app, db, jwt_token, whitelist_da
     # Create the whitelist directly using the service
     with app.app_context():
         # Create user and organization if needed for the whitelist
-        org = db.session.query(Organization).first()
+        org = db.session.execute(select(Organization)).scalars().first()
 
         # Create the whitelist
         whitelist_model, _ = whitelist_service.create_or_update_whitelist(
@@ -81,14 +82,14 @@ def test_create_rtbh_equal_to_whitelist(client, app, db, jwt_token, whitelist_da
 
     # Now verify the rule was created but marked as whitelisted
     with app.app_context():
-        rtbh_rule = db.session.query(RTBH).filter_by(id=rule_id).first()
+        rtbh_rule = db.session.execute(select(RTBH).filter_by(id=rule_id)).scalar_one()
         assert rtbh_rule is not None
         assert rtbh_rule.rstate_id == 4  # 4 = whitelisted state
 
         # Verify a cache entry was created
-        cache_entry = RuleWhitelistCache.query.filter_by(
+        cache_entry = db.session.execute(select(RuleWhitelistCache).filter_by(
             rid=rule_id, rtype=RuleTypes.RTBH.value, whitelist_id=whitelist_model.id
-        ).first()
+        )).scalars().first()
 
         assert cache_entry is not None
         assert cache_entry.rorigin == RuleOrigin.USER.value
@@ -110,7 +111,7 @@ def test_create_rtbh_supernet_of_whitelist(client, app, db, jwt_token, whitelist
 
     # Create the whitelist directly using the service
     with app.app_context():
-        org = db.session.query(Organization).first()
+        org = db.session.execute(select(Organization)).scalars().first()
         whitelist_model, _ = whitelist_service.create_or_update_whitelist(
             form_data=whitelist_data, user_id=1, org_id=org.id, user_email="test@example.com", org_name=org.name
         )
@@ -135,37 +136,35 @@ def test_create_rtbh_supernet_of_whitelist(client, app, db, jwt_token, whitelist
     # Now verify the rule was created and marked as whitelisted
     with app.app_context():
         # Check the original rule
-        rtbh_rule = db.session.query(RTBH).filter_by(id=rule_id).first()
+        rtbh_rule = db.session.execute(select(RTBH).filter_by(id=rule_id)).scalar_one()
         assert rtbh_rule is not None
         assert rtbh_rule.rstate_id == 4  # 4 = whitelisted state
 
         # Check if a new subnet rule was created for the non-whitelisted part
-        subnet_rule = (
-            db.session.query(RTBH)
-            .filter(
+        subnet_rule = db.session.execute(
+            select(RTBH).filter(
                 RTBH.ipv4 == "192.168.1.0",
                 RTBH.ipv4_mask == 25,  # This would be the other half not covered by the whitelist
             )
-            .first()
-        )
+        ).scalars().first()
 
         assert subnet_rule is not None
         assert subnet_rule.rstate_id == 1  # Active status
 
         # Verify cache entries
         # Main rule should be cached as a USER rule
-        user_cache = RuleWhitelistCache.query.filter_by(
+        user_cache = db.session.execute(select(RuleWhitelistCache).filter_by(
             rid=rule_id, rtype=RuleTypes.RTBH.value, whitelist_id=whitelist_model.id, rorigin=RuleOrigin.USER.value
-        ).first()
+        )).scalars().first()
         assert user_cache is not None
 
         # Subnet rule should be cached as a WHITELIST rule
-        whitelist_cache = RuleWhitelistCache.query.filter_by(
+        whitelist_cache = db.session.execute(select(RuleWhitelistCache).filter_by(
             rid=subnet_rule.id,
             rtype=RuleTypes.RTBH.value,
             whitelist_id=whitelist_model.id,
             rorigin=RuleOrigin.WHITELIST.value,
-        ).first()
+        )).scalars().first()
         assert whitelist_cache is not None
 
 
@@ -184,9 +183,9 @@ def test_create_rtbh_subnet_of_whitelist(client, app, db, jwt_token, whitelist_d
 
     # Create the whitelist directly using the service
     with app.app_context():
-        all_rtbh_rules_before = db.session.query(RTBH).count()
+        all_rtbh_rules_before = db.session.scalar(select(func.count()).select_from(RTBH))
 
-        org = db.session.query(Organization).first()
+        org = db.session.execute(select(Organization)).scalars().first()
         whitelist_model, _ = whitelist_service.create_or_update_whitelist(
             form_data=whitelist_data, user_id=1, org_id=org.id, user_email="test@example.com", org_name=org.name
         )
@@ -208,20 +207,20 @@ def test_create_rtbh_subnet_of_whitelist(client, app, db, jwt_token, whitelist_d
 
     # Now verify the rule was created but marked as whitelisted
     with app.app_context():
-        rtbh_rule = db.session.query(RTBH).filter_by(id=rule_id).first()
+        rtbh_rule = db.session.execute(select(RTBH).filter_by(id=rule_id)).scalar_one()
         assert rtbh_rule is not None
         assert rtbh_rule.rstate_id == 4  # 4 = whitelisted state
 
         # Verify a cache entry was created
-        cache_entry = RuleWhitelistCache.query.filter_by(
+        cache_entry = db.session.execute(select(RuleWhitelistCache).filter_by(
             rid=rule_id, rtype=RuleTypes.RTBH.value, whitelist_id=whitelist_model.id
-        ).first()
+        )).scalars().first()
 
         assert cache_entry is not None
         assert cache_entry.rorigin == RuleOrigin.USER.value
 
         # Verify no additional rules were created
-        all_rtbh_rules = db.session.query(RTBH).count()
+        all_rtbh_rules = db.session.scalar(select(func.count()).select_from(RTBH))
         assert all_rtbh_rules - all_rtbh_rules_before == 1
 
 
@@ -240,7 +239,7 @@ def test_create_rtbh_no_relation_to_whitelist(client, app, db, jwt_token, whitel
 
     # Create the whitelist directly using the service
     with app.app_context():
-        org = db.session.query(Organization).first()
+        org = db.session.execute(select(Organization)).scalars().first()
         whitelist_model, _ = whitelist_service.create_or_update_whitelist(
             form_data=whitelist_data, user_id=1, org_id=org.id, user_email="test@example.com", org_name=org.name
         )
@@ -263,11 +262,13 @@ def test_create_rtbh_no_relation_to_whitelist(client, app, db, jwt_token, whitel
 
     # Now verify the rule was created with active state
     with app.app_context():
-        rtbh_rule = db.session.query(RTBH).filter_by(id=rule_id).first()
+        rtbh_rule = db.session.execute(select(RTBH).filter_by(id=rule_id)).scalar_one()
         assert rtbh_rule is not None
         assert rtbh_rule.rstate_id == 1  # 1 = active state
 
         # Verify no cache entry was created
-        cache_entry = RuleWhitelistCache.query.filter_by(rid=rule_id, rtype=RuleTypes.RTBH.value).first()
+        cache_entry = db.session.execute(select(RuleWhitelistCache).filter_by(
+            rid=rule_id, rtype=RuleTypes.RTBH.value
+        )).scalars().first()
 
         assert cache_entry is None

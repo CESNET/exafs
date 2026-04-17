@@ -1,5 +1,6 @@
 import json
 
+from sqlalchemy import func, select
 from flowapp.models import Flowspec4, Organization
 
 V_PREFIX = "/api/v3"
@@ -457,12 +458,12 @@ def test_create_v4rule_lmit(client, db, app, jwt_token):
     test that limit checkt for v4 works
     """
     with app.app_context():
-        org = db.session.query(Organization).filter_by(id=1).first()
+        org = db.session.execute(select(Organization).filter_by(id=1)).scalar_one()
         org.limit_flowspec4 = 2
         db.session.commit()
 
         # count
-        count = db.session.query(Flowspec4).count()
+        count = db.session.scalar(select(func.count()).select_from(Flowspec4))
         print("COUNT", count)
 
     sources = ["147.230.42.17", "147.230.42.118"]
@@ -491,7 +492,7 @@ def test_create_v6rule_lmit(client, db, app, jwt_token):
     test that limit check for v6 works
     """
     with app.app_context():
-        org = db.session.query(Organization).filter_by(id=1).first()
+        org = db.session.execute(select(Organization).filter_by(id=1)).scalar_one()
         org.limit_flowspec6 = 3
         db.session.commit()
 
@@ -521,7 +522,7 @@ def test_create_rtbh_lmit(client, db, app, jwt_token):
     test that limit check for v6 works
     """
     with app.app_context():
-        org = db.session.query(Organization).filter_by(id=1).first()
+        org = db.session.execute(select(Organization).filter_by(id=1)).scalar_one()
         org.limit_rtbh = 1
         db.session.commit()
 
@@ -546,10 +547,10 @@ def test_update_existing_v4rule_with_timestamp_limit(client, db, app, jwt_token)
     """
     with app.app_context():
         # count
-        count = db.session.query(Flowspec4).filter_by(org_id=1, rstate_id=1).count()
+        count = db.session.scalar(select(func.count()).select_from(Flowspec4).filter_by(org_id=1, rstate_id=1))
         print("COUNT in update", count)
 
-        org = db.session.query(Organization).filter_by(id=1).first()
+        org = db.session.execute(select(Organization).filter_by(id=1)).scalar_one()
         org.limit_flowspec4 = count
         db.session.commit()
 
@@ -581,7 +582,7 @@ def test_overall_limit(client, db, app, jwt_token):
     with app.app_context():
         # count
 
-        org = db.session.query(Organization).filter_by(id=1).first()
+        org = db.session.execute(select(Organization).filter_by(id=1)).scalar_one()
         org.limit_flowspec4 = 20
         db.session.commit()
 

@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 
+from sqlalchemy import delete, func, select
 from flowapp.models import RTBH
 from flowapp.models.rules.whitelist import Whitelist
 
@@ -42,7 +43,7 @@ def test_create_rtbh_after_expired_rule_exists(client, app, db, jwt_token):
 
     # Verify the first rule is in withdrawn state
     with app.app_context():
-        expired_rule = db.session.query(RTBH).filter_by(id=rule_id_1).first()
+        expired_rule = db.session.execute(select(RTBH).filter_by(id=rule_id_1)).scalar_one()
         assert expired_rule is not None
         assert expired_rule.rstate_id == 2, "Expired rule should be in withdrawn state (rstate_id=2)"
         assert expired_rule.ipv4 == "192.168.100.50"
@@ -74,9 +75,9 @@ def test_create_rtbh_after_expired_rule_exists(client, app, db, jwt_token):
         # OR if a new rule is created, it has the wrong state
 
         # Check if it's the same rule (updated) or a new rule
-        total_rules = db.session.query(RTBH).filter_by(ipv4="192.168.100.50", ipv4_mask=32).count()
+        total_rules = db.session.scalar(select(func.count()).select_from(RTBH).filter_by(ipv4="192.168.100.50", ipv4_mask=32))
 
-        new_rule = db.session.query(RTBH).filter_by(id=rule_id_2).first()
+        new_rule = db.session.execute(select(RTBH).filter_by(id=rule_id_2)).scalar_one()
         assert new_rule is not None
 
         print("\n--- Bug Verification ---")
@@ -153,7 +154,7 @@ def test_create_rtbh_after_expired_rule_different_mask(client, app, db, jwt_toke
 
     # Verify the new rule is active (this should work because IP+mask don't match)
     with app.app_context():
-        new_rule = db.session.query(RTBH).filter_by(id=data2["rule"]["id"]).first()
+        new_rule = db.session.execute(select(RTBH).filter_by(id=data2["rule"]["id"])).scalar_one()
         assert new_rule is not None
         assert new_rule.rstate_id == 1, "New rule with different mask should be active"
         print("✓ Different mask creates new active rule correctly")
@@ -188,7 +189,7 @@ def test_create_rtbh_after_active_rule_exists(client, app, db, jwt_token):
 
     # Verify the first rule is active
     with app.app_context():
-        first_rule = db.session.query(RTBH).filter_by(id=rule_id_1).first()
+        first_rule = db.session.execute(select(RTBH).filter_by(id=rule_id_1)).scalar_one()
         assert first_rule.rstate_id == 1, "First rule should be active"
 
     # Step 2: Update the same rule with a new expiration
@@ -211,7 +212,7 @@ def test_create_rtbh_after_active_rule_exists(client, app, db, jwt_token):
 
     # Verify it maintains active state
     with app.app_context():
-        updated_rule = db.session.query(RTBH).filter_by(id=data2["rule"]["id"]).first()
+        updated_rule = db.session.execute(select(RTBH).filter_by(id=data2["rule"]["id"])).scalar_one()
         assert updated_rule is not None
         assert updated_rule.rstate_id == 1, "Updated rule should remain active"
         print("✓ Updating active rule maintains active state correctly")
@@ -224,8 +225,8 @@ def cleanup_before_stack(app, db):
     Cleanup function to remove all RTBH rules created during tests.
     """
     with app.app_context():
-        db.session.query(RTBH).delete()
-        db.session.query(Whitelist).delete()
+        db.session.execute(delete(RTBH))
+        db.session.execute(delete(Whitelist))
         db.session.commit()
 
 
