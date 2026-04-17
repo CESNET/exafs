@@ -9,6 +9,7 @@ from flowapp.models import (
     Flowspec6,
     Whitelist,
 )
+from flowapp.models.community import Community
 
 import flowapp.models as models
 
@@ -494,3 +495,117 @@ def test_whitelist_to_dict(db):
     assert dict_timestamp["mask"] == 32
     assert dict_timestamp["comment"] == "Test whitelist"
     assert dict_timestamp["user"] == "test-user-whitelist"
+
+
+class TestRuleWhitelistCache:
+    def _make_whitelist(self, db):
+        wl = Whitelist(
+            ip="10.0.0.0",
+            mask=8,
+            expires=datetime.now() + timedelta(days=1),
+            user_id=1,
+            org_id=1,
+        )
+        db.session.add(wl)
+        db.session.commit()
+        return wl
+
+    def _make_cache(self, db, wl_id, rule_id=42):
+        from flowapp.constants import RuleTypes, RuleOrigin
+        cache = models.RuleWhitelistCache(
+            rid=rule_id,
+            rtype=RuleTypes.RTBH,
+            whitelist_id=wl_id,
+            rorigin=RuleOrigin.USER,
+        )
+        db.session.add(cache)
+        db.session.commit()
+        return cache
+
+    def test_get_by_whitelist_id(self, db):
+        wl = self._make_whitelist(db)
+        cache = self._make_cache(db, wl.id, rule_id=100)
+        result = models.RuleWhitelistCache.get_by_whitelist_id(wl.id)
+        assert any(c.id == cache.id for c in result)
+
+    def test_count_by_rule(self, db):
+        from flowapp.constants import RuleTypes
+        wl = self._make_whitelist(db)
+        self._make_cache(db, wl.id, rule_id=200)
+        count = models.RuleWhitelistCache.count_by_rule(200, RuleTypes.RTBH)
+        assert count == 1
+
+    def test_delete_by_rule_id(self, db):
+        wl = self._make_whitelist(db)
+        self._make_cache(db, wl.id, rule_id=300)
+        deleted = models.RuleWhitelistCache.delete_by_rule_id(300)
+        assert deleted >= 1
+        from flowapp.constants import RuleTypes
+        assert models.RuleWhitelistCache.count_by_rule(300, RuleTypes.RTBH) == 0
+
+    def test_clean_by_whitelist_id(self, db):
+        wl = self._make_whitelist(db)
+        self._make_cache(db, wl.id, rule_id=400)
+        deleted = models.RuleWhitelistCache.clean_by_whitelist_id(wl.id)
+        assert deleted >= 1
+        result = models.RuleWhitelistCache.get_by_whitelist_id(wl.id)
+        assert result == []
+
+
+def test_get_whitelistable_communities(db):
+    # Communities are seeded at DB creation — id=1 exists (65535:65283)
+    result = Community.get_whitelistable_communities([1])
+    assert len(result) == 1
+    assert result[0].id == 1
+
+
+def test_get_whitelistable_communities_empty_list(db):
+    result = Community.get_whitelistable_communities([])
+    assert result == []
+
+
+def test_get_whitelistable_communities_nonexistent(db):
+    result = Community.get_whitelistable_communities([99999])
+    assert result == []
+
+
+class TestUserUpdate:
+    def _make_form(self, uuid, role_ids, org_ids):
+        class Field:
+            def __init__(self, value):
+                self.data = value
+
+        class Form:
+            pass
+
+        f = Form()
+        f.uuid = Field(uuid)
+        f.name = Field("Test User")
+        f.email = Field("test@example.com")
+        f.phone = Field("123")
+        f.comment = Field("comment")
+        f.role_ids = Field(role_ids)
+        f.org_ids = Field(org_ids)
+        return f
+
+    def test_update_changes_role(self, db):
+        user = models.User(uuid="update.test.user@test.cz")
+        db.session.add(user)
+        db.session.commit()
+
+        form = self._make_form("update.test.user@test.cz", role_ids=[2], org_ids=[1])
+        user.update(form)
+
+        role_ids = [r.id for r in user.role]
+        assert 2 in role_ids
+
+    def test_update_changes_org(self, db):
+        user = models.User(uuid="update.test.org.user@test.cz")
+        db.session.add(user)
+        db.session.commit()
+
+        form = self._make_form("update.test.org.user@test.cz", role_ids=[2], org_ids=[1])
+        user.update(form)
+
+        org_ids = [o.id for o in user.organization]
+        assert 1 in org_ids

@@ -1,4 +1,4 @@
-from sqlalchemy import event
+from sqlalchemy import event, select
 from .base import db, user_role, user_organization
 from .organization import Organization
 
@@ -46,12 +46,12 @@ class User(db.Model):
             self.organization.remove(org)
 
         for role_id in form.role_ids.data:
-            my_role = db.session.query(Role).filter_by(id=role_id).first()
+            my_role = db.session.execute(select(Role).filter_by(id=role_id)).scalar_one()
             if my_role not in self.role:
                 self.role.append(my_role)
 
         for org_id in form.org_ids.data:
-            my_org = db.session.query(Organization).filter_by(id=org_id).first()
+            my_org = db.session.execute(select(Organization).filter_by(id=org_id)).scalar_one()
             if my_org not in self.organization:
                 self.organization.append(my_org)
 

@@ -1,4 +1,4 @@
-from sqlalchemy import event
+from sqlalchemy import event, select
 from .base import db
 
 
@@ -26,7 +26,7 @@ class Community(db.Model):
 
     @classmethod
     def get_whitelistable_communities(cls, id_list):
-        return cls.query.filter(cls.id.in_(id_list)).all()
+        return db.session.scalars(select(cls).filter(cls.id.in_(id_list))).all()
 
     def __repr__(self):
         return f"<Community {self.name}>"

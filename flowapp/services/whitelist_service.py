@@ -9,6 +9,7 @@ from flask import current_app
 from typing import Dict, Tuple, List
 
 import sqlalchemy
+from sqlalchemy import select
 
 from flowapp import db
 from flowapp.constants import RuleOrigin, RuleTypes
@@ -66,7 +67,9 @@ def create_or_update_whitelist(
     # check RTBH rules against whitelist
     allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
     # filter out RTBH rules that are not active or whitelisted and not in allowed communities
-    all_rtbh_rules = RTBH.query.filter(RTBH.rstate_id.in_([1, 4]), RTBH.community_id.in_(allowed_communities)).all()
+    all_rtbh_rules = db.session.scalars(
+        select(RTBH).filter(RTBH.rstate_id.in_([1, 4]), RTBH.community_id.in_(allowed_communities))
+    ).all()
     rtbh_rules_map = map_rtbh_rules_to_strings(all_rtbh_rules)
     result = check_whitelist_against_rules(rtbh_rules_map, str(model))
     current_app.logger.info(f"Found {len(result)} matching RTBH rules for whitelist {model}")
@@ -127,7 +130,7 @@ def delete_expired_whitelists() -> List[str]:
     Returns:
         List of messages for the user
     """
-    expired_whitelists = Whitelist.query.filter(Whitelist.expires < db.func.now()).all()
+    expired_whitelists = db.session.scalars(select(Whitelist).filter(Whitelist.expires < db.func.now())).all()
     flashes = []
     for model in expired_whitelists:
         flashes.extend(delete_whitelist(model.id))

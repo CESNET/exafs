@@ -10,6 +10,7 @@ from flowapp.constants import (
 )
 from flowapp.flowspec import translate_sequence as trps
 from flask import current_app
+from sqlalchemy import select
 from flowapp.models import ASPath
 from flowapp import db
 
@@ -138,7 +139,7 @@ def create_rtbh(rule, message_type=ANNOUNCE):
 
     as_path_string = ""
     if rule.community.as_path:
-        match = db.session.query(ASPath).filter(ASPath.prefix == source).first()
+        match = db.session.execute(select(ASPath).filter_by(prefix=source)).scalar_one_or_none()
         as_path_string = f"as-path [ {match.as_path} ]" if match else ""
 
     return "{neighbor}{action} route {source} next-hop {nexthop} {as_path} {community} {large_community} {extended_community}{rd_string}".format(

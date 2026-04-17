@@ -4,6 +4,7 @@ from datetime import datetime
 from flowapp import utils
 from flowapp.constants import RuleTypes
 from flask import current_app
+from sqlalchemy import func, select
 
 from flowapp.models.rules.whitelist import Whitelist
 from .base import db
@@ -25,20 +26,20 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
     flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
     flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
-    fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
-    fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
-    rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
+    fs4 = db.session.scalar(select(func.count()).select_from(Flowspec4).filter_by(rstate_id=1))
+    fs6 = db.session.scalar(select(func.count()).select_from(Flowspec6).filter_by(rstate_id=1))
+    rtbh = db.session.scalar(select(func.count()).select_from(RTBH).filter_by(rstate_id=1))
 
     # check the organization limits
-    org = Organization.query.filter_by(id=org_id).first()
+    org = db.session.execute(select(Organization).filter_by(id=org_id)).scalar_one()
     if rule_type == RuleTypes.IPv4 and org.limit_flowspec4 > 0:
-        count = db.session.query(Flowspec4).filter_by(org_id=org_id, rstate_id=1).count()
+        count = db.session.scalar(select(func.count()).select_from(Flowspec4).filter_by(org_id=org_id, rstate_id=1))
         return count >= org.limit_flowspec4 or fs4 >= flowspec4_limit
     if rule_type == RuleTypes.IPv6 and org.limit_flowspec6 > 0:
-        count = db.session.query(Flowspec6).filter_by(org_id=org_id, rstate_id=1).count()
+        count = db.session.scalar(select(func.count()).select_from(Flowspec6).filter_by(org_id=org_id, rstate_id=1))
         return count >= org.limit_flowspec6 or fs6 >= flowspec6_limit
     if rule_type == RuleTypes.RTBH and org.limit_rtbh > 0:
-        count = db.session.query(RTBH).filter_by(org_id=org_id, rstate_id=1).count()
+        count = db.session.scalar(select(func.count()).select_from(RTBH).filter_by(org_id=org_id, rstate_id=1))
         return count >= org.limit_rtbh or rtbh >= rtbh_limit
 
     return False
@@ -48,9 +49,9 @@ def check_global_rule_limit(rule_type: RuleTypes) -> bool:
     flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
     flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
-    fs4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
-    fs6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
-    rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
+    fs4 = db.session.scalar(select(func.count()).select_from(Flowspec4).filter_by(rstate_id=1))
+    fs6 = db.session.scalar(select(func.count()).select_from(Flowspec6).filter_by(rstate_id=1))
+    rtbh = db.session.scalar(select(func.count()).select_from(RTBH).filter_by(rstate_id=1))
 
     # check the global limits if the organization limits are not set
 
@@ -70,14 +71,12 @@ def get_whitelist_model_if_exists(form_data):
     ip, mask should match
     expires, rstate_id, user_id, org_id, created, comment can be different
     """
-    record = (
-        db.session.query(Whitelist)
-        .filter(
+    record = db.session.execute(
+        select(Whitelist).filter(
             Whitelist.ip == form_data["ip"],
             Whitelist.mask == form_data["mask"],
         )
-        .first()
-    )
+    ).scalar_one_or_none()
 
     if record:
         return record
@@ -91,9 +90,8 @@ def get_ipv4_model_if_exists(form_data, rstate_id=1):
     Source and destination addresses, protocol, flags, action and packet_len should match
     Other fields can be different
     """
-    record = (
-        db.session.query(Flowspec4)
-        .filter(
+    record = db.session.scalars(
+        select(Flowspec4).filter(
             Flowspec4.source == form_data["source"],
             Flowspec4.source_mask == form_data["source_mask"],
             Flowspec4.source_port == form_data["source_port"],
@@ -106,8 +104,7 @@ def get_ipv4_model_if_exists(form_data, rstate_id=1):
             Flowspec4.action_id == form_data["action"],
             Flowspec4.rstate_id == rstate_id,
         )
-        .first()
-    )
+    ).first()
 
     if record:
         return record
@@ -119,9 +116,8 @@ def get_ipv6_model_if_exists(form_data, rstate_id=1):
     """
     Check if the record in database exist
     """
-    record = (
-        db.session.query(Flowspec6)
-        .filter(
+    record = db.session.scalars(
+        select(Flowspec6).filter(
             Flowspec6.source == form_data["source"],
             Flowspec6.source_mask == form_data["source_mask"],
             Flowspec6.source_port == form_data["source_port"],
@@ -134,8 +130,7 @@ def get_ipv6_model_if_exists(form_data, rstate_id=1):
             Flowspec6.action_id == form_data["action"],
             Flowspec6.rstate_id == rstate_id,
         )
-        .first()
-    )
+    ).first()
 
     if record:
         return record
@@ -150,17 +145,15 @@ def get_rtbh_model_if_exists(form_data):
     Rule can be in any state and have different expires, user_id, org_id, created, comment
     """
 
-    record = (
-        db.session.query(RTBH)
-        .filter(
+    record = db.session.scalars(
+        select(RTBH).filter(
             RTBH.ipv4 == form_data["ipv4"],
             RTBH.ipv4_mask == form_data["ipv4_mask"],
             RTBH.ipv6 == form_data["ipv6"],
             RTBH.ipv6_mask == form_data["ipv6_mask"],
             RTBH.community_id == form_data["community"],
         )
-        .first()
-    )
+    ).first()
 
     if record:
         return record
@@ -173,8 +166,8 @@ def insert_users(users):
     inser list of users {name: string, role_id: integer} to db
     """
     for user in users:
-        r = Role.query.filter_by(id=user["role_id"]).first()
-        o = Organization.query.filter_by(id=user["org_id"]).first()
+        r = db.session.execute(select(Role).filter_by(id=user["role_id"])).scalar_one()
+        o = db.session.execute(select(Organization).filter_by(id=user["org_id"])).scalar_one()
         u = User(uuid=user["name"])
         u.role.append(r)
         u.organization.append(o)
@@ -204,16 +197,16 @@ def insert_user(
     :return: None
     """
     u = User(uuid=uuid, name=name, phone=phone, comment=comment, email=email)
+    db.session.add(u)
 
     for role_id in role_ids:
-        r = Role.query.filter_by(id=role_id).first()
+        r = db.session.execute(select(Role).filter_by(id=role_id)).scalar_one()
         u.role.append(r)
 
     for org_id in org_ids:
-        o = Organization.query.filter_by(id=org_id).first()
+        o = db.session.execute(select(Organization).filter_by(id=org_id)).scalar_one()
         u.organization.append(o)
 
-    db.session.add(u)
     db.session.commit()
 
 
@@ -221,7 +214,7 @@ def get_user_nets(user_id):
     """
     Return list of network ranges for all user organization
     """
-    user = db.session.query(User).filter_by(id=user_id).first()
+    user = db.session.execute(select(User).filter_by(id=user_id)).scalar_one()
     orgs = user.organization
     result = []
     for org in orgs:
@@ -234,7 +227,7 @@ def get_user_orgs_choices(user_id):
     """
     Return list of orgs as choices for form
     """
-    user = db.session.query(User).filter_by(id=user_id).first()
+    user = db.session.execute(select(User).filter_by(id=user_id)).scalar_one()
     orgs = user.organization
 
     return [(g.id, g.name) for g in orgs]
@@ -246,9 +239,9 @@ def get_user_actions(user_roles):
     """
     max_role = max(user_roles)
     if max_role == 3:
-        actions = db.session.query(Action).order_by("id").all()
+        actions = db.session.scalars(select(Action).order_by("id")).all()
     else:
-        actions = db.session.query(Action).filter_by(role_id=max_role).order_by("id").all()
+        actions = db.session.scalars(select(Action).filter_by(role_id=max_role).order_by("id")).all()
     result = [(g.id, g.name) for g in actions]
     return result
 
@@ -259,9 +252,9 @@ def get_user_communities(user_roles):
     """
     max_role = max(user_roles)
     if max_role == 3:
-        communities = db.session.query(Community).order_by("id")
+        communities = db.session.scalars(select(Community).order_by("id"))
     else:
-        communities = db.session.query(Community).filter_by(role_id=max_role).order_by("id")
+        communities = db.session.scalars(select(Community).filter_by(role_id=max_role).order_by("id"))
 
     return [(g.id, g.name) for g in communities]
 
@@ -274,7 +267,7 @@ def get_existing_action(name=None, command=None):
     :param command: string action command
     :return: action id
     """
-    action = Action.query.filter((Action.name == name) | (Action.command == command)).first()
+    action = db.session.execute(select(Action).filter((Action.name == name) | (Action.command == command))).scalar_one_or_none()
     return action.id if hasattr(action, "id") else None
 
 
@@ -286,7 +279,7 @@ def get_existing_community(name=None):
     :param command: string action command
     :return: action id
     """
-    community = Community.query.filter(Community.name == name).first()
+    community = db.session.execute(select(Community).filter(Community.name == name)).scalar_one_or_none()
     return community.id if hasattr(community, "id") else None
 
 
@@ -299,7 +292,7 @@ def _get_flowspec4_rules(rule_state, sort="expires", order="desc", page=1, per_p
     sorter = getattr(Flowspec4, sort, Flowspec4.id)
     sorting = getattr(sorter, order)
 
-    query = db.session.query(Flowspec4)
+    query = select(Flowspec4)
 
     if comp_func:
         query = query.filter(comp_func(Flowspec4.expires, today))
@@ -307,10 +300,10 @@ def _get_flowspec4_rules(rule_state, sort="expires", order="desc", page=1, per_p
     query = query.order_by(sorting())
 
     if paginate:
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        pagination = db.paginate(query, page=page, per_page=per_page, error_out=False, max_per_page=500)
         return pagination.items, pagination
     else:
-        return query.all()
+        return db.session.scalars(query).all()
 
 
 def _get_flowspec6_rules(rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
@@ -322,7 +315,7 @@ def _get_flowspec6_rules(rule_state, sort="expires", order="desc", page=1, per_p
     sorter = getattr(Flowspec6, sort, Flowspec6.id)
     sorting = getattr(sorter, order)
 
-    query = db.session.query(Flowspec6)
+    query = select(Flowspec6)
 
     if comp_func:
         query = query.filter(comp_func(Flowspec6.expires, today))
@@ -330,10 +323,10 @@ def _get_flowspec6_rules(rule_state, sort="expires", order="desc", page=1, per_p
     query = query.order_by(sorting())
 
     if paginate:
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        pagination = db.paginate(query, page=page, per_page=per_page, error_out=False, max_per_page=500)
         return pagination.items, pagination
     else:
-        return query.all()
+        return db.session.scalars(query).all()
 
 
 def _get_rtbh_rules(rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
@@ -345,7 +338,7 @@ def _get_rtbh_rules(rule_state, sort="expires", order="desc", page=1, per_page=5
     sorter = getattr(RTBH, sort, RTBH.id)
     sorting = getattr(sorter, order)
 
-    query = db.session.query(RTBH)
+    query = select(RTBH)
 
     if comp_func:
         query = query.filter(comp_func(RTBH.expires, today))
@@ -353,10 +346,10 @@ def _get_rtbh_rules(rule_state, sort="expires", order="desc", page=1, per_page=5
     query = query.order_by(sorting())
 
     if paginate:
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        pagination = db.paginate(query, page=page, per_page=per_page, error_out=False, max_per_page=500)
         return pagination.items, pagination
     else:
-        return query.all()
+        return db.session.scalars(query).all()
 
 
 def _get_whitelist_rules(rule_state, sort="expires", order="desc", page=1, per_page=50, paginate=False):
@@ -368,7 +361,7 @@ def _get_whitelist_rules(rule_state, sort="expires", order="desc", page=1, per_p
     sorter = getattr(Whitelist, sort, Whitelist.id)
     sorting = getattr(sorter, order)
 
-    query = db.session.query(Whitelist)
+    query = select(Whitelist)
 
     if comp_func:
         query = query.filter(comp_func(Whitelist.expires, today))
@@ -376,10 +369,10 @@ def _get_whitelist_rules(rule_state, sort="expires", order="desc", page=1, per_p
     query = query.order_by(sorting())
 
     if paginate:
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False, max_per_page=500)
+        pagination = db.paginate(query, page=page, per_page=per_page, error_out=False, max_per_page=500)
         return pagination.items, pagination
     else:
-        return query.all()
+        return db.session.scalars(query).all()
 
 
 # Facade function - keeps backward compatibility and config-based routing
@@ -430,13 +423,10 @@ def get_user_rules_ids(user_id, rule_type):
     """
 
     if rule_type == "ipv4":
-        rules4 = db.session.query(Flowspec4.id).filter_by(user_id=user_id).all()
-        return [int(x[0]) for x in rules4]
+        return list(db.session.scalars(select(Flowspec4.id).filter_by(user_id=user_id)))
 
     if rule_type == "ipv6":
-        rules6 = db.session.query(Flowspec6.id).order_by(Flowspec6.expires.desc()).all()
-        return [int(x[0]) for x in rules6]
+        return list(db.session.scalars(select(Flowspec6.id).order_by(Flowspec6.expires.desc())))
 
     if rule_type == "rtbh":
-        rules_rtbh = db.session.query(RTBH.id).filter_by(user_id=user_id).all()
-        return [int(x[0]) for x in rules_rtbh]
+        return list(db.session.scalars(select(RTBH.id).filter_by(user_id=user_id)))

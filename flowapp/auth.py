@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import List, Optional
 from flask import current_app, redirect, request, url_for, session, abort
+from sqlalchemy import select
 
 from flowapp import __version__, db, validators
 from flowapp.models import Flowspec4, Flowspec6, RTBH, Whitelist, get_user_nets
@@ -153,35 +154,35 @@ def get_user_allowed_rule_ids(rule_type: str, user_id: int, user_role_ids: List[
     # Admin users can modify any rules
     if 3 in user_role_ids:
         if rule_type == "ipv4":
-            return [r.id for r in db.session.query(Flowspec4.id).all()]
+            return list(db.session.scalars(select(Flowspec4.id)))
         elif rule_type == "ipv6":
-            return [r.id for r in db.session.query(Flowspec6.id).all()]
+            return list(db.session.scalars(select(Flowspec6.id)))
         elif rule_type == "rtbh":
-            return [r.id for r in db.session.query(RTBH.id).all()]
+            return list(db.session.scalars(select(RTBH.id)))
         elif rule_type == "whitelist":
-            return [r.id for r in db.session.query(Whitelist.id).all()]
+            return list(db.session.scalars(select(Whitelist.id)))
         return []
 
     # Regular users - filter by network ranges
     net_ranges = get_user_nets(user_id)
 
     if rule_type == "ipv4":
-        rules = db.session.query(Flowspec4).all()
+        rules = db.session.scalars(select(Flowspec4)).all()
         filtered_rules = validators.filter_rules_in_network(net_ranges, rules)
         return [r.id for r in filtered_rules]
 
     elif rule_type == "ipv6":
-        rules = db.session.query(Flowspec6).all()
+        rules = db.session.scalars(select(Flowspec6)).all()
         filtered_rules = validators.filter_rules_in_network(net_ranges, rules)
         return [r.id for r in filtered_rules]
 
     elif rule_type == "rtbh":
-        rules = db.session.query(RTBH).all()
+        rules = db.session.scalars(select(RTBH)).all()
         filtered_rules = validators.filter_rtbh_rules(net_ranges, rules)
         return [r.id for r in filtered_rules]
 
     elif rule_type == "whitelist":
-        rules = db.session.query(Whitelist).all()
+        rules = db.session.scalars(select(Whitelist)).all()
         filtered_rules = validators.filter_rules_in_network(net_ranges, rules)
         return [r.id for r in filtered_rules]
 

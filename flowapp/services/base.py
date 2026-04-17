@@ -1,5 +1,6 @@
 from datetime import datetime
 from operator import ge, lt
+from sqlalchemy import select
 from flowapp import constants, db, messages
 from flowapp.constants import ANNOUNCE, WITHDRAW
 from flowapp.models import RTBH, Flowspec4, Flowspec6
@@ -44,27 +45,24 @@ def announce_all_routes(action=constants.ANNOUNCE):
     today = datetime.now()
     comp_func = ge if action == constants.ANNOUNCE else lt
 
-    rules4 = (
-        db.session.query(Flowspec4)
+    rules4 = db.session.scalars(
+        select(Flowspec4)
         .filter(Flowspec4.rstate_id == 1)
         .filter(comp_func(Flowspec4.expires, today))
         .order_by(Flowspec4.expires.desc())
-        .all()
-    )
-    rules6 = (
-        db.session.query(Flowspec6)
+    ).all()
+    rules6 = db.session.scalars(
+        select(Flowspec6)
         .filter(Flowspec6.rstate_id == 1)
         .filter(comp_func(Flowspec6.expires, today))
         .order_by(Flowspec6.expires.desc())
-        .all()
-    )
-    rules_rtbh = (
-        db.session.query(RTBH)
+    ).all()
+    rules_rtbh = db.session.scalars(
+        select(RTBH)
         .filter(RTBH.rstate_id == 1)
         .filter(comp_func(RTBH.expires, today))
         .order_by(RTBH.expires.desc())
-        .all()
-    )
+    ).all()
 
     messages_v4 = [messages.create_ipv4(rule, action) for rule in rules4]
     messages_v6 = [messages.create_ipv6(rule, action) for rule in rules6]
