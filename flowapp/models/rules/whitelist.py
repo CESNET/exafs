@@ -157,6 +157,14 @@ class RuleWhitelistCache(db.Model):
         return deleted
 
     @classmethod
+    def get_by_rule_ids(cls, rule_ids: list, rule_type: "RuleTypes") -> list:
+        if not rule_ids:
+            return []
+        return db.session.scalars(
+            select(cls).filter(cls.rid.in_(rule_ids), cls.rtype == rule_type.value)
+        ).all()
+
+    @classmethod
     def count_by_rule(cls, rule_id: int, rule_type: RuleTypes):
         """
         Count the number of cache entries for the given rule

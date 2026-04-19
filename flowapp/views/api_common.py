@@ -65,10 +65,10 @@ def authorize(user_key: str) -> Tuple[Response, int]:
     """
     jwt_key: Optional[str] = current_app.config.get("JWT_SECRET")
     # try normal user key first
-    model: Optional[Union[ApiKey, MachineApiKey]] = db.session.query(ApiKey).filter_by(key=user_key).first()
+    model: Optional[Union[ApiKey, MachineApiKey]] = ApiKey.get_by_key(user_key)
     # if not found try machine key
     if not model:
-        model = db.session.query(MachineApiKey).filter_by(key=user_key).first()
+        model = MachineApiKey.get_by_key(user_key)
     # if key is not found return 403
     if not model:
         return jsonify({"message": "auth token is invalid"}), 403
@@ -124,9 +124,9 @@ def index(current_user: Dict[str, Any], key_map: Dict[str, str]) -> Response:
     prefered_tf: str = request.args.get(TIME_FORMAT_ARG) if request.args.get(TIME_FORMAT_ARG) else ""
 
     net_ranges: List[str] = get_user_nets(current_user["id"])
-    rules4: List[Flowspec4] = db.session.query(Flowspec4).order_by(Flowspec4.expires.desc()).all()
-    rules6: List[Flowspec6] = db.session.query(Flowspec6).order_by(Flowspec6.expires.desc()).all()
-    rules_rtbh: List[RTBH] = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
+    rules4: List[Flowspec4] = Flowspec4.get_all_ordered()
+    rules6: List[Flowspec6] = Flowspec6.get_all_ordered()
+    rules_rtbh: List[RTBH] = RTBH.get_all_ordered()
 
     # admin can see and edit any rules
     if 3 in current_user["role_ids"]:
@@ -232,11 +232,11 @@ def create_ipv4(current_user: Dict[str, Any]) -> Tuple[Response, int]:
     :return: json response
     """
     if check_global_rule_limit(RuleTypes.IPv4):
-        count: int = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
+        count: int = Flowspec4.count_active()
         return global_limit_reached(count=count, rule_type=RuleTypes.IPv4)
 
     if check_rule_limit(current_user["org_id"], RuleTypes.IPv4):
-        count = db.session.query(Flowspec4).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        count = Flowspec4.count_active(org_id=current_user["org_id"])
         return limit_reached(count=count, rule_type=RuleTypes.IPv4, org_id=current_user["org_id"])
 
     net_ranges: List[str] = get_user_nets(current_user["id"])
@@ -275,11 +275,11 @@ def create_ipv6(current_user: Dict[str, Any]) -> Tuple[Response, int]:
     :return:
     """
     if check_global_rule_limit(RuleTypes.IPv6):
-        count: int = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
+        count: int = Flowspec6.count_active()
         return global_limit_reached(count=count, rule_type=RuleTypes.IPv6)
 
     if check_rule_limit(current_user["org_id"], RuleTypes.IPv6):
-        count = db.session.query(Flowspec6).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        count = Flowspec6.count_active(org_id=current_user["org_id"])
         return limit_reached(count=count, rule_type=RuleTypes.IPv6, org_id=current_user["org_id"])
 
     net_ranges: List[str] = get_user_nets(current_user["id"])
@@ -312,14 +312,14 @@ def create_rtbh(current_user: Dict[str, Any]) -> Tuple[Response, int]:
     Create new RTBH rule
     """
     if check_global_rule_limit(RuleTypes.RTBH):
-        count: int = db.session.query(RTBH).filter_by(rstate_id=1).count()
+        count: int = RTBH.count_active()
         return global_limit_reached(count=count, rule_type=RuleTypes.RTBH)
 
     if check_rule_limit(current_user["org_id"], RuleTypes.RTBH):
-        count = db.session.query(RTBH).filter_by(rstate_id=1, org_id=current_user["org_id"]).count()
+        count = RTBH.count_active(org_id=current_user["org_id"])
         return limit_reached(count=count, rule_type=RuleTypes.RTBH, org_id=current_user["org_id"])
 
-    all_com: List[Community] = db.session.query(Community).all()
+    all_com: List[Community] = Community.get_all()
     if not all_com:
         insert_initial_communities()
 
@@ -379,7 +379,7 @@ def rtbh_rule_get(current_user: Dict[str, Any], rule_id: int) -> Tuple[Response,
     :param rule_id:
     :return:
     """
-    model: Optional[RTBH] = db.session.query(RTBH).get(rule_id)
+    model: Optional[RTBH] = db.session.get(RTBH, rule_id)
     return get_rule(current_user, model, rule_id)
 
 

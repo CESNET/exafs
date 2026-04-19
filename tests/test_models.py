@@ -10,6 +10,7 @@ from flowapp.models import (
     Whitelist,
 )
 from flowapp.models.community import Community
+from flowapp.models.rules.base import Action
 
 import flowapp.models as models
 
@@ -567,6 +568,77 @@ def test_get_whitelistable_communities_empty_list(db):
 def test_get_whitelistable_communities_nonexistent(db):
     result = Community.get_whitelistable_communities([99999])
     assert result == []
+
+
+def test_action_get_all_ordered_returns_seeded(db):
+    result = Action.get_all_ordered()
+    assert len(result) >= 1
+    names = [a.name for a in result]
+    assert names == sorted(names)
+
+
+def test_action_get_all_returns_seeded(db):
+    result = Action.get_all()
+    assert len(result) >= 1
+
+
+def test_apikey_get_by_user_id_returns_keys(db):
+    key = ApiKey(machine="127.0.0.1", key="testkey-uid-1", user_id=1, org_id=1)
+    db.session.add(key)
+    db.session.commit()
+    result = ApiKey.get_by_user_id(1)
+    assert any(k.key == "testkey-uid-1" for k in result)
+
+
+def test_apikey_get_by_user_id_empty(db):
+    result = ApiKey.get_by_user_id(99999)
+    assert result == []
+
+
+def test_community_get_all_returns_seeded(db):
+    result = Community.get_all()
+    assert len(result) >= 1
+
+
+class TestRuleWhitelistCacheGetByRuleIds:
+    def _make_whitelist(self, db):
+        wl = Whitelist(
+            ip="10.1.0.0",
+            mask=16,
+            expires=datetime.now() + timedelta(days=1),
+            user_id=1,
+            org_id=1,
+        )
+        db.session.add(wl)
+        db.session.commit()
+        return wl
+
+    def test_get_by_rule_ids_returns_matching(self, db):
+        from flowapp.constants import RuleTypes, RuleOrigin
+        wl = self._make_whitelist(db)
+        cache = models.RuleWhitelistCache(
+            rid=501, rtype=RuleTypes.IPv4, whitelist_id=wl.id, rorigin=RuleOrigin.WHITELIST
+        )
+        db.session.add(cache)
+        db.session.commit()
+        result = models.RuleWhitelistCache.get_by_rule_ids([501], RuleTypes.IPv4)
+        assert any(c.rid == 501 for c in result)
+
+    def test_get_by_rule_ids_excludes_other_type(self, db):
+        from flowapp.constants import RuleTypes, RuleOrigin
+        wl = self._make_whitelist(db)
+        cache = models.RuleWhitelistCache(
+            rid=502, rtype=RuleTypes.RTBH, whitelist_id=wl.id, rorigin=RuleOrigin.WHITELIST
+        )
+        db.session.add(cache)
+        db.session.commit()
+        result = models.RuleWhitelistCache.get_by_rule_ids([502], RuleTypes.IPv4)
+        assert not any(c.rid == 502 for c in result)
+
+    def test_get_by_rule_ids_empty_list(self, db):
+        from flowapp.constants import RuleTypes
+        result = models.RuleWhitelistCache.get_by_rule_ids([], RuleTypes.IPv4)
+        assert result == []
 
 
 class TestUserUpdate:

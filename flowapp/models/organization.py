@@ -1,4 +1,5 @@
-from sqlalchemy import event
+from typing import List, Optional
+from sqlalchemy import event, select
 from .base import db
 
 
@@ -26,6 +27,14 @@ class Organization(db.Model):
         """
         # self.user is the backref from the user_organization relationship
         return self.user
+
+    @classmethod
+    def get_all_ordered(cls) -> List["Organization"]:
+        return db.session.scalars(select(cls).order_by(cls.name)).all()
+
+    @classmethod
+    def get_by_name(cls, name: str) -> Optional["Organization"]:
+        return db.session.scalars(select(cls).filter_by(name=name)).first()
 
 
 # Event listeners for Organization

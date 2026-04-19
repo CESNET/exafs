@@ -65,6 +65,47 @@ def check_global_rule_limit(rule_type: RuleTypes) -> bool:
     return False
 
 
+def get_org_rule_stats() -> dict:
+    """
+    Return per-org and global active rule counts for the admin organizations view.
+    """
+    orgs = db.session.scalars(
+        select(Organization).options(db.joinedload(Organization.rtbh))
+    ).unique().all()
+
+    rtbh_counts = dict(
+        db.session.execute(
+            select(RTBH.org_id, func.count(RTBH.id))
+            .filter(RTBH.rstate_id == 1)
+            .group_by(RTBH.org_id)
+        ).all()
+    )
+    flowspec4_counts = dict(
+        db.session.execute(
+            select(Flowspec4.org_id, func.count(Flowspec4.id))
+            .filter(Flowspec4.rstate_id == 1)
+            .group_by(Flowspec4.org_id)
+        ).all()
+    )
+    flowspec6_counts = dict(
+        db.session.execute(
+            select(Flowspec6.org_id, func.count(Flowspec6.id))
+            .filter(Flowspec6.rstate_id == 1)
+            .group_by(Flowspec6.org_id)
+        ).all()
+    )
+
+    return {
+        "orgs": orgs,
+        "rtbh_counts": rtbh_counts,
+        "flowspec4_counts": flowspec4_counts,
+        "flowspec6_counts": flowspec6_counts,
+        "rtbh_all_count": RTBH.count_active(),
+        "flowspec4_all_count": Flowspec4.count_active(),
+        "flowspec6_all_count": Flowspec6.count_active(),
+    }
+
+
 def get_whitelist_model_if_exists(form_data):
     """
     Check if the record in database exist

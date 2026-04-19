@@ -1,3 +1,4 @@
+from typing import List, Optional
 from sqlalchemy import event, select
 from .base import db
 
@@ -25,6 +26,10 @@ class Community(db.Model):
         self.role_id = role_id
 
     @classmethod
+    def get_all(cls) -> List["Community"]:
+        return db.session.scalars(select(cls)).all()
+
+    @classmethod
     def get_whitelistable_communities(cls, id_list):
         return db.session.scalars(select(cls).filter(cls.id.in_(id_list))).all()
 
@@ -42,7 +47,13 @@ class ASPath(db.Model):
     prefix = db.Column(db.String(120), unique=True)
     as_path = db.Column(db.String(250))
 
-    # Methods and initializer
+    @classmethod
+    def get_all(cls) -> List["ASPath"]:
+        return db.session.scalars(select(cls)).all()
+
+    @classmethod
+    def get_by_prefix(cls, prefix: str) -> Optional["ASPath"]:
+        return db.session.scalars(select(cls).filter_by(prefix=prefix)).first()
 
 
 # Note: seed data is also defined in migrations/versions/001_baseline.py - keep in sync

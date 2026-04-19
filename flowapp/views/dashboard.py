@@ -705,8 +705,8 @@ def enrich_rules_with_whitelist_info(rules, rule_type):
     from flowapp.models.rules.whitelist import RuleWhitelistCache
     from flowapp.constants import RuleTypes, RuleOrigin
 
-    # Map rule type string to enum value
-    rule_type_map = {"ipv4": RuleTypes.IPv4.value, "ipv6": RuleTypes.IPv6.value, "rtbh": RuleTypes.RTBH.value}
+    # Map rule type string to enum
+    rule_type_map = {"ipv4": RuleTypes.IPv4, "ipv6": RuleTypes.IPv6, "rtbh": RuleTypes.RTBH}
 
     # Get all rule IDs
     rule_ids = [rule.id for rule in rules]
@@ -716,9 +716,7 @@ def enrich_rules_with_whitelist_info(rules, rule_type):
         return rules, set()
 
     # Query the cache for these rule IDs
-    cache_entries = RuleWhitelistCache.query.filter(
-        RuleWhitelistCache.rid.in_(rule_ids), RuleWhitelistCache.rtype == rule_type_map.get(rule_type)
-    ).all()
+    cache_entries = RuleWhitelistCache.get_by_rule_ids(rule_ids, rule_type_map.get(rule_type))
 
     # Create a set of rule IDs that were created by a whitelist
     whitelist_rule_ids = {entry.rid for entry in cache_entries if entry.rorigin == RuleOrigin.WHITELIST.value}

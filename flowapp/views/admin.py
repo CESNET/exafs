@@ -1,9 +1,7 @@
 import csv
 from io import StringIO
-from datetime import datetime, timedelta
 import secrets
 
-from sqlalchemy import func
 from flask import Blueprint, render_template, redirect, flash, request, session, url_for, current_app
 import sqlalchemy
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -21,10 +19,8 @@ from ..models import (
     Community,
     get_existing_community,
     Log,
-    Flowspec4,
-    Flowspec6,
-    RTBH,
 )
+from ..models.utils import get_org_rule_stats
 from ..auth import auth_required, admin_required
 from flowapp import db
 
@@ -40,13 +36,7 @@ def log(page):
     Displays logs for last two days
     """
     per_page = 20
-    now = datetime.now()
-    week_ago = now - timedelta(weeks=1)
-    logs = (
-        Log.query.order_by(Log.time.desc())
-        .filter(Log.time > week_ago)
-        .paginate(page=page, per_page=per_page, max_per_page=None, error_out=False)
-    )
+    logs = Log.get_recent_paginated(page=page, per_page=per_page)
     return render_template("pages/logs.html", logs=logs)
 
 
@@ -57,7 +47,7 @@ def machine_keys():
     """
     Display all machine keys, from all admins
     """
-    keys = db.session.query(MachineApiKey).all()
+    keys = MachineApiKey.get_all()
 
     return render_template("pages/machine_api_key.html", keys=keys)
 
@@ -72,7 +62,7 @@ def add_machine_key():
     """
     generated = secrets.token_hex(24)
     form = MachineApiKeyForm(request.form, key=generated)
-    form.user.choices = [(g.id, f"{g.name} ({g.uuid})") for g in db.session.query(User).order_by("name")]
+    form.user.choices = [(g.id, f"{g.name} ({g.uuid})") for g in User.get_all_ordered()]
 
     if request.method == "POST" and form.validate():
         target_user = db.session.get(User, form.user.data)
@@ -128,12 +118,12 @@ def delete_machine_key(key_id):
 @admin_required
 def user():
     form = UserForm(request.form)
-    form.role_ids.choices = [(g.id, g.name) for g in db.session.query(Role).order_by("name")]
-    form.org_ids.choices = [(g.id, g.name) for g in db.session.query(Organization).order_by("name")]
+    form.role_ids.choices = [(g.id, g.name) for g in Role.get_all_ordered()]
+    form.org_ids.choices = [(g.id, g.name) for g in Organization.get_all_ordered()]
 
     if request.method == "POST" and form.validate():
         # test if user is unique
-        exist = db.session.query(User).filter_by(uuid=form.uuid.data).first()
+        exist = User.get_by_uuid(form.uuid.data)
         if not exist:
             insert_user(
                 uuid=form.uuid.data,
@@ -164,8 +154,8 @@ def user():
 def edit_user(user_id):
     user = db.session.get(User, user_id)
     form = UserForm(request.form, obj=user)
-    form.role_ids.choices = [(g.id, g.name) for g in db.session.query(Role).order_by("name")]
-    form.org_ids.choices = [(g.id, g.name) for g in db.session.query(Organization).order_by("name")]
+    form.role_ids.choices = [(g.id, g.name) for g in Role.get_all_ordered()]
+    form.org_ids.choices = [(g.id, g.name) for g in Organization.get_all_ordered()]
 
     if request.method == "POST" and form.validate():
         user.update(form)
@@ -217,7 +207,7 @@ def delete_user(user_id):
 @auth_required
 @admin_required
 def users():
-    users = User.query.all()
+    users = User.get_all()
     return render_template("pages/users.html", users=users)
 
 
@@ -235,9 +225,9 @@ def bulk_import_users():
 @admin_required
 def bulk_import_users_save():
     form = BulkUserForm(request.form)
-    roles = [role.id for role in db.session.query(Role).all()]
-    orgs = [org.id for org in db.session.query(Organization).all()]
-    uuids = [user.uuid for user in db.session.query(User).all()]
+    roles = [role.id for role in Role.get_all_ordered()]
+    orgs = [org.id for org in Organization.get_all_ordered()]
+    uuids = [user.uuid for user in User.get_all()]
     form.roles = roles
     form.organizations = orgs
     form.uuids = uuids
@@ -288,46 +278,17 @@ def bulk_import_users_save():
 @auth_required
 @admin_required
 def organizations():
-    # Query all organizations and eager load RTBH relationships
-    orgs = db.session.query(Organization).options(db.joinedload(Organization.rtbh)).all()
-
-    # Get RTBH counts with rstate_id=1 for all organizations in one query
-    rtbh_counts_query = (
-        db.session.query(RTBH.org_id, func.count(RTBH.id)).filter(RTBH.rstate_id == 1).group_by(RTBH.org_id).all()
-    )
-
-    flowspec4_count_query = (
-        db.session.query(Flowspec4.org_id, func.count(Flowspec4.id))
-        .filter(Flowspec4.rstate_id == 1)
-        .group_by(Flowspec4.org_id)
-        .all()
-    )
-
-    flowspec6_count_query = (
-        db.session.query(Flowspec6.org_id, func.count(Flowspec6.id))
-        .filter(Flowspec6.rstate_id == 1)
-        .group_by(Flowspec6.org_id)
-        .all()
-    )
-
-    flowspec4_all_count = db.session.query(Flowspec4).filter(Flowspec4.rstate_id == 1).count()
-    flowspec6_all_count = db.session.query(Flowspec6).filter(Flowspec6.rstate_id == 1).count()
-    rtbh_all_count = db.session.query(RTBH).filter(RTBH.rstate_id == 1).count()
-
-    # Convert query result to a dictionary {org_id: count}
-    rtbh_counts = {org_id: count for org_id, count in rtbh_counts_query}
-    flowspec4_counts = {org_id: count for org_id, count in flowspec4_count_query}
-    flowspec6_counts = {org_id: count for org_id, count in flowspec6_count_query}
+    stats = get_org_rule_stats()
 
     return render_template(
         "pages/orgs.html",
-        orgs=orgs,
-        rtbh_counts=rtbh_counts,
-        flowspec4_counts=flowspec4_counts,
-        flowspec6_counts=flowspec6_counts,
-        rtbh_all_count=rtbh_all_count,
-        flowspec4_all_count=flowspec4_all_count,
-        flowspec6_all_count=flowspec6_all_count,
+        orgs=stats["orgs"],
+        rtbh_counts=stats["rtbh_counts"],
+        flowspec4_counts=stats["flowspec4_counts"],
+        flowspec6_counts=stats["flowspec6_counts"],
+        rtbh_all_count=stats["rtbh_all_count"],
+        flowspec4_all_count=stats["flowspec4_all_count"],
+        flowspec6_all_count=stats["flowspec6_all_count"],
         flowspec4_limit=current_app.config.get("FLOWSPEC4_MAX_RULES", 9000),
         flowspec6_limit=current_app.config.get("FLOWSPEC6_MAX_RULES", 9000),
         rtbh_limit=current_app.config.get("RTBH_MAX_RULES", 100000),
@@ -342,7 +303,7 @@ def organization():
 
     if request.method == "POST" and form.validate():
         # test if user is unique
-        exist = db.session.query(Organization).filter_by(name=form.name.data).first()
+        exist = Organization.get_by_name(form.name.data)
         if not exist:
             org = Organization(
                 name=form.name.data,
@@ -417,7 +378,7 @@ def delete_organization(org_id):
 @auth_required
 @admin_required
 def as_paths():
-    mpaths = db.session.query(ASPath).all()
+    mpaths = ASPath.get_all()
     return render_template("pages/as_paths.html", paths=mpaths)
 
 
@@ -429,7 +390,7 @@ def as_path():
 
     if request.method == "POST" and form.validate():
         # test if user is unique
-        exist = db.session.query(ASPath).filter_by(prefix=form.prefix.data).first()
+        exist = ASPath.get_by_prefix(form.prefix.data)
         if not exist:
             pth = ASPath(prefix=form.prefix.data, as_path=form.as_path.data)
             db.session.add(pth)
@@ -492,7 +453,7 @@ def delete_as_path(path_id):
 @auth_required
 @admin_required
 def actions():
-    actions = db.session.query(Action).all()
+    actions = Action.get_all()
     return render_template("pages/actions.html", actions=actions)
 
 
@@ -579,7 +540,7 @@ def delete_action(action_id):
 @auth_required
 @admin_required
 def communities():
-    communities = db.session.query(Community).all()
+    communities = Community.get_all()
     return render_template("pages/communities.html", communities=communities)
 
 

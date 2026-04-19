@@ -1,3 +1,4 @@
+from typing import List, Optional
 from sqlalchemy import event, select
 from .base import db, user_role, user_organization
 from .organization import Organization
@@ -57,6 +58,18 @@ class User(db.Model):
 
         db.session.commit()
 
+    @classmethod
+    def get_all(cls) -> List["User"]:
+        return db.session.scalars(select(cls)).all()
+
+    @classmethod
+    def get_all_ordered(cls) -> List["User"]:
+        return db.session.scalars(select(cls).order_by(cls.name)).all()
+
+    @classmethod
+    def get_by_uuid(cls, uuid: str) -> Optional["User"]:
+        return db.session.scalars(select(cls).filter_by(uuid=uuid)).first()
+
 
 class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -69,6 +82,10 @@ class Role(db.Model):
 
     def __repr__(self):
         return self.name
+
+    @classmethod
+    def get_all_ordered(cls) -> List["Role"]:
+        return db.session.scalars(select(cls).order_by(cls.name)).all()
 
 
 # Event listeners for Role

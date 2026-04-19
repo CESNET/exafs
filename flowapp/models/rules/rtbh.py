@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
+from typing import List, Optional
 from flowapp import utils
+from sqlalchemy import func, select
 from ..base import db
 
 
@@ -151,3 +153,14 @@ class RTBH(db.Model):
 
     def get_author(self):
         return f"{self.user.email} / {self.org}"
+
+    @classmethod
+    def get_all_ordered(cls) -> List["RTBH"]:
+        return db.session.scalars(select(cls).order_by(cls.expires.desc())).all()
+
+    @classmethod
+    def count_active(cls, org_id: Optional[int] = None) -> int:
+        q = select(func.count()).select_from(cls).filter_by(rstate_id=1)
+        if org_id is not None:
+            q = select(func.count()).select_from(cls).filter_by(rstate_id=1, org_id=org_id)
+        return db.session.scalar(q)
