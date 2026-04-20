@@ -2,6 +2,7 @@
 import os
 
 from flask import Flask, redirect, render_template, session, url_for, flash
+from sqlalchemy import select
 
 from flask_sso import SSO
 from flask_sqlalchemy import SQLAlchemy
@@ -128,7 +129,7 @@ def create_app(config_object=None):
     @auth_required
     def select_org(org_id=None):
         uuid = session.get("user_uuid")
-        user = db.session.query(models.User).filter_by(uuid=uuid).first()
+        user = db.session.execute(select(models.User).filter_by(uuid=uuid)).scalar_one_or_none()
 
         if user is None:
             return render_template("errors/404.html"), 404

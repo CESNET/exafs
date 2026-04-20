@@ -46,6 +46,14 @@ IPV4_FRAGMENT = {
     "last": "last-fragment",
 }
 
+IPV4_FRAGMENT_V5 = {
+    "dont": "dont-fragment",
+    "first": "first-fragment",
+    "is": "is-fragment",
+    "last": "last-fragment",
+    "not": "!is-fragment",
+}
+
 COMP_FUNCS = {"active": ge, "expired": lt, "all": None}
 
 TCP_FLAGS = [

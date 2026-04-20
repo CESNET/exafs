@@ -1,6 +1,7 @@
 from flowapp import utils
 from ..base import db
 from datetime import datetime
+from sqlalchemy import func, select
 from flowapp.constants import RuleTypes, RuleOrigin
 
 
@@ -119,7 +120,7 @@ class RuleWhitelistCache(db.Model):
         Returns:
             list: All RuleWhitelistCache objects with the specified whitelist_id
         """
-        return cls.query.filter_by(whitelist_id=whitelist_id).all()
+        return db.session.scalars(select(cls).filter_by(whitelist_id=whitelist_id)).all()
 
     @classmethod
     def clean_by_whitelist_id(cls, whitelist_id: int):
@@ -132,7 +133,9 @@ class RuleWhitelistCache(db.Model):
         Returns:
             int: Number of rows deleted
         """
-        deleted = cls.query.filter_by(whitelist_id=whitelist_id).delete()
+        deleted = db.session.execute(
+            db.delete(cls).where(cls.whitelist_id == whitelist_id)
+        ).rowcount
         db.session.commit()
         return deleted
 
@@ -147,9 +150,19 @@ class RuleWhitelistCache(db.Model):
         Returns:
             int: Number of rows deleted
         """
-        deleted = cls.query.filter_by(rid=rule_id).delete()
+        deleted = db.session.execute(
+            db.delete(cls).where(cls.rid == rule_id)
+        ).rowcount
         db.session.commit()
         return deleted
+
+    @classmethod
+    def get_by_rule_ids(cls, rule_ids: list, rule_type: "RuleTypes") -> list:
+        if not rule_ids or not rule_type:
+            return []
+        return db.session.scalars(
+            select(cls).filter(cls.rid.in_(rule_ids), cls.rtype == rule_type.value)
+        ).all()
 
     @classmethod
     def count_by_rule(cls, rule_id: int, rule_type: RuleTypes):
@@ -163,7 +176,9 @@ class RuleWhitelistCache(db.Model):
         Returns:
             int: Number of cache entries
         """
-        return cls.query.filter_by(rid=rule_id, rtype=rule_type.value).count()
+        return db.session.scalar(
+            select(func.count()).select_from(cls).filter_by(rid=rule_id, rtype=rule_type.value)
+        )
 
     def __repr__(self):
         return f"<RuleWhitelistCache {self.rid} {self.rtype} {self.rorigin}>"

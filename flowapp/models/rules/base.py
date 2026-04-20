@@ -1,4 +1,5 @@
-from sqlalchemy import event
+from typing import List
+from sqlalchemy import event, select
 from ..base import db
 
 
@@ -29,6 +30,14 @@ class Action(db.Model):
         self.command = command
         self.description = description
         self.role_id = role_id
+
+    @classmethod
+    def get_all_ordered(cls) -> List["Action"]:
+        return db.session.scalars(select(cls).order_by(cls.name)).all()
+
+    @classmethod
+    def get_all(cls) -> List["Action"]:
+        return db.session.scalars(select(cls)).all()
 
 
 # Event listeners for Rstate

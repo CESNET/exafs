@@ -459,3 +459,41 @@ class TestEvaluateWhitelistAgainstRtbhResults:
 
                 # Verify the correct model was returned
                 assert result == whitelist_model
+
+
+class TestDeleteExpiredWhitelists:
+    def test_deletes_expired_whitelist(self, app, db):
+        from flowapp.services.whitelist_service import delete_expired_whitelists
+
+        expired = Whitelist(
+            ip="172.16.0.0",
+            mask=12,
+            expires=datetime.now() - timedelta(days=1),
+            user_id=1,
+            org_id=1,
+        )
+        db.session.add(expired)
+        db.session.commit()
+        wl_id = expired.id
+
+        delete_expired_whitelists()
+
+        assert db.session.get(Whitelist, wl_id) is None
+
+    def test_keeps_active_whitelist(self, app, db):
+        from flowapp.services.whitelist_service import delete_expired_whitelists
+
+        active = Whitelist(
+            ip="172.17.0.0",
+            mask=16,
+            expires=datetime.now() + timedelta(days=1),
+            user_id=1,
+            org_id=1,
+        )
+        db.session.add(active)
+        db.session.commit()
+        wl_id = active.id
+
+        delete_expired_whitelists()
+
+        assert db.session.get(Whitelist, wl_id) is not None

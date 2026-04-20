@@ -5,7 +5,7 @@ PyTest configuration file for all tests
 import os
 import json
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from flowapp import create_app
@@ -117,7 +117,7 @@ def db(app, request):
         print("#: inserting users")
         flowapp.models.insert_users(users)
 
-        org = _db.session.query(Organization).filter_by(id=1).first()
+        org = _db.session.execute(select(Organization).filter_by(id=1)).scalar_one()
         # Update the organization address range to include our test networks
         org.arange = "147.230.0.0/16\n2001:718:1c01::/48\n192.168.0.0/16\n10.0.0.0/8"
         _db.session.commit()
@@ -224,9 +224,30 @@ def reset_org_limits(db, app):
     yield  # Allow test execution
 
     with app.app_context():
-        org = db.session.query(Organization).filter_by(id=1).first()
+        org = db.session.execute(select(Organization).filter_by(id=1)).scalar_one_or_none()
         if org:
             org.limit_flowspec4 = 0
             org.limit_flowspec6 = 0
             org.limit_rtbh = 0
             db.session.commit()
+
+
+@pytest.fixture(scope="session")
+def normal_user_jwt_token(client, app, db, request):
+    """
+    JWT token for a normal (non-admin) user belonging to org 1.
+    The user's org covers 147.230.0.0/16 and 2001:718:1c01::/48,
+    so rules on e.g. 200.200.200.0/24 or 2002::/16 are outside their nets.
+    """
+    normal_key = "normal-user-testkey"
+    with app.app_context():
+        flowapp.models.insert_users([{"name": "normal.user@cesnet.cz", "role_id": 2, "org_id": 1}])
+        user = db.session.execute(select(flowapp.models.User).filter_by(uuid="normal.user@cesnet.cz")).scalar_one()
+        model = flowapp.models.ApiKey(machine="127.0.0.1", key=normal_key, user_id=user.id, org_id=1)
+        db.session.add(model)
+        db.session.commit()
+
+    url = "/api/v3/auth"
+    token = client.get(url, headers={"x-api-key": normal_key})
+    data = json.loads(token.data)
+    return data["token"]

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from sqlalchemy import select
 from flowapp.constants import RuleTypes
 from .base import db
 
@@ -22,6 +23,17 @@ class Log(db.Model):
         self.rule_id = rule_id
         self.user_id = user_id
         self.author = author
+
+    @classmethod
+    def get_recent_paginated(cls, page: int, per_page: int = 20, weeks: int = 1):
+        since = datetime.now() - timedelta(weeks=weeks)
+        return db.paginate(
+            select(cls).filter(cls.time > since).order_by(cls.time.desc()),
+            page=page,
+            per_page=per_page,
+            max_per_page=None,
+            error_out=False,
+        )
 
     @classmethod
     def delete_old(cls, days: int = 30):

@@ -92,4 +92,16 @@
     </div>
   </div>
   </form>
+<script>
+  function updateFlags() {
+    var flags = document.getElementById('flags');
+    var isTcp = document.getElementById('protocol').value === 'tcp';
+    flags.disabled = !isTcp;
+    if (!isTcp) {
+      Array.from(flags.options).forEach(o => o.selected = false);
+    }
+  }
+  document.getElementById('protocol').addEventListener('change', updateFlags);
+  updateFlags();
+</script>
 {% endblock %}

@@ -31,7 +31,7 @@ def all():
     :return: page with keys
     """
     jwt_key = current_app.config.get("JWT_SECRET")
-    keys = db.session.query(ApiKey).filter_by(user_id=session["user_id"]).all()
+    keys = ApiKey.get_by_user_id(session["user_id"])
     payload = {"keys": [key.id for key in keys]}
     encoded = jwt.encode(payload, jwt_key, algorithm="HS256")
 

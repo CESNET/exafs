@@ -81,7 +81,7 @@ def reactivate_rule(rule_type, rule_id):
     form.net_ranges = get_user_nets(session["user_id"])
 
     if rule_type > 2:
-        form.action.choices = [(g.id, g.name) for g in db.session.query(Action).order_by("name")]
+        form.action.choices = [(g.id, g.name) for g in Action.get_all_ordered()]
         form.action.data = model.action_id
 
     if rule_type == RuleTypes.RTBH.value:
@@ -337,7 +337,7 @@ def group_delete():
                 f"{session['user_email']} / {session['user_org']}",
             )
 
-        db.session.query(model_name).filter(model_name.id.in_(to_delete)).delete(synchronize_session=False)
+        db.session.execute(db.delete(model_name).where(model_name.id.in_(to_delete)))
         db.session.commit()
 
         flash(f"Rules {to_delete} deleted", "alert-success")
@@ -391,7 +391,7 @@ def group_update():
     form = form_name(request.form)
     form.net_ranges = get_user_nets(session["user_id"])
     if rule_type_int > 2:
-        form.action.choices = [(g.id, g.name) for g in db.session.query(Action).order_by("name")]
+        form.action.choices = [(g.id, g.name) for g in Action.get_all_ordered()]
     if rule_type_int == 1:
         form.community.choices = get_user_communities(session["user_role_ids"])
 
@@ -610,7 +610,7 @@ def rtbh_rule():
     if check_rule_limit(session["user_org_id"], RuleTypes.RTBH):
         return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.RTBH))
 
-    all_com = db.session.query(Community).all()
+    all_com = Community.get_all()
     if not all_com:
         insert_initial_communities()
 
@@ -654,9 +654,9 @@ def rtbh_rule():
 @auth_required
 def limit_reached(rule_type):
     rule_type = constants.RULE_NAMES_DICT[int(rule_type)]
-    count_4 = db.session.query(Flowspec4).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
-    count_6 = db.session.query(Flowspec6).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
-    count_rtbh = db.session.query(RTBH).filter_by(rstate_id=1, org_id=session["user_org_id"]).count()
+    count_4 = Flowspec4.count_active(org_id=session["user_org_id"])
+    count_6 = Flowspec6.count_active(org_id=session["user_org_id"])
+    count_rtbh = RTBH.count_active(org_id=session["user_org_id"])
     org = db.session.get(Organization, session["user_org_id"])
     return render_template(
         "pages/limit_reached.html",
@@ -673,9 +673,9 @@ def limit_reached(rule_type):
 @auth_required
 def global_limit_reached(rule_type):
     rule_type = constants.RULE_NAMES_DICT[int(rule_type)]
-    count_4 = db.session.query(Flowspec4).filter_by(rstate_id=1).count()
-    count_6 = db.session.query(Flowspec6).filter_by(rstate_id=1).count()
-    count_rtbh = db.session.query(RTBH).filter_by(rstate_id=1).count()
+    count_4 = Flowspec4.count_active()
+    count_6 = Flowspec6.count_active()
+    count_rtbh = RTBH.count_active()
 
     Limit = namedtuple("Limit", ["limit_flowspec4", "limit_flowspec6", "limit_rtbh"])
     limit = Limit(
@@ -699,14 +699,14 @@ def global_limit_reached(rule_type):
 @auth_required
 @admin_required
 def export():
-    rules4 = db.session.query(Flowspec4).order_by(Flowspec4.expires.desc()).all()
-    rules6 = db.session.query(Flowspec6).order_by(Flowspec6.expires.desc()).all()
+    rules4 = Flowspec4.get_all_ordered()
+    rules6 = Flowspec6.get_all_ordered()
     rules = {4: rules4, 6: rules6}
 
-    actions = db.session.query(Action).all()
+    actions = Action.get_all()
     actions = {action.id: action for action in actions}
 
-    rules_rtbh = db.session.query(RTBH).order_by(RTBH.expires.desc()).all()
+    rules_rtbh = RTBH.get_all_ordered()
 
     announce_all_routes()
 

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Union
 
 from flask import current_app
+from sqlalchemy import select
 
 from flowapp import db, messages
 from flowapp.constants import WITHDRAW, RuleOrigin, RuleTypes, ANNOUNCE
@@ -332,7 +333,7 @@ def check_rtbh_whitelisted(model: RTBH, user_id: int, flashes: List[str], author
     allowed_communities = current_app.config["ALLOWED_COMMUNITIES"]
     if model.community_id in allowed_communities:
         # get all not expired whitelists
-        whitelists = db.session.query(Whitelist).filter(Whitelist.expires > datetime.now()).all()
+        whitelists = db.session.scalars(select(Whitelist).filter(Whitelist.expires > datetime.now())).all()
         wl_cache = map_whitelists_to_strings(whitelists)
         results = check_rule_against_whitelists(str(model), wl_cache.keys())
         # check rule against whitelists
@@ -556,14 +557,14 @@ def delete_expired_rules() -> Dict[str, int]:
 
     for rule_type, (model_class, rule_enum) in model_map.items():
         # Get IDs of rules to delete
-        expired_rule_ids = [
-            r.id
-            for r in db.session.query(model_class.id)
-            .filter(
-                model_class.expires < deletion_date, model_class.rstate_id.in_([2, 3])  # withdrawn or deleted state
+        expired_rule_ids = list(
+            db.session.scalars(
+                select(model_class.id).filter(
+                    model_class.expires < deletion_date,
+                    model_class.rstate_id.in_([2, 3]),  # withdrawn or deleted state
+                )
             )
-            .all()
-        ]
+        )
 
         if not expired_rule_ids:
             current_app.logger.info(f"No expired {model_class.__name__} rules to delete")
@@ -580,9 +581,9 @@ def delete_expired_rules() -> Dict[str, int]:
             )
 
         # Bulk delete the rules
-        deleted = (
-            db.session.query(model_class).filter(model_class.id.in_(expired_rule_ids)).delete(synchronize_session=False)
-        )
+        deleted = db.session.execute(
+            db.delete(model_class).where(model_class.id.in_(expired_rule_ids))
+        ).rowcount
 
         deletion_counts[rule_type] = deleted
         deletion_counts["total"] += deleted

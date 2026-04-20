@@ -5,6 +5,25 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-04-20
+
+### Changed
+- Migrated entire codebase to SQLAlchemy 2.0 Query API — replaced all legacy `session.query()` / `Model.query` patterns with `session.execute(select())`, `session.scalars()`, and `db.paginate()` across models, services, and views
+- Moved DB queries out of views into model classmethods following separation of concerns (`ApiKey`, `Flowspec4/6`, `RTBH`, `Community`, `Action`, `Log`, `User`, `Role`, `Organization`, `ASPath`, etc.)
+- New `get_org_rule_stats()` utility replaces inline admin view queries
+
+### Fixed
+- API response discrepancy: rules returned via API now apply the same data transformation as the UI, fixing inconsistency between `/api/v3/` responses and dashboard display
+
+### Added
+- Extensive new test coverage for previously untested DB-touching code paths (`test_auth.py`, `test_model_utils.py`, `test_services_base.py`, `test_admin_models.py`, additions to `test_flowapp.py`, `test_messages.py`, `test_models.py`, `test_whitelist_service.py`)
+- Tests for all new model classmethods (added before implementation, TDD-style)
+- ExaBGP 5.x support via `EXABGP_MAJOR_VERSION` config option (default: `4`)
+  - TCP flags formatted as `tcp-flags [ syn ack ];` (lowercase, bracketed) when version is 5
+  - Fragment conditions use updated `!is-fragment` syntax for version 5
+  - `IPV4_FRAGMENT_V5` constants dict added for version 5 fragment mappings
+- Unit tests for ExaBGP message formatting helpers (`tests/test_messages.py`)
+
 ## [1.2.2] - 2026-02-19
 
 ### Changed
@@ -304,6 +323,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Route Distinguisher for VRF now supported
 - See config example and update your `config.py`
 
+[1.3.0]: https://github.com/CESNET/exafs/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/CESNET/exafs/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/CESNET/exafs/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/CESNET/exafs/compare/v1.1.9...v1.2.0
