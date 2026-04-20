@@ -308,7 +308,7 @@ def get_existing_action(name=None, command=None):
     :param command: string action command
     :return: action id
     """
-    action = db.session.execute(select(Action).filter((Action.name == name) | (Action.command == command))).scalar_one_or_none()
+    action = db.session.scalars(select(Action).filter((Action.name == name) | (Action.command == command)).limit(1)).first()
     return action.id if hasattr(action, "id") else None
 
 
@@ -467,7 +467,7 @@ def get_user_rules_ids(user_id, rule_type):
         return list(db.session.scalars(select(Flowspec4.id).filter_by(user_id=user_id)))
 
     if rule_type == "ipv6":
-        return list(db.session.scalars(select(Flowspec6.id).order_by(Flowspec6.expires.desc())))
+        return list(db.session.scalars(select(Flowspec6.id).filter_by(user_id=user_id).order_by(Flowspec6.expires.desc())))
 
     if rule_type == "rtbh":
         return list(db.session.scalars(select(RTBH.id).filter_by(user_id=user_id)))

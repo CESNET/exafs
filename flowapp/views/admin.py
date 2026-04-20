@@ -33,7 +33,7 @@ admin = Blueprint("admin", __name__, template_folder="templates")
 @admin_required
 def log(page):
     """
-    Displays logs for last two days
+    Displays paginated logs
     """
     per_page = 20
     logs = Log.get_recent_paginated(page=page, per_page=per_page)
