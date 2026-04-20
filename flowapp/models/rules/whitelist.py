@@ -134,7 +134,7 @@ class RuleWhitelistCache(db.Model):
             int: Number of rows deleted
         """
         deleted = db.session.execute(
-            db.delete(cls).filter_by(whitelist_id=whitelist_id)
+            db.delete(cls).where(cls.whitelist_id == whitelist_id)
         ).rowcount
         db.session.commit()
         return deleted
@@ -151,14 +151,14 @@ class RuleWhitelistCache(db.Model):
             int: Number of rows deleted
         """
         deleted = db.session.execute(
-            db.delete(cls).filter_by(rid=rule_id)
+            db.delete(cls).where(cls.rid == rule_id)
         ).rowcount
         db.session.commit()
         return deleted
 
     @classmethod
     def get_by_rule_ids(cls, rule_ids: list, rule_type: "RuleTypes") -> list:
-        if not rule_ids:
+        if not rule_ids or not rule_type:
             return []
         return db.session.scalars(
             select(cls).filter(cls.rid.in_(rule_ids), cls.rtype == rule_type.value)

@@ -33,7 +33,7 @@ Detailed conventions and step-by-step task guides. Linked from `CLAUDE.md`.
        return jsonify(data), 200
    ```
 2. **Update Swagger** (`flowapp/static/swagger.yml`)
-3. **Add Tests** (`flowapp/tests/test_api_v3.py`)
+3. **Add Tests** (`tests/test_api_v3.py`)
    ```python
    def test_new_endpoint(auth_client):
        response = auth_client.get('/api/v3/endpoint')
@@ -49,7 +49,7 @@ Detailed conventions and step-by-step task guides. Linked from `CLAUDE.md`.
            raise ValidationError('Invalid value')
    ```
 2. **Use in form field** validators list
-3. **Add tests** in `flowapp/tests/test_validators.py`
+3. **Add tests** in `tests/test_validators.py`
 
 ## Code Conventions
 

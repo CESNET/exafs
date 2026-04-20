@@ -280,9 +280,9 @@ def get_user_actions(user_roles):
     """
     max_role = max(user_roles)
     if max_role == 3:
-        actions = db.session.scalars(select(Action).order_by("id")).all()
+        actions = db.session.scalars(select(Action).order_by(Action.id)).all()
     else:
-        actions = db.session.scalars(select(Action).filter_by(role_id=max_role).order_by("id")).all()
+        actions = db.session.scalars(select(Action).filter_by(role_id=max_role).order_by(Action.id)).all()
     result = [(g.id, g.name) for g in actions]
     return result
 
@@ -293,9 +293,9 @@ def get_user_communities(user_roles):
     """
     max_role = max(user_roles)
     if max_role == 3:
-        communities = db.session.scalars(select(Community).order_by("id"))
+        communities = db.session.scalars(select(Community).order_by(Community.id))
     else:
-        communities = db.session.scalars(select(Community).filter_by(role_id=max_role).order_by("id"))
+        communities = db.session.scalars(select(Community).filter_by(role_id=max_role).order_by(Community.id))
 
     return [(g.id, g.name) for g in communities]
 

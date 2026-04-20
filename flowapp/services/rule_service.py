@@ -582,7 +582,7 @@ def delete_expired_rules() -> Dict[str, int]:
 
         # Bulk delete the rules
         deleted = db.session.execute(
-            db.delete(model_class).filter(model_class.id.in_(expired_rule_ids))
+            db.delete(model_class).where(model_class.id.in_(expired_rule_ids))
         ).rowcount
 
         deletion_counts[rule_type] = deleted
