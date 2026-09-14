@@ -20,9 +20,11 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
     """
     Check if the organization has reached the rule limit
     :param org_id: integer organization id
-    :param rule_type: RuleType rule type
+    :param rule_type: RuleTypes rule type, or its integer value
     :return: boolean
+    :raises ValueError: when rule_type is not a valid rule type
     """
+    rule_type = RuleTypes(rule_type)
     flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
     flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
@@ -46,6 +48,13 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
 
 
 def check_global_rule_limit(rule_type: RuleTypes) -> bool:
+    """
+    Check if the global rule limit has been reached
+    :param rule_type: RuleTypes rule type, or its integer value
+    :return: boolean
+    :raises ValueError: when rule_type is not a valid rule type
+    """
+    rule_type = RuleTypes(rule_type)
     flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
     flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
