@@ -40,7 +40,6 @@ from flowapp.utils import (
 )
 from flowapp.auth import get_user_allowed_rule_ids, check_user_can_modify_rule
 
-
 rules = Blueprint("rules", __name__, template_folder="templates")
 
 DATA_MODELS = {1: RTBH, 4: Flowspec4, 6: Flowspec6}
@@ -445,12 +444,12 @@ def group_update_save(rule_type):
 
     for rule_id in to_update:
         # check global limit
-        check_gl = check_global_rule_limit(rule_type)
+        check_gl = check_global_rule_limit(enum_rule_type)
         if rstate_id == 1 and check_gl:
             return redirect(url_for("rules.global_limit_reached", rule_type=rule_type))
 
         # check if rule will be reactivated
-        check = check_rule_limit(session["user_org_id"], rule_type=rule_type)
+        check = check_rule_limit(session["user_org_id"], rule_type=enum_rule_type)
         if rstate_id == 1 and check:
             return redirect(url_for("rules.limit_reached", rule_type=rule_type))
 
@@ -514,10 +513,10 @@ def group_update_save(rule_type):
 @user_or_admin_required
 def ipv4_rule():
     if check_global_rule_limit(RuleTypes.IPv4):
-        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.IPv4))
+        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.IPv4.value))
 
     if check_rule_limit(session["user_org_id"], RuleTypes.IPv4):
-        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv4))
+        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv4.value))
 
     net_ranges = get_user_nets(session["user_id"])
     form = IPv4Form(request.form)
@@ -561,10 +560,10 @@ def ipv4_rule():
 @user_or_admin_required
 def ipv6_rule():
     if check_global_rule_limit(RuleTypes.IPv6):
-        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.IPv6))
+        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.IPv6.value))
 
     if check_rule_limit(session["user_org_id"], RuleTypes.IPv6):
-        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv6))
+        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.IPv6.value))
 
     net_ranges = get_user_nets(session["user_id"])
     form = IPv6Form(request.form)
@@ -605,10 +604,10 @@ def ipv6_rule():
 @user_or_admin_required
 def rtbh_rule():
     if check_global_rule_limit(RuleTypes.RTBH):
-        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.RTBH))
+        return redirect(url_for("rules.global_limit_reached", rule_type=RuleTypes.RTBH.value))
 
     if check_rule_limit(session["user_org_id"], RuleTypes.RTBH):
-        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.RTBH))
+        return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.RTBH.value))
 
     all_com = Community.get_all()
     if not all_com:
@@ -650,10 +649,26 @@ def rtbh_rule():
     )
 
 
+def _resolve_rule_type(rule_type):
+    """
+    Translate the rule_type url argument to a rule name.
+    :param rule_type: value from the url, expected to be a RuleTypes value
+    :return: string rule name, or None when the value is not a known rule type
+    """
+    try:
+        return constants.RULE_NAMES_DICT[int(rule_type)]
+    except (ValueError, TypeError, KeyError):
+        return None
+
+
 @rules.route("/limit_reached/<rule_type>")
 @auth_required
 def limit_reached(rule_type):
-    rule_type = constants.RULE_NAMES_DICT[int(rule_type)]
+    rule_type = _resolve_rule_type(rule_type)
+    if rule_type is None:
+        flash("Unknown rule type.", "alert-danger")
+        return redirect(url_for("index"))
+
     count_4 = Flowspec4.count_active(org_id=session["user_org_id"])
     count_6 = Flowspec6.count_active(org_id=session["user_org_id"])
     count_rtbh = RTBH.count_active(org_id=session["user_org_id"])
@@ -672,16 +687,20 @@ def limit_reached(rule_type):
 @rules.route("/global_limit_reached/<rule_type>")
 @auth_required
 def global_limit_reached(rule_type):
-    rule_type = constants.RULE_NAMES_DICT[int(rule_type)]
+    rule_type = _resolve_rule_type(rule_type)
+    if rule_type is None:
+        flash("Unknown rule type.", "alert-danger")
+        return redirect(url_for("index"))
+
     count_4 = Flowspec4.count_active()
     count_6 = Flowspec6.count_active()
     count_rtbh = RTBH.count_active()
 
     Limit = namedtuple("Limit", ["limit_flowspec4", "limit_flowspec6", "limit_rtbh"])
     limit = Limit(
-        limit_flowspec4=current_app.config["FLOWSPEC4_MAX_RULES"],
-        limit_flowspec6=current_app.config["FLOWSPEC6_MAX_RULES"],
-        limit_rtbh=current_app.config["RTBH_MAX_RULES"],
+        limit_flowspec4=current_app.config.get("FLOWSPEC4_MAX_RULES", 9000),
+        limit_flowspec6=current_app.config.get("FLOWSPEC6_MAX_RULES", 9000),
+        limit_rtbh=current_app.config.get("RTBH_MAX_RULES", 100000),
     )
 
     return render_template(
