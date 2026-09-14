@@ -111,6 +111,8 @@ def test_add_rule_redirects_when_org_limit_reached(db, auth_client, url, rule_ty
     """
     This is the path the user hit. The add rule view redirects to limit_reached,
     which used to crash on the generated url.
+
+    Both checks are pinned so that only the org limit can trigger the redirect.
     """
     with (
         patch("flowapp.views.rules.check_global_rule_limit", return_value=False),
@@ -124,6 +126,7 @@ def test_add_rule_redirects_when_org_limit_reached(db, auth_client, url, rule_ty
 
 @pytest.mark.parametrize("url, rule_type", ADD_RULE_URLS)
 def test_add_rule_redirects_when_global_limit_reached(db, auth_client, url, rule_type):
+    """Both checks are pinned so that only the global limit can trigger the redirect."""
     with (
         patch("flowapp.views.rules.check_global_rule_limit", return_value=True),
         patch("flowapp.views.rules.check_rule_limit", return_value=False),
@@ -152,14 +155,10 @@ def test_check_rule_limit_accepts_int_and_enum(app, db):
     assert check_rule_limit(1, RuleTypes.IPv4) == check_rule_limit(1, RuleTypes.IPv4.value)
 
 
-def test_check_global_rule_limit_accepts_int_and_enum(app, db):
-    original = app.config.get("FLOWSPEC4_MAX_RULES", 9000)
-    app.config["FLOWSPEC4_MAX_RULES"] = 0
-    try:
-        assert check_global_rule_limit(RuleTypes.IPv4) is True
-        assert check_global_rule_limit(RuleTypes.IPv4.value) is True
-    finally:
-        app.config["FLOWSPEC4_MAX_RULES"] = original
+def test_check_global_rule_limit_accepts_int_and_enum(app, db, set_config):
+    set_config(FLOWSPEC4_MAX_RULES=0)
+    assert check_global_rule_limit(RuleTypes.IPv4) is True
+    assert check_global_rule_limit(RuleTypes.IPv4.value) is True
 
 
 @pytest.mark.parametrize("bad_value", [99, 0, "ipv4"])
