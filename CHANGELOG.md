@@ -5,6 +5,24 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-09-14
+
+### Removed
+- **Dropped support for Python 3.9 and 3.10** — ExaFS now requires **Python 3.11 or newer**. Both versions are at or near end of life, and as network security tooling ExaFS should run on supported runtimes only. Deployments on RHEL9 must install a newer interpreter (for example `dnf install python3.12`) before upgrading, as the distribution default is still 3.9.
+
+### Fixed
+- **Rule limit pages returned HTTP 500** — reaching an organization or global rule limit on the *Add rule* forms (IPv4, IPv6, RTBH) crashed with `ValueError: invalid literal for int() with base 10: 'RuleTypes.RTBH'` instead of showing the limit page. The rule type was passed into the URL as an enum member rather than its integer value.
+- **Rule limits were silently not enforced on group update** — the limit checks compared a `RuleTypes` member against a plain integer, which never matched, so both the organization and the global limit always evaluated as "not reached". Group update could therefore reactivate rules past the configured limits.
+- Unknown or malformed rule types in the limit page URLs now redirect with a flash message instead of raising.
+- The global limit page no longer raises `KeyError` when `FLOWSPEC4_MAX_RULES`, `FLOWSPEC6_MAX_RULES` or `RTBH_MAX_RULES` are absent from `config.py`; the documented defaults are used, consistent with the rest of the application.
+
+### Changed
+- `RuleTypes` is now an `IntEnum`, so members compare equal to their integer values. Call sites that pass the rule type as an integer (URL arguments, database columns) and those that pass the enum now behave identically.
+- `check_rule_limit()` and `check_global_rule_limit()` accept either form and raise `ValueError` on an unknown rule type rather than reporting "limit not reached".
+
+### Added
+- `tests/test_rule_limit_views.py` — coverage for the limit views, the add-rule redirects, invalid rule types, and the integer/enum equivalence of the limit checks
+
 ## [1.3.0] - 2026-04-20
 
 ### Changed

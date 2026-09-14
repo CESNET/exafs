@@ -4,8 +4,12 @@
 Example of ExaFS installation od RHEL/Centos 9 and deployment in production enviroment. 
 Includes: shibboleth auth, mariadb, uwsgi, supervisord
 
-The default Python for RHEL9 is Python 3.9
-Virtualenv with Python39 is used by uWSGI server to keep the packages for app separated from system.
+ExaFS requires Python 3.11 or newer.
+
+The default Python for RHEL9 is Python 3.9, which is not sufficient. Install a newer
+interpreter from the system repositories first, for example `dnf install python3.12`.
+Virtualenv with this Python is used by uWSGI server to keep the packages for app
+separated from system.
 
 ## Prerequisites
 First, choose how to [authenticate and authorize users](./AUTH.md). The application currently supports three options. 
@@ -85,7 +89,7 @@ This is the simplest approach. The `flowapp` package is installed into the virtu
 
 ```
 mkdir ~/www && cd ~/www
-virtualenv --python=python3.9 venv
+virtualenv --python=python3.12 venv
 source venv/bin/activate
 pip install exafs
 ```
@@ -106,7 +110,7 @@ Use this if you want to track a specific branch, contribute changes, or pin to a
 ```
 git clone https://github.com/CESNET/exafs.git www
 cd www
-virtualenv --python=python3.9 venv
+virtualenv --python=python3.12 venv
 source venv/bin/activate
 pip install -e .
 ```
