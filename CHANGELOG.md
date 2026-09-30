@@ -5,6 +5,20 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-09-29
+
+### Fixed
+- **HTTP 500 when an organization had no rule limits stored** — adding an RTBH rule through the UI (`/rules/add_rtbh_rule`) or the API (`POST /api/v3/rules/rtbh`) failed with `TypeError: '>' not supported between instances of 'NoneType' and 'int'`. The organization limit columns are nullable and the model default only applies on INSERT, so an organization edited in the admin form with an empty limit field had `NULL` stored. A `NULL` limit is now treated as no limit, the same as `0`.
+- **Organization rule limits above 1000 could not be saved** — the admin form validated all three limits against a hardcoded maximum of 1000, so a legitimate RTBH limit (the global default maximum is 100000) was rejected. Each field is now bound by the configured global maximum for its own rule type (`FLOWSPEC4_MAX_RULES`, `FLOWSPEC6_MAX_RULES`, `RTBH_MAX_RULES`).
+- API rule-limit responses no longer report `Rule limit None reached` when the organization limit is `NULL`.
+- The organizations admin page no longer renders `None` instead of `unlimited` for an organization with a `NULL` limit.
+
+### Changed
+- Leaving an organization limit field empty in the admin form now stores `0` (unlimited) instead of `NULL`, on both the create and the edit path.
+
+### Note for operators
+Organizations that already have `NULL` limits in the database keep them; they are handled safely as unlimited. A migration that backfills those rows to `0` and makes the columns `NOT NULL` will follow in a separate release.
+
 ## [1.4.0] - 2026-09-14
 
 ### Removed
