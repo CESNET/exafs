@@ -202,6 +202,10 @@ def limit_reached(count: int, rule_type: RuleTypes, org_id: int) -> Tuple[Respon
     elif rule_type == RuleTypes.RTBH:
         limit = org.limit_rtbh
 
+    # the limit columns are nullable, do not report "None" to the client
+    if limit is None:
+        limit = 0
+
     return (
         jsonify({"message": f"Rule limit {limit} reached for {rule_name}, currently you have {count} active rules."}),
         403,

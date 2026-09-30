@@ -138,8 +138,8 @@ class TestReactivateRule:
         )
 
         # Assertions
-        mock_check_global_limit.assert_called_once_with(RuleTypes.IPv4.value)
-        mock_check_rule_limit.assert_called_once_with(test_data["org_id"], rule_type=RuleTypes.IPv4.value)
+        mock_check_global_limit.assert_called_once_with(RuleTypes.IPv4)
+        mock_check_rule_limit.assert_called_once_with(test_data["org_id"], rule_type=RuleTypes.IPv4)
 
         # Verify model was updated
         assert model.expires == expires
@@ -226,7 +226,7 @@ class TestReactivateRule:
         )
 
         # Assertions
-        mock_check_global_limit.assert_called_once_with(RuleTypes.IPv4.value)
+        mock_check_global_limit.assert_called_once_with(RuleTypes.IPv4)
 
         # Check returned values
         assert messages == ["global_limit_reached"]
@@ -255,8 +255,8 @@ class TestReactivateRule:
         )
 
         # Assertions
-        mock_check_global_limit.assert_called_once_with(RuleTypes.IPv4.value)
-        mock_check_rule_limit.assert_called_once_with(test_data["org_id"], rule_type=RuleTypes.IPv4.value)
+        mock_check_global_limit.assert_called_once_with(RuleTypes.IPv4)
+        mock_check_rule_limit.assert_called_once_with(test_data["org_id"], rule_type=RuleTypes.IPv4)
 
         # Check returned values
         assert messages == ["limit_reached"]

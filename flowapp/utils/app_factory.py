@@ -130,7 +130,8 @@ def register_template_filters(app):
 
     @app.template_filter("unlimited")
     def unlimited_filter(value):
-        return "unlimited" if value == 0 else value
+        # the org limit columns are nullable, NULL means no limit just as 0 does
+        return "unlimited" if not value else value
 
     return app
 

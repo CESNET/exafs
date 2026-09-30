@@ -2,7 +2,7 @@
 This module contains constant values used in application
 """
 
-from enum import Enum
+from enum import Enum, IntEnum
 from operator import ge, lt
 
 DEFAULT_SORT = "expires"
@@ -68,7 +68,12 @@ TCP_FLAGS = [
 FORM_TIME_PATTERN = "%Y-%m-%dT%H:%M"
 
 
-class RuleTypes(Enum):
+class RuleTypes(IntEnum):
+    """
+    Rule type. IntEnum so that members compare equal to their integer values,
+    which several call sites pass around interchangeably (URL args, DB columns).
+    """
+
     RTBH = 1
     IPv4 = 4
     IPv6 = 6

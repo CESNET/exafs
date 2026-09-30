@@ -573,11 +573,11 @@ def test_update_existing_v4rule_with_timestamp_limit(client, db, app, jwt_token)
     assert data["message"].startswith("Rule limit")
 
 
-def test_overall_limit(client, db, app, jwt_token):
+def test_overall_limit(client, db, app, jwt_token, set_config):
     """
     test that update with different data passes
     """
-    app.config.update({"FLOWSPEC4_MAX_RULES": 5, "FLOWSPEC6_MAX_RULES": 5, "RTBH_MAX_RULES": 5})
+    set_config(FLOWSPEC4_MAX_RULES=5, FLOWSPEC6_MAX_RULES=5, RTBH_MAX_RULES=5)
 
     with app.app_context():
         # count

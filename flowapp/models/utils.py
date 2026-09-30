@@ -20,9 +20,11 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
     """
     Check if the organization has reached the rule limit
     :param org_id: integer organization id
-    :param rule_type: RuleType rule type
+    :param rule_type: RuleTypes rule type, or its integer value
     :return: boolean
+    :raises ValueError: when rule_type is not a valid rule type
     """
+    rule_type = RuleTypes(rule_type)
     flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
     flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)
@@ -32,20 +34,33 @@ def check_rule_limit(org_id: int, rule_type: RuleTypes) -> bool:
 
     # check the organization limits
     org = db.session.execute(select(Organization).filter_by(id=org_id)).scalar_one()
-    if rule_type == RuleTypes.IPv4 and org.limit_flowspec4 > 0:
+    # The limit columns are nullable and the model default only applies on insert,
+    # so orgs edited through the admin form can hold NULL. NULL means no limit, as 0 does.
+    org_limit_4 = org.limit_flowspec4 if org.limit_flowspec4 is not None else 0
+    org_limit_6 = org.limit_flowspec6 if org.limit_flowspec6 is not None else 0
+    org_limit_rtbh = org.limit_rtbh if org.limit_rtbh is not None else 0
+
+    if rule_type == RuleTypes.IPv4 and org_limit_4 > 0:
         count = db.session.scalar(select(func.count()).select_from(Flowspec4).filter_by(org_id=org_id, rstate_id=1))
-        return count >= org.limit_flowspec4 or fs4 >= flowspec4_limit
-    if rule_type == RuleTypes.IPv6 and org.limit_flowspec6 > 0:
+        return count >= org_limit_4 or fs4 >= flowspec4_limit
+    if rule_type == RuleTypes.IPv6 and org_limit_6 > 0:
         count = db.session.scalar(select(func.count()).select_from(Flowspec6).filter_by(org_id=org_id, rstate_id=1))
-        return count >= org.limit_flowspec6 or fs6 >= flowspec6_limit
-    if rule_type == RuleTypes.RTBH and org.limit_rtbh > 0:
+        return count >= org_limit_6 or fs6 >= flowspec6_limit
+    if rule_type == RuleTypes.RTBH and org_limit_rtbh > 0:
         count = db.session.scalar(select(func.count()).select_from(RTBH).filter_by(org_id=org_id, rstate_id=1))
-        return count >= org.limit_rtbh or rtbh >= rtbh_limit
+        return count >= org_limit_rtbh or rtbh >= rtbh_limit
 
     return False
 
 
 def check_global_rule_limit(rule_type: RuleTypes) -> bool:
+    """
+    Check if the global rule limit has been reached
+    :param rule_type: RuleTypes rule type, or its integer value
+    :return: boolean
+    :raises ValueError: when rule_type is not a valid rule type
+    """
+    rule_type = RuleTypes(rule_type)
     flowspec4_limit = current_app.config.get("FLOWSPEC4_MAX_RULES", 9000)
     flowspec6_limit = current_app.config.get("FLOWSPEC6_MAX_RULES", 9000)
     rtbh_limit = current_app.config.get("RTBH_MAX_RULES", 100000)

@@ -232,6 +232,58 @@ def reset_org_limits(db, app):
             db.session.commit()
 
 
+# The app fixture is session scoped, so any config change made by a test is seen
+# by every test that follows it. The rule limit keys are not set in the test
+# config at all - the application falls back to its own defaults - so restoring
+# them means removing them again, not writing a default value back.
+RULE_LIMIT_CONFIG_KEYS = ("FLOWSPEC4_MAX_RULES", "FLOWSPEC6_MAX_RULES", "RTBH_MAX_RULES")
+
+_MISSING = object()
+
+
+@pytest.fixture
+def set_config(app):
+    """
+    Temporarily set app config keys for the duration of a single test.
+
+    Usage: set_config(FLOWSPEC4_MAX_RULES=5)
+
+    The previous state is restored afterwards, including for keys that were not
+    present before - those are removed again. Restore also runs when the test fails.
+    """
+    saved = {}
+
+    def _set(**kwargs):
+        for key, value in kwargs.items():
+            saved.setdefault(key, app.config.get(key, _MISSING))
+            app.config[key] = value
+
+    yield _set
+
+    for key, value in saved.items():
+        if value is _MISSING:
+            app.config.pop(key, None)
+        else:
+            app.config[key] = value
+
+
+@pytest.fixture(autouse=True)
+def reset_rule_limit_config(app):
+    """
+    Safety net for the rule limit config keys, for tests that set them directly
+    instead of using the set_config fixture.
+    """
+    before = {key: app.config[key] for key in RULE_LIMIT_CONFIG_KEYS if key in app.config}
+
+    yield  # Allow test execution
+
+    for key in RULE_LIMIT_CONFIG_KEYS:
+        if key in before:
+            app.config[key] = before[key]
+        else:
+            app.config.pop(key, None)
+
+
 @pytest.fixture(scope="session")
 def normal_user_jwt_token(client, app, db, request):
     """

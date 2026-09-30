@@ -408,9 +408,17 @@ class TestOrganizationForm:
 
     def test_invalid_limits(self, app):
         with app.test_request_context():
-            form_data = create_form_data({"name": "Test Org", "limit_flowspec4": "1001"})  # Exceeds max value
+            # the upper bound is FLOWSPEC4_MAX_RULES, which defaults to 9000
+            form_data = create_form_data({"name": "Test Org", "limit_flowspec4": "9001"})
             form = OrganizationForm(formdata=form_data)
             assert not form.validate()
+
+    def test_limit_within_configured_maximum(self, app):
+        """A limit that used to hit the hardcoded 1000 bound is now valid."""
+        with app.test_request_context():
+            form_data = create_form_data({"name": "Test Org", "limit_flowspec4": "5000"})
+            form = OrganizationForm(formdata=form_data)
+            assert form.validate(), form.errors
 
 
 class TestActionForm:

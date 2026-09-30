@@ -73,7 +73,7 @@ def test_check_rule_limit_no_limit_set(app, db):
     assert result is False
 
 
-def test_check_rule_limit_under_limit(app, db):
+def test_check_rule_limit_under_limit(app, db, set_config):
     from sqlalchemy import select
     from flowapp.models.organization import Organization
 
@@ -81,15 +81,9 @@ def test_check_rule_limit_under_limit(app, db):
     org.limit_flowspec4 = 100
     db.session.commit()
 
-    original_max = app.config.get("FLOWSPEC4_MAX_RULES", 9000)
-    app.config["FLOWSPEC4_MAX_RULES"] = 9000
-    try:
-        result = check_rule_limit(1, RuleTypes.IPv4)
-        assert result is False
-    finally:
-        org.limit_flowspec4 = 0
-        db.session.commit()
-        app.config["FLOWSPEC4_MAX_RULES"] = original_max
+    set_config(FLOWSPEC4_MAX_RULES=9000)
+    result = check_rule_limit(1, RuleTypes.IPv4)
+    assert result is False
 
 
 def test_check_rule_limit_at_limit(app, db):
@@ -104,31 +98,20 @@ def test_check_rule_limit_at_limit(app, db):
     result = check_rule_limit(1, RuleTypes.IPv4)
     assert result is True
 
-    org.limit_flowspec4 = 0
-    db.session.commit()
-
 
 # ── check_global_rule_limit ──────────────────────────────────────────────────
 
 
-def test_check_global_rule_limit_not_reached(app, db):
-    original = app.config.get("FLOWSPEC4_MAX_RULES", 9000)
-    app.config["FLOWSPEC4_MAX_RULES"] = 9000
-    try:
-        result = check_global_rule_limit(RuleTypes.IPv4)
-        assert result is False
-    finally:
-        app.config["FLOWSPEC4_MAX_RULES"] = original
+def test_check_global_rule_limit_not_reached(app, db, set_config):
+    set_config(FLOWSPEC4_MAX_RULES=9000)
+    result = check_global_rule_limit(RuleTypes.IPv4)
+    assert result is False
 
 
-def test_check_global_rule_limit_reached(app, db):
-    original = app.config.get("FLOWSPEC4_MAX_RULES", 9000)
-    app.config["FLOWSPEC4_MAX_RULES"] = 0
-    try:
-        result = check_global_rule_limit(RuleTypes.IPv4)
-        assert result is True
-    finally:
-        app.config["FLOWSPEC4_MAX_RULES"] = original
+def test_check_global_rule_limit_reached(app, db, set_config):
+    set_config(FLOWSPEC4_MAX_RULES=0)
+    result = check_global_rule_limit(RuleTypes.IPv4)
+    assert result is True
 
 
 # ── get_ip_rules ─────────────────────────────────────────────────────────────

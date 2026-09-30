@@ -77,11 +77,11 @@ def reactivate_rule(
     state = get_state_by_time(expires)
 
     # Check global limit
-    if state == 1 and check_global_rule_limit(rule_type.value):
+    if state == 1 and check_global_rule_limit(rule_type):
         return model, ["global_limit_reached"]
 
     # Check org limit
-    if state == 1 and check_rule_limit(org_id, rule_type=rule_type.value):
+    if state == 1 and check_rule_limit(org_id, rule_type=rule_type):
         return model, ["limit_reached"]
 
     # Set new expiration date
