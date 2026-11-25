@@ -112,7 +112,7 @@ paths:
               rule:
                 $ref: '#/definitions/IPv4Rule'
         '400':
-          description: Invalid input data
+          description: Invalid input data, or no actions are available to the user (see `message`)
         '403':
           description: Rule limit reached or read-only token
 
@@ -139,7 +139,7 @@ paths:
               rule:
                 $ref: '#/definitions/IPv6Rule'
         '400':
-          description: Invalid input data
+          description: Invalid input data, or no actions are available to the user (see `message`)
         '403':
           description: Rule limit reached or read-only token
 
@@ -166,7 +166,7 @@ paths:
               rule:
                 $ref: '#/definitions/RTBHRule'
         '400':
-          description: Invalid input data
+          description: Invalid input data, or no communities are available to the user (see `message`)
         '403':
           description: Rule limit reached or read-only token
 
@@ -283,24 +283,38 @@ paths:
       tags:
         - Choices
       summary: Get available actions
-      description: Returns actions allowed for current user
+      description: >
+        Returns actions allowed for current user as a list of [id, name] pairs.
+        An empty list means no actions are available to the user.
       responses:
         '200':
-          description: List of available actions
-        '404':
-          description: No actions found for user
+          description: List of available actions (empty array when none are available)
+          schema:
+            type: array
+            items:
+              type: array
+              items: {}
+          examples:
+            application/json: [[1, "QoS 100 kbps"], [2, "Discard"]]
 
   /communities:
     get:
       tags:
         - Choices
       summary: Get available communities
-      description: Returns RTBH communities allowed for current user
+      description: >
+        Returns RTBH communities allowed for current user as a list of [id, name] pairs.
+        An empty list means no communities are available to the user.
       responses:
         '200':
-          description: List of available communities
-        '404':
-          description: No communities found for user
+          description: List of available communities (empty array when none are available)
+          schema:
+            type: array
+            items:
+              type: array
+              items: {}
+          examples:
+            application/json: [[1, "65535:65283"]]
 
 
 definitions:

@@ -5,6 +5,20 @@ All notable changes to ExaFS will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-25
+
+### Changed
+- **`GET /api/v3/actions` and `GET /api/v3/communities` return `200` with an empty array instead of `404`** when nothing is available to the user. An empty collection is a valid result, not "not found". The shape of a non-empty response (a JSON array of `[id, name]` pairs) is unchanged. Clients that treated `404` as "nothing to choose from" should treat `[]` the same way. The misleading `"no actions for this user?"` message, which `/communities` returned as well, is gone.
+
+### Fixed
+- **No explanation when there were no actions or communities to choose from** — with an empty `action` table, or with none assigned to the user's role, the add-rule forms offered only the placeholder and failed with a generic "Not a valid choice". Now:
+  - The web forms for IPv4, IPv6 and RTBH rules show a warning as soon as they are opened, saying whether nothing is defined in the system (an administrator has to create it) or nothing is assigned to the user's role (contact an administrator). Administrators get a link to the page where actions or communities are managed.
+  - `POST /api/v3/rules/ipv4`, `/ipv6` and `/rtbh` return `400` with the same explanation in `message` instead of the generic form error. Global and organization rule limits are still checked first.
+- **HTTP 500 when adding an RTBH rule with an empty `community` table** — the web view and the API tried to re-seed the default communities by calling the SQLAlchemy `after_create` listener directly, which failed with `TypeError`. The re-seed call is removed. The user now gets the "no communities defined" explanation instead. Fresh installs are still seeded by the migration and by `db.create_all()`.
+
+### Added
+- `tests/test_empty_choices.py` — coverage for the empty list endpoints and the explanations in the API and the web add-rule forms
+
 ## [1.4.1] - 2026-09-29
 
 ### Fixed
