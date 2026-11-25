@@ -362,6 +362,29 @@ class TestApiKeyForm:
             form = ApiKeyForm(formdata=form_data)
             assert form.validate()
 
+    @pytest.mark.parametrize("machine", ["2001:db8::10", "2001:DB8:0:0::10", "::1", "fe80::1"])
+    def test_valid_ipv6(self, app, valid_datetime, machine):
+        with app.test_request_context():
+            form = ApiKeyForm(formdata=create_form_data({"machine": machine, "expires": valid_datetime}))
+            assert form.validate(), form.errors
+
+    @pytest.mark.parametrize(
+        "machine",
+        [
+            "192.168.1.0/24",
+            "2001:db8::/64",
+            "192.168.1.1, 192.168.1.2",
+            "192.168.1.1 2001:db8::10",
+            "2001:db8::10\n2001:db8::11",
+        ],
+    )
+    def test_one_key_one_address(self, app, valid_datetime, machine):
+        """A key is bound to a single address: prefixes and lists are rejected."""
+        with app.test_request_context():
+            form = ApiKeyForm(formdata=create_form_data({"machine": machine, "expires": valid_datetime}))
+            assert not form.validate()
+            assert "provide valid IP address" in form.machine.errors
+
 
 class TestMachineApiKeyForm:
     # Similar to ApiKeyForm, but might have different validation rules
@@ -381,6 +404,22 @@ class TestMachineApiKeyForm:
             form = MachineApiKeyForm(formdata=form_data)
             form.user.choices = [(1, "g.name"), (2, "test")]
             assert form.validate()
+
+    def test_valid_ipv6(self, app, valid_machine_key_data):
+        with app.test_request_context():
+            form_data = create_form_data({**valid_machine_key_data, "machine": "2001:db8::10"})
+            form = MachineApiKeyForm(formdata=form_data)
+            form.user.choices = [(1, "g.name"), (2, "test")]
+            assert form.validate(), form.errors
+
+    @pytest.mark.parametrize("machine", ["2001:db8::/64", "192.168.1.1, 2001:db8::10"])
+    def test_one_key_one_address(self, app, valid_machine_key_data, machine):
+        with app.test_request_context():
+            form_data = create_form_data({**valid_machine_key_data, "machine": machine})
+            form = MachineApiKeyForm(formdata=form_data)
+            form.user.choices = [(1, "g.name"), (2, "test")]
+            assert not form.validate()
+            assert "provide valid IP address" in form.machine.errors
 
 
 class TestOrganizationForm:

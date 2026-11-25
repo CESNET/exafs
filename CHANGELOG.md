@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **No explanation when there were no actions or communities to choose from** — with an empty `action` table, or with none assigned to the user's role, the add-rule forms offered only the placeholder and failed with a generic "Not a valid choice". Now:
   - The web forms for IPv4, IPv6 and RTBH rules show a warning as soon as they are opened, saying whether nothing is defined in the system (an administrator has to create it) or nothing is assigned to the user's role (contact an administrator). Administrators get a link to the page where actions or communities are managed.
   - `POST /api/v3/rules/ipv4`, `/ipv6` and `/rtbh` return `400` with the same explanation in `message` instead of the generic form error. Global and organization rule limits are still checked first.
+- **API keys could not be bound to an IPv6 address** — the *Machine address* field in the user and machine API key forms accepted only IPv4 (`#85`). Both forms now accept a single IPv4 or IPv6 address. A key is still bound to exactly one address; prefixes and lists of addresses are rejected.
 - **HTTP 500 when adding an RTBH rule with an empty `community` table** — the web view and the API tried to re-seed the default communities by calling the SQLAlchemy `after_create` listener directly, which failed with `TypeError`. The re-seed call is removed. The user now gets the "no communities defined" explanation instead. Fresh installs are still seeded by the migration and by `db.create_all()`.
 
 ### Added
