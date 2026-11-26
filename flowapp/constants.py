@@ -82,3 +82,15 @@ class RuleTypes(IntEnum):
 class RuleOrigin(Enum):
     USER = 1
     WHITELIST = 2
+
+
+# Shown when a user has no flowspec actions / RTBH communities to choose from.
+# Shared by the web views and the API so both channels say the same thing.
+NO_ACTIONS_IN_SYSTEM = (
+    "No flowspec actions are defined in the system. An administrator has to create them."
+)
+NO_ACTIONS_FOR_ROLE = "Your role has no flowspec actions assigned. Contact an administrator."
+NO_COMMUNITIES_IN_SYSTEM = (
+    "No RTBH communities are defined in the system. An administrator has to create them."
+)
+NO_COMMUNITIES_FOR_ROLE = "Your role has no RTBH communities assigned. Contact an administrator."

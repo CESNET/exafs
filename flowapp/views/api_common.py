@@ -13,14 +13,14 @@ from flowapp.models import (
     Flowspec6,
     ApiKey,
     MachineApiKey,
-    Community,
     Organization,
     check_global_rule_limit,
     check_rule_limit,
     get_user_nets,
     get_user_actions,
-    insert_initial_communities,
     get_user_communities,
+    no_actions_message,
+    no_communities_message,
 )
 from flowapp.forms import IPv4Form, IPv6Form, RTBHForm
 from flowapp.services import rule_service
@@ -172,10 +172,7 @@ def all_actions(current_user: Dict[str, Any]) -> Tuple[Response, int]:
     """
 
     actions: List[Tuple[int, str]] = get_user_actions(current_user["role_ids"])
-    if actions:
-        return jsonify(actions)
-    else:
-        return jsonify({"message": "no actions for this user?"}), 404
+    return jsonify(actions), 200
 
 
 def all_communities(current_user: Dict[str, Any]) -> Tuple[Response, int]:
@@ -186,10 +183,7 @@ def all_communities(current_user: Dict[str, Any]) -> Tuple[Response, int]:
     """
 
     coms: List[Tuple[int, str]] = get_user_communities(current_user["role_ids"])
-    if coms:
-        return jsonify(coms)
-    else:
-        return jsonify({"message": "no actions for this user?"}), 404
+    return jsonify(coms), 200
 
 
 def limit_reached(count: int, rule_type: RuleTypes, org_id: int) -> Tuple[Response, int]:
@@ -243,11 +237,15 @@ def create_ipv4(current_user: Dict[str, Any]) -> Tuple[Response, int]:
         count = Flowspec4.count_active(org_id=current_user["org_id"])
         return limit_reached(count=count, rule_type=RuleTypes.IPv4, org_id=current_user["org_id"])
 
+    user_actions: List[Tuple[int, str]] = get_user_actions(current_user["role_ids"])
+    if not user_actions:
+        return jsonify({"message": no_actions_message()}), 400
+
     net_ranges: List[str] = get_user_nets(current_user["id"])
     json_request_data: Optional[Dict[str, Any]] = request.get_json()
     form: IPv4Form = IPv4Form(data=json_request_data, meta={"csrf": False})
     # add values to form instance
-    form.action.choices = get_user_actions(current_user["role_ids"])
+    form.action.choices = user_actions
     form.net_ranges = net_ranges
 
     # if the form is not valid, we should return 404 with errors
@@ -286,10 +284,14 @@ def create_ipv6(current_user: Dict[str, Any]) -> Tuple[Response, int]:
         count = Flowspec6.count_active(org_id=current_user["org_id"])
         return limit_reached(count=count, rule_type=RuleTypes.IPv6, org_id=current_user["org_id"])
 
+    user_actions: List[Tuple[int, str]] = get_user_actions(current_user["role_ids"])
+    if not user_actions:
+        return jsonify({"message": no_actions_message()}), 400
+
     net_ranges: List[str] = get_user_nets(current_user["id"])
     json_request_data: Optional[Dict[str, Any]] = request.get_json()
     form: IPv6Form = IPv6Form(data=json_request_data, meta={"csrf": False})
-    form.action.choices = get_user_actions(current_user["role_ids"])
+    form.action.choices = user_actions
     form.net_ranges = net_ranges
 
     if not form.validate():
@@ -323,16 +325,16 @@ def create_rtbh(current_user: Dict[str, Any]) -> Tuple[Response, int]:
         count = RTBH.count_active(org_id=current_user["org_id"])
         return limit_reached(count=count, rule_type=RuleTypes.RTBH, org_id=current_user["org_id"])
 
-    all_com: List[Community] = Community.get_all()
-    if not all_com:
-        insert_initial_communities()
+    user_communities: List[Tuple[int, str]] = get_user_communities(current_user["role_ids"])
+    if not user_communities:
+        return jsonify({"message": no_communities_message()}), 400
 
     net_ranges: List[str] = get_user_nets(current_user["id"])
 
     json_request_data: Optional[Dict[str, Any]] = request.get_json()
     form: RTBHForm = RTBHForm(data=json_request_data, meta={"csrf": False})
 
-    form.community.choices = get_user_communities(current_user["role_ids"])
+    form.community.choices = user_communities
     form.net_ranges = net_ranges
 
     if not form.validate():

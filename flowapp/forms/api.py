@@ -18,7 +18,7 @@ class ApiKeyForm(FlaskForm):
 
     machine = StringField(
         "Machine address",
-        validators=[DataRequired(), IPAddress(message="provide valid IP address")],
+        validators=[DataRequired(), IPAddress(ipv4=True, ipv6=True, message="provide valid IP address")],
     )
 
     comment = TextAreaField("Your comment for this key", validators=[Optional(), Length(max=255)])
@@ -45,7 +45,7 @@ class MachineApiKeyForm(FlaskForm):
 
     machine = StringField(
         "Machine address",
-        validators=[DataRequired(), IPAddress(message="provide valid IP address")],
+        validators=[DataRequired(), IPAddress(ipv4=True, ipv6=True, message="provide valid IP address")],
     )
 
     comment = TextAreaField("Your comment for this key", validators=[Optional(), Length(max=255)])

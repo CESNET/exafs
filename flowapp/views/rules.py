@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask_wtf.csrf import validate_csrf
+from markupsafe import Markup, escape
 from wtforms import ValidationError
 
 from flowapp import constants, db
@@ -28,7 +29,10 @@ from flowapp.models import (
     get_user_actions,
     get_user_communities,
     get_user_nets,
-    insert_initial_communities,
+    no_actions_message,
+    no_communities_message,
+    system_has_actions,
+    system_has_communities,
 )
 from flowapp.models.log import Log
 from flowapp.output import ROUTE_MODELS, announce_route, log_route, log_withdraw, RouteSources, Route
@@ -508,6 +512,29 @@ def group_update_save(rule_type):
     )
 
 
+
+def _flash_no_choices(message, in_system, admin_endpoint):
+    """
+    Flash the explanation for an empty action / community select.
+    Admins in the "none in the system" case get a link to the admin page that fixes it.
+    """
+    if in_system or not is_admin(session["user_role_ids"]):
+        flash(message, "alert-warning")
+        return
+
+    link = url_for(admin_endpoint)
+    html = f'{escape(message)} <a href="{escape(link)}" class="alert-link">Manage them here.</a>'
+    flash(Markup(html), "alert-warning")
+
+
+def _flash_no_actions():
+    _flash_no_choices(no_actions_message(), system_has_actions(), "admin.actions")
+
+
+def _flash_no_communities():
+    _flash_no_choices(no_communities_message(), system_has_communities(), "admin.communities")
+
+
 @rules.route("/add_ipv4_rule", methods=["GET", "POST"])
 @auth_required
 @user_or_admin_required
@@ -523,6 +550,10 @@ def ipv4_rule():
 
     # add values to form instance
     user_actions = get_user_actions(session["user_role_ids"])
+    has_actions = bool(user_actions)
+    if not has_actions:
+        _flash_no_actions()
+
     user_actions = [
         (0, "---- select action ----"),
     ] + user_actions
@@ -531,7 +562,7 @@ def ipv4_rule():
     form.action.default = 0
     form.net_ranges = net_ranges
 
-    if request.method == "POST" and form.validate():
+    if request.method == "POST" and has_actions and form.validate():
         # Use the service to create/update the rule
         _model, message = rule_service.create_or_update_ipv4_rule(
             form_data=form.data,
@@ -570,6 +601,10 @@ def ipv6_rule():
 
     # set up form
     user_actions = get_user_actions(session["user_role_ids"])
+    has_actions = bool(user_actions)
+    if not has_actions:
+        _flash_no_actions()
+
     user_actions = [
         (0, "---- select action ----"),
     ] + user_actions
@@ -577,7 +612,7 @@ def ipv6_rule():
     form.action.default = 0
     form.net_ranges = net_ranges
 
-    if request.method == "POST" and form.validate():
+    if request.method == "POST" and has_actions and form.validate():
         _model, message = rule_service.create_or_update_ipv6_rule(
             form_data=form.data,
             user_id=session["user_id"],
@@ -609,12 +644,12 @@ def rtbh_rule():
     if check_rule_limit(session["user_org_id"], RuleTypes.RTBH):
         return redirect(url_for("rules.limit_reached", rule_type=RuleTypes.RTBH.value))
 
-    all_com = Community.get_all()
-    if not all_com:
-        insert_initial_communities()
-
     net_ranges = get_user_nets(session["user_id"])
     user_communities = get_user_communities(session["user_role_ids"])
+    has_communities = bool(user_communities)
+    if not has_communities:
+        _flash_no_communities()
+
     # setup form
     form = RTBHForm(request.form)
     user_communities = [
@@ -624,7 +659,7 @@ def rtbh_rule():
     form.net_ranges = net_ranges
     whitelistable = Community.get_whitelistable_communities(current_app.config["ALLOWED_COMMUNITIES"])
 
-    if request.method == "POST" and form.validate():
+    if request.method == "POST" and has_communities and form.validate():
         _model, messages = rule_service.create_or_update_rtbh_rule(
             form_data=form.data,
             user_id=session["user_id"],

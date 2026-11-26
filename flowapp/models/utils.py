@@ -2,7 +2,13 @@
 
 from datetime import datetime
 from flowapp import utils
-from flowapp.constants import RuleTypes
+from flowapp.constants import (
+    NO_ACTIONS_FOR_ROLE,
+    NO_ACTIONS_IN_SYSTEM,
+    NO_COMMUNITIES_FOR_ROLE,
+    NO_COMMUNITIES_IN_SYSTEM,
+    RuleTypes,
+)
 from flask import current_app
 from sqlalchemy import func, select
 
@@ -313,6 +319,36 @@ def get_user_communities(user_roles):
         communities = db.session.scalars(select(Community).filter_by(role_id=max_role).order_by(Community.id))
 
     return [(g.id, g.name) for g in communities]
+
+
+def system_has_actions() -> bool:
+    """
+    Return True if at least one flowspec action exists, regardless of role
+    """
+    return db.session.scalars(select(Action.id).limit(1)).first() is not None
+
+
+def system_has_communities() -> bool:
+    """
+    Return True if at least one RTBH community exists, regardless of role
+    """
+    return db.session.scalars(select(Community.id).limit(1)).first() is not None
+
+
+def no_actions_message() -> str:
+    """
+    Explain why a user has no flowspec actions to choose from.
+    Call only when the user's role-filtered action list is empty.
+    """
+    return NO_ACTIONS_FOR_ROLE if system_has_actions() else NO_ACTIONS_IN_SYSTEM
+
+
+def no_communities_message() -> str:
+    """
+    Explain why a user has no RTBH communities to choose from.
+    Call only when the user's role-filtered community list is empty.
+    """
+    return NO_COMMUNITIES_FOR_ROLE if system_has_communities() else NO_COMMUNITIES_IN_SYSTEM
 
 
 def get_existing_action(name=None, command=None):
